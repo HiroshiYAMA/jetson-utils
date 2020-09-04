@@ -73,6 +73,7 @@ int main( int argc, char** argv )
 	if( !display )
 		printf("camera-viewer:  failed to create openGL display\n");
 	
+	display->Open();
 
 	/*
 	 * start streaming

@@ -46,6 +46,9 @@ except:
 input = jetson.utils.videoSource(opt.input_URI, argv=sys.argv)
 output = jetson.utils.videoOutput(opt.output_URI, argv=sys.argv)
 
+# open outputs
+output.Open()
+
 # capture frames until user exits
 while output.IsStreaming():
 	image = input.Capture()
