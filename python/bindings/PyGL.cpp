@@ -102,6 +102,19 @@ static void PyDisplay_Dealloc( PyDisplay_Object* self )
 }
 
 
+// Open
+static PyObject* PyDisplay_Open( PyDisplay_Object* self )
+{
+	if( !self || !self->display )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "glDisplay invalid object instance");
+		return NULL;
+	}
+
+	PY_RETURN_BOOL(self->display->Open());
+}
+
+
 // BeginRender
 static PyObject* PyDisplay_BeginRender( PyDisplay_Object* self, PyObject* args, PyObject* kwds )
 {
@@ -367,6 +380,7 @@ static PyTypeObject PyDisplay_Type =
 
 static PyMethodDef PyDisplay_Methods[] = 
 {
+	{ "Open", (PyCFunction)PyDisplay_Open, METH_NOARGS, "Open window"},
 	{ "BeginRender", (PyCFunction)PyDisplay_BeginRender, METH_VARARGS|METH_KEYWORDS, "Clear window and begin rendering a frame"},
 	{ "EndRender", (PyCFunction)PyDisplay_EndRender, METH_NOARGS, "Finish rendering and refresh / flip the backbuffer"},
 	{ "Render", (PyCFunction)PyDisplay_Render, METH_VARARGS|METH_KEYWORDS, "Render a CUDA float4 image using OpenGL interop"},

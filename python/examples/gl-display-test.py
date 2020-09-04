@@ -36,8 +36,9 @@ parser.add_argument("--a", type=float, default=0.00, help="window background col
 opt = parser.parse_args()
 print(opt)
 
-# create display device
-display = jetson.utils.glDisplay(opt.title, opt.r, opt.g, opt.b, opt.a)
+# create & open display device
+display = jetson.utils.glDisplay(opt.title, -1, -1, opt.r, opt.g, opt.b, opt.a)
+display.Open()
 
 # render until user exits
 while display.IsOpen():

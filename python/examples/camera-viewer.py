@@ -35,8 +35,9 @@ parser.add_argument("--camera", type=str, default="0", help="index of the MIPI C
 opt = parser.parse_args()
 print(opt)
 
-# create display window
+# create & open display window
 display = jetson.utils.glDisplay()
+display.Open()
 
 # create camera device
 camera = jetson.utils.gstCamera(opt.width, opt.height, opt.camera)

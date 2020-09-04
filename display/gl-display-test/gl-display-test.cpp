@@ -77,6 +77,7 @@ int main( int argc, char** argv )
 		return 0;
 	}
 
+	display->Open();
 
 	/*
 	 * allocate openGL texture
