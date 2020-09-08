@@ -12,7 +12,7 @@ import jetson.utils
 
 # OUT_SIZE = [[640, 360], [720, 405], [800, 450], [864, 486], [1008, 567], [1024, 576], [1152, 648], [1280, 720], [1296, 729], [1440, 810], [1600, 900], [1920, 1080]]
 OUT_SIZE = [[640, 360], [1024, 576], [1280, 720], [1600, 900], [1920, 1080], [3840, 2160]]
-# OUT_SIZE = [[1600, 900]]
+# OUT_SIZE = [[1280, 720]]
 
 # IN_SIZE = [[1024, 576]]
 IN_SIZE = [[1920, 1080]]
@@ -73,7 +73,7 @@ def test_resize():
     hoge_resize = HogeHogeResize()
     dummy_img_scaled = hoge_resize.Go(img_in, in_X, in_Y, 'gpu')   # 時間計測のため。CUDAの初期化時間をキャンセル。
 
-    loop_cnt = 100
+    loop_cnt = 10000
     device_list = ['cpu', 'gpu', 'jetson-utils']
 
     for X, Y in OUT_SIZE:
