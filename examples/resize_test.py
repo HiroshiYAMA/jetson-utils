@@ -12,19 +12,25 @@ import jetson.utils
 
 # OUT_SIZE = [[640, 360], [720, 405], [800, 450], [864, 486], [1008, 567], [1024, 576], [1152, 648], [1280, 720], [1296, 729], [1440, 810], [1600, 900], [1920, 1080]]
 OUT_SIZE = [[640, 360], [1024, 576], [1280, 720], [1600, 900], [1920, 1080], [3840, 2160]]
-# OUT_SIZE = [[1280, 720]]
+# OUT_SIZE = [[1920, 1080]]
+# OUT_SIZE = [[160, 90]]
 
-# IN_SIZE = [[1024, 576]]
-IN_SIZE = [[1920, 1080]]
+IN_SIZE = [[1024, 576]]
+# IN_SIZE = [[1920, 1080]]
 # IN_SIZE = [[2560, 1440]]
 
 # ITP_MODE = cv2.INTER_NEAREST
-# ITP_MODE = cv2.INTER_LINEAR
-ITP_MODE = cv2.INTER_AREA
+ITP_MODE = cv2.INTER_LINEAR
+# ITP_MODE = cv2.INTER_CUBIC
+# ITP_MODE = cv2.INTER_AREA
+# ITP_MODE = cv2.INTER_LANCZOS4
 
 # ITP_MODE_JETSON_UTILS = jetson.utils.INTER_NEAREST
-# ITP_MODE_JETSON_UTILS = jetson.utils.INTER_LINEAR
-ITP_MODE_JETSON_UTILS = jetson.utils.INTER_AREA
+ITP_MODE_JETSON_UTILS = jetson.utils.INTER_LINEAR
+# ITP_MODE_JETSON_UTILS = jetson.utils.INTER_CUBIC
+# ITP_MODE_JETSON_UTILS = jetson.utils.INTER_AREA
+# ITP_MODE_JETSON_UTILS = jetson.utils.INTER_LANCZOS4
+# ITP_MODE_JETSON_UTILS = jetson.utils.INTER_SPLINE36
 
 class HogeHogeResize(object):
     def __init__(self):
@@ -71,11 +77,17 @@ def test_resize():
     jetson.utils.cudaResize(img2, img_in2, jetson.utils.INTER_LINEAR)
 
     hoge_resize = HogeHogeResize()
-    dummy_img_scaled = hoge_resize.Go(img_in, in_X, in_Y, 'gpu')   # 時間計測のため。CUDAの初期化時間をキャンセル。
+    if ITP_MODE != cv2.INTER_LANCZOS4:
+        dummy_img_scaled = hoge_resize.Go(img_in, in_X, in_Y, 'gpu')   # 時間計測のため。CUDAの初期化時間をキャンセル。
 
-    loop_cnt = 10000
-    device_list = ['cpu', 'gpu', 'jetson-utils']
+    loop_cnt = 1000
+    if ITP_MODE != cv2.INTER_LANCZOS4:
+        device_list = ['cpu', 'gpu', 'jetson-utils']
+    else:
+        device_list = ['cpu', 'jetson-utils']
+    # device_list = ['jetson-utils']
 
+    print(in_X, in_Y, "-->")
     for X, Y in OUT_SIZE:
         print(X, Y)
 
@@ -97,13 +109,13 @@ def test_resize():
 
             if d == 'cpu':
                 print('resize(CPU) end_time [msec],',end_time*1000/loop_cnt)
-                cv2.imwrite("dst_cpu.jpg", img_OUT)
+                cv2.imwrite("dst_resize_cpu.jpg", img_OUT)
             elif d == 'gpu':
                 print('resize(CUDA) end_time [msec],',end_time*1000/loop_cnt)
-                cv2.imwrite("dst_gpu.jpg", img_OUT)
+                cv2.imwrite("dst_resize_gpu.jpg", img_OUT)
             else:
                 print('resize(jetson-utils) end_time [msec],',end_time*1000/loop_cnt)
-                jetson.utils.saveImage("dst_jetson-utils.jpg", img_OUT)
+                jetson.utils.saveImage("dst_resize_jetson-utils.jpg", img_OUT)
 
 
 
