@@ -36,6 +36,57 @@ __global__ void gpuThreshold_binary_inv(T *input, T *output, size_t width, size_
 	output[y * width + x] = p_dst;
 }
 
+// gpuThreshold. trunc.
+// * Binarize an image on the GPU (supports grayscale)
+template<typename T>
+__global__ void gpuThreshold_trunc(T *input, T *output, size_t width, size_t height, float threshold, float max_value)
+{
+	const int x = blockIdx.x * blockDim.x + threadIdx.x;
+	const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if( x >= width || y >= height )
+		return;
+
+	const T p_src = input[y * width + x];
+	const T p_dst = (float(p_src) > threshold) ? T(threshold) : p_src;
+
+	output[y * width + x] = p_dst;
+}
+
+// gpuThreshold. tozero.
+// * Binarize an image on the GPU (supports grayscale)
+template<typename T>
+__global__ void gpuThreshold_tozero(T *input, T *output, size_t width, size_t height, float threshold, float max_value)
+{
+	const int x = blockIdx.x * blockDim.x + threadIdx.x;
+	const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if( x >= width || y >= height )
+		return;
+
+	const T p_src = input[y * width + x];
+	const T p_dst = (float(p_src) > threshold) ? p_src : T(0);
+
+	output[y * width + x] = p_dst;
+}
+
+// gpuThreshold. tozero_inv.
+// * Binarize an image on the GPU (supports grayscale)
+template<typename T>
+__global__ void gpuThreshold_tozero_inv(T *input, T *output, size_t width, size_t height, float threshold, float max_value)
+{
+	const int x = blockIdx.x * blockDim.x + threadIdx.x;
+	const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if( x >= width || y >= height )
+		return;
+
+	const T p_src = input[y * width + x];
+	const T p_dst = (float(p_src) > threshold) ? T(0) : p_src;
+
+	output[y * width + x] = p_dst;
+}
+
 // launchThreshold
 // * Binarize an image on the GPU (supports grayscale)
 template<typename T>
@@ -54,6 +105,12 @@ static cudaError_t launchThreshold(T *input, T *output, size_t width, size_t hei
 
 	if (mode == static_cast<int>(BinarizationFlags::THRESH_BINARY_INV)) {
 		gpuThreshold_binary_inv<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
+	} else if (mode == static_cast<int>(BinarizationFlags::THRESH_TRUNC)) {
+		gpuThreshold_trunc<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
+	} else if (mode == static_cast<int>(BinarizationFlags::THRESH_TOZERO)) {
+		gpuThreshold_tozero<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
+	} else if (mode == static_cast<int>(BinarizationFlags::THRESH_TOZERO_INV)) {
+		gpuThreshold_tozero_inv<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
 	} else {
 		gpuThreshold_binary<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
 	}
