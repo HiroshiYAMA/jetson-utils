@@ -276,12 +276,148 @@ PyObject* PyNumpy_ToCUDA( PyObject* self, PyObject* args, PyObject* kwds )
 }
 
 
+// cudaFromNumpy2()
+PyObject* PyNumpy_ToCUDA2( PyObject* self, PyObject* args, PyObject* kwds )
+{
+	PyObject* object = NULL;
+	PyObject* object_cuda = NULL;
+
+	int pyBGR=0;
+	static char* kwlist[] = {"array", "cudaary", "isBGR", NULL};
+
+	if( !PyArg_ParseTupleAndKeywords(args, kwds, "OO|i", kwlist, &object, &object_cuda, &pyBGR) )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaFromNumpy2() failed to parse array argument");
+		return NULL;
+	}
+
+	if( !PyArray_Check(object) )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "Object passed to cudaFromNumpy2() wasn't a numpy ndarray");
+		return NULL;
+	}
+
+	// get pointers to image data
+	PyCudaImage* output = PyCUDA_GetImage(object_cuda);
+
+	if( !output )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaFromNumpy2() failed to get output image pointers (should be cudaImage)");
+		return NULL;
+	}
+
+	const bool isBGR = (pyBGR > 0);
+
+	// detect uint8 array - otherwise cast to float
+	const int inputType = PyArray_TYPE((PyArrayObject*)object);
+	int outputType = NPY_FLOAT32;
+	int typeSize = sizeof(float);
+
+	if( inputType == NPY_UINT8 )
+	{
+		outputType = NPY_UINT8;
+		typeSize = sizeof(uint8_t);
+	}
+
+	// cast to numpy array
+	PyArrayObject* array = (PyArrayObject*)PyArray_FROM_OTF(object, outputType, NPY_ARRAY_IN_ARRAY|NPY_ARRAY_FORCECAST);
+
+	if( !array )
+		return NULL;
+
+	// calculate the size of the array
+	const int ndim = PyArray_NDIM(array);
+	npy_intp* dims = PyArray_DIMS(array);
+	size_t    size = 0;
+
+	for( int n=0; n < ndim; n++ )
+	{
+		LogDebug(LOG_PY_UTILS "cudaFromNumpy2()  ndarray dim %i = %li\n", n, dims[n]);
+
+		if( n == 0 )
+			size = dims[0];
+		else
+			size *= dims[n];
+	}
+
+	size *= typeSize;
+
+	if( size == 0 )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaFromNumpy2() numpy ndarray has data size of 0 bytes");
+		Py_DECREF(array);
+		return NULL;
+	}
+
+
+	// retrieve the data pointer to the array
+	float* arrayPtr = (float*)PyArray_DATA(array);
+
+	if( !arrayPtr )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaFromNumpy2() failed to retrieve data pointer from numpy ndarray");
+		Py_DECREF(array);
+		return NULL;
+	}
+
+	// detect the image format
+	imageFormat format = IMAGE_UNKNOWN;
+
+	if( outputType == NPY_FLOAT32 )
+	{
+		if( ndim == 2 )
+		{
+			format = IMAGE_GRAY32F;
+		}
+		else if( ndim == 3 )
+		{
+			if( dims[2] == 1 )
+				format = IMAGE_GRAY32F;
+			else if( dims[2] == 3 )
+				format = isBGR ? IMAGE_BGR32F : IMAGE_RGB32F;
+			else if( dims[2] == 4 )
+				format = isBGR ? IMAGE_BGRA32F : IMAGE_RGBA32F;
+		}
+	}
+	else if( outputType == NPY_UINT8 )
+	{
+		if( ndim == 2 )
+		{
+			format = IMAGE_GRAY8;
+		}
+		else if( ndim == 3 )
+		{
+			if( dims[2] == 1 )
+				format = IMAGE_GRAY8;
+			else if( dims[2] == 3 )
+				format = isBGR ? IMAGE_BGR8 : IMAGE_RGB8;
+			else if( dims[2] == 4 )
+				format = isBGR ? IMAGE_BGRA8 : IMAGE_RGBA8;
+		}
+	}
+
+	if (output->width != dims[1] || output->height != dims[0] || output->format != format) {
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaFromNumpy2() invalid. width/height/format");
+		Py_DECREF(array);
+		return NULL;
+	}
+
+	// copy array into CUDA memory
+	memcpy(output->base.ptr, arrayPtr, size);
+
+	// return void
+	Py_DECREF(array);
+	Py_RETURN_NONE;
+}
+
+
 
 //-------------------------------------------------------------------------------
 
 static PyMethodDef pyImageIO_Functions[] = 
 {
 	{ "cudaFromNumpy", (PyCFunction)PyNumpy_ToCUDA, METH_VARARGS|METH_KEYWORDS, "Copy a numpy ndarray to CUDA memory" },
+	{ "cudaFromNumpy2", (PyCFunction)PyNumpy_ToCUDA2, METH_VARARGS|METH_KEYWORDS, "Copy a numpy ndarray to CUDA memory" },
 	{ "cudaToNumpy", (PyCFunction)PyNumpy_FromCUDA, METH_VARARGS|METH_KEYWORDS, "Create a numpy ndarray wrapping the CUDA memory, without copying it" },	
 	{NULL}  /* Sentinel */
 };
