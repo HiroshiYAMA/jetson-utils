@@ -29,6 +29,7 @@
 #include "cudaResize.h"
 #include "cudaSplit.h"
 #include "cudaMerge.h"
+#include "cudaMask.h"
 #include "cudaCrop.h"
 #include "cudaFont.h"
 
@@ -1263,6 +1264,73 @@ PyObject* PyCUDA_Merge( PyObject* self, PyObject* args, PyObject* kwds )
 }
 
 
+// PyCUDA_Mask
+PyObject* PyCUDA_Mask( PyObject* self, PyObject* args, PyObject* kwds )
+{
+	// parse arguments
+	PyObject* pyInput   = NULL;
+	PyObject* pyMask    = NULL;
+	PyObject* pyOutput  = NULL;
+	PyObject* pyBgColor = NULL;
+
+	static char* kwlist[] = {"input", "mask", "output", "bg_color", NULL};
+
+	if( !PyArg_ParseTupleAndKeywords(args, kwds, "OOO|O", kwlist, &pyInput, &pyMask, &pyOutput, &pyBgColor))
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaMask() failed to parse args");
+		return NULL;
+	}
+
+	// get pointers to image data
+	PyCudaImage* input = PyCUDA_GetImage(pyInput);
+	PyCudaImage* mask = PyCUDA_GetImage(pyMask);
+	PyCudaImage* output = PyCUDA_GetImage(pyOutput);
+
+	if( !input || !mask || !output )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaMask() failed to get input/mask/output image pointers (should be cudaImage)");
+		return NULL;
+	}
+
+	if( input->format != output->format )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaMask() input and output image formats are different");
+		return NULL;
+	}
+
+	if( input->width != output->width || input->height != output->height
+		|| input->width != mask->width || input->height != mask->height )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaMask() input, mask and output size are different");
+		return NULL;
+	}
+
+	// get bg_color
+	float bg_color[3] = {};
+	if PyList_Check(pyBgColor) {
+		int n = PyList_Size(pyBgColor);
+		if (n == 3) {
+			for (int i = 0; i < n; i++) {
+				auto item = PyList_GetItem(pyBgColor, i);
+				float c = PyFloat_AsDouble(item);
+				bg_color[i] = c;
+			}
+		}
+	}
+
+	// run the CUDA function
+	if( CUDA_FAILED(cudaMask(input->base.ptr, mask->base.ptr, output->base.ptr, output->width, output->height,
+		input->format, mask->format, bg_color)) )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaMask() failed");
+		return NULL;
+	}
+
+	// return void
+	Py_RETURN_NONE;
+}
+
+
 // PyCUDA_Crop
 PyObject* PyCUDA_Crop( PyObject* self, PyObject* args, PyObject* kwds )
 {
@@ -1764,6 +1832,7 @@ static PyMethodDef pyCUDA_Functions[] =
 	{ "cudaResize", (PyCFunction)PyCUDA_Resize, METH_VARARGS|METH_KEYWORDS, "Resize an image on the GPU" },
 	{ "cudaSplit", (PyCFunction)PyCUDA_Split, METH_VARARGS|METH_KEYWORDS, "Split an image on the GPU" },
 	{ "cudaMerge", (PyCFunction)PyCUDA_Merge, METH_VARARGS|METH_KEYWORDS, "Merge an image on the GPU" },
+	{ "cudaMask", (PyCFunction)PyCUDA_Mask, METH_VARARGS|METH_KEYWORDS, "Mask an image on the GPU" },
 	{ "cudaNormalize", (PyCFunction)PyCUDA_Normalize, METH_VARARGS|METH_KEYWORDS, "Normalize the pixel intensities of an image between two ranges" },
 	{ "cudaOverlay", (PyCFunction)PyCUDA_Overlay, METH_VARARGS|METH_KEYWORDS, "Overlay the input image onto the composite output image at position (x,y)" },
 	{ "adaptFontSize", (PyCFunction)PyCUDA_AdaptFontSize, METH_VARARGS, "Determine an appropriate font size for the given image dimension" },
