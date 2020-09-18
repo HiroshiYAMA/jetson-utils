@@ -29,6 +29,7 @@
 #include "cudaResize.h"
 #include "cudaSplit.h"
 #include "cudaMerge.h"
+#include "cudaThreshold.h"
 #include "cudaCrop.h"
 #include "cudaFont.h"
 
@@ -1263,6 +1264,59 @@ PyObject* PyCUDA_Merge( PyObject* self, PyObject* args, PyObject* kwds )
 }
 
 
+// PyCUDA_Threshold
+PyObject* PyCUDA_Threshold( PyObject* self, PyObject* args, PyObject* kwds )
+{
+	// parse arguments
+	PyObject* pyInput  = NULL;
+	PyObject* pyOutput = NULL;
+	float threshold = 0.0f;
+	float max_value = 0.0f;
+	long mode = 0L;
+
+	static char* kwlist[] = {"input", "output", "threshold", "max_value", "mode", NULL};
+
+	if( !PyArg_ParseTupleAndKeywords(args, kwds, "OOff|l", kwlist, &pyInput, &pyOutput, &threshold, &max_value, &mode))
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaThreshold() failed to parse args");
+		return NULL;
+	}
+
+	// get pointers to image data
+	PyCudaImage* input = PyCUDA_GetImage(pyInput);
+	PyCudaImage* output = PyCUDA_GetImage(pyOutput);
+
+	if( !input || !output )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaThreshold() failed to get input/output image pointers (should be cudaImage)");
+		return NULL;
+	}
+
+	if( input->format != output->format )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaThreshold() input and output image formats are different");
+		return NULL;
+	}
+
+	if( input->width != output->width || input->height != output->height )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaThreshold() input and output size are different");
+		return NULL;
+	}
+
+	// run the CUDA function
+	if( CUDA_FAILED(cudaThreshold(input->base.ptr, output->base.ptr, output->width, output->height, output->format,
+		threshold, max_value, mode)) )
+	{
+		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaThreshold() failed");
+		return NULL;
+	}
+
+	// return void
+	Py_RETURN_NONE;
+}
+
+
 // PyCUDA_Crop
 PyObject* PyCUDA_Crop( PyObject* self, PyObject* args, PyObject* kwds )
 {
@@ -1764,6 +1818,7 @@ static PyMethodDef pyCUDA_Functions[] =
 	{ "cudaResize", (PyCFunction)PyCUDA_Resize, METH_VARARGS|METH_KEYWORDS, "Resize an image on the GPU" },
 	{ "cudaSplit", (PyCFunction)PyCUDA_Split, METH_VARARGS|METH_KEYWORDS, "Split an image on the GPU" },
 	{ "cudaMerge", (PyCFunction)PyCUDA_Merge, METH_VARARGS|METH_KEYWORDS, "Merge an image on the GPU" },
+	{ "cudaThreshold", (PyCFunction)PyCUDA_Threshold, METH_VARARGS|METH_KEYWORDS, "Binarize an image on the GPU" },
 	{ "cudaNormalize", (PyCFunction)PyCUDA_Normalize, METH_VARARGS|METH_KEYWORDS, "Normalize the pixel intensities of an image between two ranges" },
 	{ "cudaOverlay", (PyCFunction)PyCUDA_Overlay, METH_VARARGS|METH_KEYWORDS, "Overlay the input image onto the composite output image at position (x,y)" },
 	{ "adaptFontSize", (PyCFunction)PyCUDA_AdaptFontSize, METH_VARARGS, "Determine an appropriate font size for the given image dimension" },
