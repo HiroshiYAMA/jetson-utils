@@ -100,6 +100,100 @@ cudaError_t cudaWarpFisheye( uchar4* input, uchar4* output, uint32_t width, uint
  */
 cudaError_t cudaWarpFisheye( float4* input, float4* output, uint32_t width, uint32_t height, float focus );
 
-							
-#endif
 
+#include <math.h>
+
+// dgrees <--> radians.
+template<typename T> constexpr inline __host__ __device__ T RAD(T d) { return static_cast<T>(d * M_PI / 180.0); }
+template<typename T> constexpr inline __host__ __device__ T DEG(T r) { return static_cast<T>(r * 180.0 / M_PI); }
+
+// rotation. X, Y, Z.
+template<typename T, typename S> inline __host__ __device__ T rotX(T p, S th)
+{
+	T p_rot = p;
+
+	p_rot.y = cos(th) * p.y - sin(th) * p.z;
+	p_rot.z = sin(th) * p.y + cos(th) * p.z;
+
+	return p_rot;
+}
+template<typename T, typename S> inline __host__ __device__ T rotY(T p, S th)
+{
+	T p_rot = p;
+
+	p_rot.x = cos(th) * p.x - sin(th) * p.z;
+	p_rot.z = sin(th) * p.x + cos(th) * p.z;
+
+	return p_rot;
+}
+template<typename T, typename S> inline __host__ __device__ T rotZ(T p, S th)
+{
+	T p_rot = p;
+
+	p_rot.x = cos(th) * p.x - sin(th) * p.y;
+	p_rot.y = sin(th) * p.x + cos(th) * p.y;
+
+	return p_rot;
+}
+
+template<typename T> constexpr inline __host__ __device__ T f_Equidistant(T theta, T k) { return k * theta; };
+template<typename T> constexpr inline __host__ __device__ T f_Equisolid_angle(T theta, T k) { return static_cast<T>(k * 2.0 * sin(theta / 2.0)); };
+template<typename T> constexpr inline __host__ __device__ T f_Orthographic(T theta, T k) { return static_cast<T>(k * sin(theta)); };
+template<typename T> constexpr inline __host__ __device__ T f_Stereographic(T theta, T k) { return static_cast<T>(k * 2.0 * tan(theta / 2.0)); };
+template<typename T> constexpr inline __host__ __device__ T f_Rectilinear(T theta, T k) { return static_cast<T>(k * tan(theta)); };
+//
+template<typename T> constexpr inline __host__ __device__ T f_lens_radius(T theta, T k) { return f_Equisolid_angle(theta, k); };
+
+constexpr auto COLLO_LENS_TBL_NUM = 36;
+struct st_COLLO_lens_table {
+	int num;	// number of data.
+	float step;	// step of degrees or radians.
+	float data[COLLO_LENS_TBL_NUM];	// radius of each dgrees or radians.
+};
+
+struct st_COLLO_rotation {
+	float x;
+	float y;
+	float z;
+	float roll;
+};
+
+struct st_COLLO_param {
+	// input.
+	uint32_t iW;
+	uint32_t iH;
+	float iAspect;
+
+	// output.
+	uint32_t oW;
+	uint32_t oH;
+	float oAspect;
+	float v_fov_half_tan;
+
+	// lens spec.
+	float xcenter;
+	float ycenter;
+	float lens_radius_scale;
+	st_COLLO_lens_table lens_tbl;
+
+	// rotaion.
+	st_COLLO_rotation rot;
+
+	// pixel sampling filter.
+	int filter_mode;
+};
+
+/**
+ * Apply COLLO to an 8-bit fixed-point RGBA/RGB/GRAY image.
+ * Apply COLLO to a 32-bit floating-point RGBA/RGB/GRAY image.
+ * @param[in] focus focus of the lens (in mm).
+ * @ingroup warping
+ */
+cudaError_t cudaWarpCollo( uint8_t* input, uint8_t* output, st_COLLO_param collo_prm );
+cudaError_t cudaWarpCollo( float* input, float* output, st_COLLO_param collo_prm );
+cudaError_t cudaWarpCollo( uchar3* input, uchar3* output, st_COLLO_param collo_prm );
+cudaError_t cudaWarpCollo( float3* input, float3* output, st_COLLO_param collo_prm );
+cudaError_t cudaWarpCollo( uchar4* input, uchar4* output, st_COLLO_param collo_prm );
+cudaError_t cudaWarpCollo( float4* input, float4* output, st_COLLO_param collo_prm );
+
+#endif

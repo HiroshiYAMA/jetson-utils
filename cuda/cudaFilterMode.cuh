@@ -25,6 +25,7 @@
 
 
 #include "cudaFilterMode.h"
+#include "cudaVector.h"
 #include "cudaMath.h"
 
 
@@ -80,6 +81,351 @@ float4 cudaReadPixel<FORMAT_CHW>( float4* input, int x, int y, int width, int he
 
 ///@}
 
+
+
+// linear.
+template<cudaDataFormat format=FORMAT_HWC, typename T>
+__device__ inline T cudaFilterPixel_linear( T* input, float x, float y, int width, int height, float max_value=255.0f )
+{
+	const int x1 = __float2int_rd(x);
+	const int y1 = __float2int_rd(y);
+	const int x2 = x1 + 1;
+	const int y2 = y1 + 1;
+	const int x2_read = ::min(x2, width - 1);
+	const int y2_read = ::min(y2, height - 1);
+
+	const float4 pix_in[4] = {
+		make_float4(cudaReadPixel<format>(input, x1, y1, width, height)),
+		make_float4(cudaReadPixel<format>(input, x2_read, y1, width, height)),
+		make_float4(cudaReadPixel<format>(input, x1, y2_read, width, height)),
+		make_float4(cudaReadPixel<format>(input, x2_read, y2_read, width, height)),
+	};
+	const float weight[4] = {
+		(x2 - x) * (y2 - y),
+		(x - x1) * (y2 - y),
+		(x2 - x) * (y - y1),
+		(x - x1) * (y - y1),
+	};
+
+	const float4 pix_tmp =
+		pix_in[0] * weight[0]
+		+ pix_in[1] * weight[1]
+		+ pix_in[2] * weight[2]
+		+ pix_in[3] * weight[3];
+
+	const T out = cast_vec<T>(clamp(pix_tmp, 0.0f, max_value));
+
+	return out;
+}
+
+
+
+// cubic.
+template <typename T>
+static __device__ inline T calc_cubic_coef(T d, T a)
+{
+	T d_abs = abs(d);
+
+	// T w1 = T(1) - (a + T(3)) * d_abs * d_abs + (a + T(2)) * d_abs * d_abs * d_abs;
+	// T w2 = T(-4) * a + T(8) * a * d_abs + T(-5) * a * d_abs * d_abs + a * d_abs * d_abs * d_abs;
+	T w1 = T(1) + ((-a + T(-3)) + (a + T(2)) * d_abs) * d_abs * d_abs;
+	T w2 = (T(-4) + (T(8) + (T(-5) + d_abs) * d_abs) * d_abs) * a;
+
+	T w = (d_abs < T(1)) ? w1 : (d_abs < T(2)) ? w2 : T(0);
+
+	return w;
+}
+template<cudaDataFormat format=FORMAT_HWC, typename T>
+__device__ inline T cudaFilterPixel_cubic( T* input, float x, float y, int width, int height, float max_value = 255.0f )
+{
+	const int xc = __float2int_rd(x);
+	const int yc = __float2int_rd(y);
+	const int x_btm = xc - 1;
+	const int y_btm = yc - 1;
+	// const int x_top = xc + 2;
+	const int y_top = yc + 2;
+	const float xd = x - xc;
+	const float yd = y - yc;
+
+	constexpr float a = -0.75f;	// CPU ver. = -0.75, GPU ver. = -0.5
+	const float wx[4] = {
+		calc_cubic_coef(-1.0f - xd, a),
+		calc_cubic_coef(0.0f - xd, a),
+		calc_cubic_coef(1.0f - xd, a),
+		calc_cubic_coef(2.0f - xd, a),
+	};
+	const float wx_sum = wx[0] + wx[1] + wx[2] + wx[3];
+
+	float4 pix_sum = {};
+	float w_sum = 0.0f;
+	for (int i = y_btm; i <= y_top; i++) {
+		const float wy = calc_cubic_coef(i - yd - yc, a);
+
+		const int pos_x[4] = {
+			::max(x_btm, 0),
+			x_btm + 1,
+			::min(x_btm + 2, width - 1),
+			::min(x_btm + 3, width - 1),
+		};
+		const int pos_y = ::clamp(i, 0, height - 1);
+
+		const float4 pix[4] = {
+			make_float4(cudaReadPixel<format>(input, pos_x[0], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[1], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[2], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[3], pos_y, width, height)),
+		};
+
+		pix_sum += (pix[0] * wx[0] + pix[1] * wx[1] + pix[2] * wx[2] + pix[3] * wx[3]) * wy;
+		w_sum += wx_sum * wy;
+	}
+
+	const T out = (w_sum == 0.0f) ? T{} : cast_vec<T>(clamp(pix_sum / w_sum, 0.0f, max_value));
+
+	return out;
+}
+
+
+
+// area.
+template<cudaDataFormat format=FORMAT_HWC, typename T>
+__device__ inline T cudaFilterPixel_area( T* input, float x, float y, int width, int height, float2 scale, float max_value = 255.0f )
+{
+	float fsx1 = x;
+	float fsx2 = ::min(fsx1 + scale.x, width - 1.0f);
+
+	int sx1 = __float2int_ru(fsx1);
+	int sx2 = __float2int_rd(fsx2);
+
+	float fsy1 = y;
+	float fsy2 = ::min(fsy1 + scale.y, height - 1.0f);
+
+	int sy1 = __float2int_ru(fsy1);
+	int sy2 = __float2int_rd(fsy2);
+
+	float sx = ::min(float(scale.x), width - fsx1);
+	float sy = ::min(float(scale.y), height - fsy1);
+	float scale_xy = 1.f / (sx * sy);
+
+	float4 out = {};
+
+	for (int dy = sy1; dy < sy2; ++dy)
+	{
+		// inner rectangle.
+		for (int dx = sx1; dx < sx2; ++dx)
+			out += make_float4(cudaReadPixel<format>(input, dx, dy, width, height));
+
+		// v-edge line(left).
+		if (sx1 > fsx1)
+			out += make_float4(cudaReadPixel<format>(input, (sx1 -1), dy, width, height) * (sx1 - fsx1));
+
+		// v-edge line(right).
+		if (sx2 < fsx2)
+			out += make_float4(cudaReadPixel<format>(input, sx2, dy, width, height) * (fsx2 - sx2));
+	}
+
+	// h-edge line(top).
+	if (sy1 > fsy1)
+		for (int dx = sx1; dx < sx2; ++dx)
+			out += make_float4(cudaReadPixel<format>(input, dx, (sy1 - 1), width, height) * (sy1 - fsy1));
+
+	// h-edge line(bottom).
+	if (sy2 < fsy2)
+		for (int dx = sx1; dx < sx2; ++dx)
+			out += make_float4(cudaReadPixel<format>(input, dx, sy2, width, height) * (fsy2 - sy2));
+
+	// corner(top, left).
+	if ((sy1 > fsy1) &&  (sx1 > fsx1))
+		out += make_float4(cudaReadPixel<format>(input, (sx1 - 1), (sy1 - 1), width, height) * (sy1 - fsy1) * (sx1 - fsx1));
+
+	// corner(top, right).
+	if ((sy1 > fsy1) &&  (sx2 < fsx2))
+		out += make_float4(cudaReadPixel<format>(input, sx2, (sy1 - 1), width, height) * (sy1 - fsy1) * (fsx2 - sx2));
+
+	// corner(bottom, left).
+	if ((sy2 < fsy2) &&  (sx2 < fsx2))
+		out += make_float4(cudaReadPixel<format>(input, sx2, sy2, width, height) * (fsy2 - sy2) * (fsx2 - sx2));
+
+	// corner(bottom, right).
+	if ((sy2 < fsy2) &&  (sx1 > fsx1))
+		out += make_float4(cudaReadPixel<format>(input, (sx1 - 1), sy2, width, height) * (fsy2 - sy2) * (sx1 - fsx1));
+
+	out *= scale_xy;
+
+	return cast_vec<T>(clamp(out, 0.0f, max_value));
+}
+
+
+
+// lanczos4.
+//// /* # SLOW. */
+// template <typename T>
+// static __device__  inline T calc_sinc(T x)
+// {
+// 	return (x == T(0)) ? T(1) : sin(x * M_PI) / (x * M_PI);
+// }
+// template <typename T>
+// static __device__ inline T calc_lanczos_coef(T d, T n)
+// {
+// 	T d_abs = abs(d);
+// 	T w = (d_abs > n) ? T(0) : calc_sinc(d_abs) * calc_sinc(d_abs / n);
+
+// 	return w;
+// }
+//// /* # FAST. */
+template <typename T>
+static __device__ inline T calc_lanczos_coef(T d, T n)
+{
+	T d_abs = abs(d);
+
+	T pi_d = M_PI * d_abs;
+	T cos_k1 = cos(pi_d * 0.25f);
+	T cos_k2 = sqrt(1.0f - cos_k1 * cos_k1);
+
+	constexpr auto zero = 1e-3f;
+	T w = (d_abs >= n) ? T(0) :
+		(d_abs < T(zero)) ? T(1) :
+		(T(16) * cos_k1 * cos_k2 * (cos_k1 - cos_k2) * (cos_k1 + cos_k2) * cos_k2) / (pi_d * pi_d);
+
+	return w;
+}
+template<cudaDataFormat format=FORMAT_HWC, typename T>
+__device__ inline T cudaFilterPixel_lanczos4( T* input, float x, float y, int width, int height, float max_value = 255.0f )
+{
+	constexpr float tap = 4.0f;
+
+	const int xc = __float2int_rd(x);
+	const int yc = __float2int_rd(y);
+	const int x_btm = xc - 3;
+	const int y_btm = yc - 3;
+	// const int x_top = xc + 4;
+	const int y_top = yc + 4;
+	const float xd = x - xc;
+	const float yd = y - yc;
+
+	const float wx[8] = {
+		calc_lanczos_coef(-3.0f - xd, tap),
+		calc_lanczos_coef(-2.0f - xd, tap),
+		calc_lanczos_coef(-1.0f - xd, tap),
+		calc_lanczos_coef(0.0f - xd, tap),
+		calc_lanczos_coef(1.0f - xd, tap),
+		calc_lanczos_coef(2.0f - xd, tap),
+		calc_lanczos_coef(3.0f - xd, tap),
+		calc_lanczos_coef(4.0f - xd, tap),
+	};
+	const float wx_sum = wx[0] + wx[1] + wx[2] + wx[3] + wx[4] + wx[5] + wx[6] + wx[7];
+
+	float4 pix_sum = {};
+	float w_sum = 0.0f;
+	for (int i = y_btm; i <= y_top; i++) {
+		const float wy = calc_lanczos_coef(i - yd - yc, tap);
+
+		const int pos_x[8] = {
+			::max(x_btm, 0),
+			::max(x_btm + 1, 0),
+			::max(x_btm + 2, 0),
+			x_btm + 3,
+			::min(x_btm + 4, width - 1),
+			::min(x_btm + 5, width - 1),
+			::min(x_btm + 6, width - 1),
+			::min(x_btm + 7, width - 1),
+		};
+		const int pos_y = ::clamp(i, 0, height - 1);
+
+		const float4 pix[8] = {
+			make_float4(cudaReadPixel<format>(input, pos_x[0], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[1], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[2], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[3], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[4], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[5], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[6], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[7], pos_y, width, height)),
+		};
+
+		const float4 pix_0 = pix[0] * wx[0] + pix[1] * wx[1] + pix[2] * wx[2] + pix[3] * wx[3];
+		const float4 pix_1 = pix[4] * wx[4] + pix[5] * wx[5] + pix[6] * wx[6] + pix[7] * wx[7];
+		pix_sum += (pix_0 + pix_1) * wy;
+		w_sum += wx_sum * wy;
+	}
+
+	const T out = (w_sum == 0.0f) ? T{} : cast_vec<T>(clamp(pix_sum / w_sum, 0.0f, max_value));
+
+	return out;
+}
+
+
+
+// spline36.
+template <typename T>
+static __device__ inline T calc_spline36_coef(T d)
+{
+	T d_abs = abs(d);
+
+	T w = (d_abs > T(3)) ? T(0)
+		: (d_abs > T(2)) ? (((T(19) * d_abs + T(-159)) * d_abs + T(434)) * d_abs + T(-384)) / T(209)
+		: (d_abs > T(1)) ? (((T(-114) * d_abs + T(612)) * d_abs + T(-1038)) * d_abs + T(540)) / T(209)
+		: (((T(247) * d_abs + T(-453)) * d_abs + T(-3)) * d_abs + T(209)) / T(209);
+
+	return w;
+}
+template<cudaDataFormat format=FORMAT_HWC, typename T>
+__device__ inline T cudaFilterPixel_spline36( T* input, float x, float y, int width, int height, float max_value = 255.0f )
+{
+	const int xc = __float2int_rd(x);
+	const int yc = __float2int_rd(y);
+	const int x_btm = xc - 2;
+	const int y_btm = yc - 2;
+	// const int x_top = xc + 3;
+	const int y_top = yc + 3;
+	const float xd = x - xc;
+	const float yd = y - yc;
+
+	const float wx[6] = {
+		calc_spline36_coef(-2.0f - xd),
+		calc_spline36_coef(-1.0f - xd),
+		calc_spline36_coef(0.0f - xd),
+		calc_spline36_coef(1.0f - xd),
+		calc_spline36_coef(2.0f - xd),
+		calc_spline36_coef(3.0f - xd),
+	};
+	const float wx_sum = wx[0] + wx[1] + wx[2] + wx[3] + wx[4] + wx[5];
+
+	float4 pix_sum = {};
+	float w_sum = 0.0f;
+	for (int i = y_btm; i <= y_top; i++) {
+		const float wy = calc_spline36_coef(i - yd - yc);
+
+		const int pos_x[6] = {
+			::max(x_btm, 0),
+			::max(x_btm + 1, 0),
+			x_btm + 2,
+			::min(x_btm + 3, width - 1),
+			::min(x_btm + 4, width - 1),
+			::min(x_btm + 5, width - 1),
+		};
+		const int pos_y = ::clamp(i, 0, height - 1);
+
+		const float4 pix[6] = {
+			make_float4(cudaReadPixel<format>(input, pos_x[0], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[1], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[2], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[3], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[4], pos_y, width, height)),
+			make_float4(cudaReadPixel<format>(input, pos_x[5], pos_y, width, height)),
+		};
+
+		const float4 pix6 = pix[0] * wx[0] + pix[1] * wx[1] + pix[2] * wx[2]
+							+ pix[3] * wx[3] + pix[4] * wx[4] + pix[5] * wx[5];
+		pix_sum += pix6 * wy;
+		w_sum += wx_sum * wy;
+	}
+
+	const T out = (w_sum == 0.0f) ? T{} : cast_vec<T>(clamp(pix_sum / w_sum, 0.0f, max_value));
+
+	return out;
+}
+
 /**
  * CUDA device function for sampling a pixel with bilinear or point filtering.
  * cudaFilterPixel() is for use inside of other CUDA kernels, and accepts a
@@ -96,7 +442,7 @@ float4 cudaReadPixel<FORMAT_CHW>( float4* input, int x, int y, int width, int he
  * @ingroup cudaFilter
  */ 
 template<cudaFilterMode filter, cudaDataFormat format=FORMAT_HWC, typename T>
-__device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int height )
+__device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int height, float max_value = 255.0f )
 {
 	if( filter == FILTER_POINT )
 	{
@@ -105,42 +451,21 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int 
 
 		return cudaReadPixel<format>(input, x1, y1, width, height); //input[y1 * width + x1];
 	}
+	else if ( filter == FILTER_CUBIC )
+	{
+		return cudaFilterPixel_cubic<format>(input, x, y, width, height, max_value);
+	}
+	else if ( filter == FILTER_LANCZOS4 )
+	{
+		return cudaFilterPixel_lanczos4<format>(input, x, y, width, height, max_value);
+	}
+	else if ( filter == FILTER_SPLINE36 )
+	{
+		return cudaFilterPixel_spline36<format>(input, x, y, width, height, max_value);
+	}
 	else // FILTER_LINEAR
 	{
-		const float bx = x - 0.5f;
-		const float by = y - 0.5f;
-
-		const float cx = bx < 0.0f ? 0.0f : bx;
-		const float cy = by < 0.0f ? 0.0f : by;
-
-		const int x1 = int(cx);
-		const int y1 = int(cy);
-			
-		const int x2 = x1 >= width - 1 ? x1 : x1 + 1;	// bounds check
-		const int y2 = y1 >= height - 1 ? y1 : y1 + 1;
-		
-		const T samples[4] = {
-			cudaReadPixel<format>(input, x1, y1, width, height),   //input[y1 * width + x1],
-			cudaReadPixel<format>(input, x2, y1, width, height),   //input[y1 * width + x2],
-			cudaReadPixel<format>(input, x1, y2, width, height),   //input[y2 * width + x1],
-			cudaReadPixel<format>(input, x2, y2, width, height) }; //input[y2 * width + x2] };
-
-		// compute bilinear weights
-		const float x1d = cx - float(x1);
-		const float y1d = cy - float(y1);
-
-		const float x1f = 1.0f - x1d;
-		const float y1f = 1.0f - y1d;
-
-		const float x2f = 1.0f - x1f;
-		const float y2f = 1.0f - y1f;
-
-		const float x1y1f = x1f * y1f;
-		const float x1y2f = x1f * y2f;
-		const float x2y1f = x2f * y1f;
-		const float x2y2f = x2f * y2f;
-
-		return samples[0] * x1y1f + samples[1] * x2y1f + samples[2] * x1y2f + samples[3] * x2y2f;
+		return cudaFilterPixel_linear<format>(input, x, y, width, height, max_value);
 	}
 }
 
@@ -160,18 +485,38 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int 
  * @returns the filtered pixel from the input image
  * @ingroup cudaFilter
  */ 
-template<cudaFilterMode filter, cudaDataFormat format=FORMAT_HWC, typename T>
-__device__ inline T cudaFilterPixel( T* input, int x, int y,
-						       int input_width, int input_height,
-						       int output_width, int output_height )
-{
-	const float px = float(x) / float(output_width) * float(input_width);
-	const float py = float(y) / float(output_height) * float(input_height);
+ template<cudaFilterMode filter, cudaDataFormat format=FORMAT_HWC, typename T>
+ __device__ inline T cudaFilterPixel( T* input, float x, float y,
+								int input_width, int input_height,
+								int output_width, int output_height,
+								float2 scale, float max_value = 255.0f )
+ {
+	 const float px = x * scale.x;
+	 const float py = y * scale.y;
 
-	return cudaFilterPixel<filter, format>(input, px, py, input_width, input_height);
+	 if ( filter == FILTER_AREA ) {
+		 if (scale.x < 1.0f && scale.y < 1.0f) {
+			 return cudaFilterPixel_area<format>(input, px, py, input_width, input_height, scale, max_value);
+		 } else {
+			 return cudaFilterPixel_linear<format>(input, px, py, input_width, input_height, max_value);
+		 }
+	 } else {
+		 return cudaFilterPixel<filter, format>(input, px, py, input_width, input_height, max_value);
+	 }
+ }
+ template<cudaFilterMode filter, cudaDataFormat format=FORMAT_HWC, typename T>
+__device__ inline T cudaFilterPixel( T* input, float x, float y,
+						       int input_width, int input_height,
+						       int output_width, int output_height,
+							   float max_value = 255.0f )
+{
+	const float2 scale = {
+		float(input_width) / float(output_width),
+		float(input_height) / float(output_height),
+	};
+
+	return cudaFilterPixel<filter, format>(input, x, y, input_width, input_height, output_width, output_height, scale, max_value);
 }
 
 
 #endif
-
-
