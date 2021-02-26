@@ -27,6 +27,7 @@
 #include "cudaUtility.h"
 #include "cudaVector.h"
 #include "imageFormat.h"
+#include "cudaFilterMode.h"
 
 enum class InterpolationFlags : int {
     INTER_NEAREST        = 0,

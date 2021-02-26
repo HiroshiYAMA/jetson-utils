@@ -34,8 +34,14 @@
  */
 enum cudaFilterMode
 {
-	FILTER_POINT,	 /**< Nearest-neighbor sampling */
-	FILTER_LINEAR	 /**< Bilinear filtering */
+	FILTER_POINT	= 0,	 /**< Nearest-neighbor sampling */
+	FILTER_LINEAR	= 1,	 /**< Bilinear filtering */
+    FILTER_CUBIC	= 2,	// Bi-Cubic.
+    FILTER_AREA		= 3,	// Area.
+    FILTER_LANCZOS4	= 4,	// Lanczos4.
+    // FILTER_LINEAR_EXACT	= 5,	// dummy.
+    FILTER_SPLINE36	= 6,	// Spline36.
+    FILTER_MAX		= 7,	// dummy.
 };
 
 /**
