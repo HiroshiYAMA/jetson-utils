@@ -491,8 +491,6 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int 
 								int output_width, int output_height,
 								float2 scale, float max_value = 255.0f )
  {
-	 if (scale.x == 1.0f && scale.y == 1.0f) { return input[(int)y * input_width + (int)x]; }
-
 	 const float px =
 	 	(filter == FILTER_POINT || filter == FILTER_AREA)
 		 ? (x * scale.x)
