@@ -192,13 +192,13 @@ template<cudaDataFormat format=FORMAT_HWC, typename T>
 __device__ inline T cudaFilterPixel_area( T* input, float x, float y, int width, int height, float2 scale, float max_value = 255.0f )
 {
 	float fsx1 = x;
-	float fsx2 = ::min(fsx1 + scale.x, width - 1.0f);
+	float fsx2 = ::min(fsx1 + scale.x, (float)width);
 
 	int sx1 = __float2int_ru(fsx1);
 	int sx2 = __float2int_rd(fsx2);
 
 	float fsy1 = y;
-	float fsy2 = ::min(fsy1 + scale.y, height - 1.0f);
+	float fsy2 = ::min(fsy1 + scale.y, (float)height);
 
 	int sy1 = __float2int_ru(fsy1);
 	int sy2 = __float2int_rd(fsy2);
@@ -491,11 +491,19 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int 
 								int output_width, int output_height,
 								float2 scale, float max_value = 255.0f )
  {
-	 const float px = x * scale.x;
-	 const float py = y * scale.y;
+	 if (scale.x == 1.0f && scale.y == 1.0f) { return input[(int)y * input_width + (int)x]; }
+
+	 const float px =
+	 	(filter == FILTER_POINT || filter == FILTER_AREA)
+		 ? (x * scale.x)
+		 : ((x + 0.5f) * scale.x - 0.5f);
+	 const float py =
+	 	(filter == FILTER_POINT || filter == FILTER_AREA)
+		 ? (y * scale.y)
+		 : ((y + 0.5f) * scale.y - 0.5f);
 
 	 if ( filter == FILTER_AREA ) {
-		 if (scale.x < 1.0f && scale.y < 1.0f) {
+		 if (scale.x > 1.0f && scale.y > 1.0f) {
 			 return cudaFilterPixel_area<format>(input, px, py, input_width, input_height, scale, max_value);
 		 } else {
 			 return cudaFilterPixel_linear<format>(input, px, py, input_width, input_height, max_value);

@@ -15,10 +15,13 @@ OUT_SIZE = [[640, 360], [1024, 576], [1280, 720], [1600, 900], [1920, 1080], [38
 # OUT_SIZE = [[1920, 1080]]
 # OUT_SIZE = [[160, 90]]
 # OUT_SIZE = [[640, 360], [1024, 576], [1280, 720]]
+# OUT_SIZE = [[311, 83]]
+# OUT_SIZE = [[1553, 797]]
 
-IN_SIZE = [[1024, 576]]
+# IN_SIZE = [[1024, 576]]
 # IN_SIZE = [[1920, 1080]]
-# IN_SIZE = [[2560, 1440]]
+IN_SIZE = [[2560, 1440]]
+# IN_SIZE = [[640, 360]]
 
 # ITP_MODE = cv2.INTER_NEAREST
 ITP_MODE = cv2.INTER_LINEAR
@@ -59,9 +62,9 @@ class HogeHogeResize(object):
 def test_resize():
     # 画像を取得
     # cpu, gpu. (BGR)
-    img = cv2.imread("src.jpg")
+    img = cv2.imread("test_color_chart.png")
     # jetson-utils. (RGBA)
-    img2 = jetson.utils.loadImage('src.jpg', format='rgba8')
+    img2 = jetson.utils.loadImage('test_color_chart.png', format='rgba8')
 
     # 3ch(BGR) -> 4ch(BGRA).
     img_a = np.full((img.shape[0], img.shape[1]), 255).astype(np.uint8)
@@ -72,7 +75,7 @@ def test_resize():
     # input size.
     in_X, in_Y = IN_SIZE[0]
     # cpu, gpu.
-    img_in = cv2.resize(img_4ch, (in_X, in_Y))
+    img_in = cv2.resize(img_4ch, (in_X, in_Y), interpolation = cv2.INTER_LINEAR)
     # jetson-utils.
     img_in2 = jetson.utils.cudaAllocMapped(width=in_X, height=in_Y, format=img2.format)
     jetson.utils.cudaResize(img2, img_in2, jetson.utils.INTER_LINEAR)
@@ -110,13 +113,13 @@ def test_resize():
 
             if d == 'cpu':
                 print('resize(CPU) end_time [msec],',end_time*1000/loop_cnt)
-                cv2.imwrite("dst_resize_cpu.jpg", img_OUT)
+                cv2.imwrite("dst_resize_cpu.png", img_OUT)
             elif d == 'gpu':
                 print('resize(CUDA) end_time [msec],',end_time*1000/loop_cnt)
-                cv2.imwrite("dst_resize_gpu.jpg", img_OUT)
+                cv2.imwrite("dst_resize_gpu.png", img_OUT)
             else:
                 print('resize(jetson-utils) end_time [msec],',end_time*1000/loop_cnt)
-                jetson.utils.saveImage("dst_resize_jetson-utils.jpg", img_OUT)
+                jetson.utils.saveImage("dst_resize_jetson-utils.png", img_OUT)
 
 
 
