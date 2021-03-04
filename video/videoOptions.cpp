@@ -40,6 +40,7 @@ videoOptions::videoOptions()
 	deviceType  = DEVICE_DEFAULT;
 	flipMethod  = FLIP_DEFAULT;
 	codec       = CODEC_UNKNOWN;
+	fullScreen 	= false;
 }
 
 
@@ -67,6 +68,7 @@ void videoOptions::Print( const char* prefix ) const
 	LogInfo("  -- zeroCopy:   %s\n", zeroCopy ? "true" : "false");	
 	LogInfo("  -- flipMethod: %s\n", FlipMethodToStr(flipMethod));
 	LogInfo("  -- loop:       %i\n", loop);
+	LogInfo("  -- fullscreen: %s\n", fullScreen ? "true" : "false");
 	
 	LogInfo("------------------------------------------------\n");
 }
@@ -158,6 +160,16 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 		
 		if( loop == -999 )
 			loop = cmdLine.GetInt("loop");
+	}
+
+	// fullscreen
+	if ( type == OUTPUT && resource.protocol == "display" )
+	{
+		fullScreen = cmdLine.GetFlag("fullscreen");
+	}
+	else
+	{
+		fullScreen = false;
 	}
 	
 	return true;
