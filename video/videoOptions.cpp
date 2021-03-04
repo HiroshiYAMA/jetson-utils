@@ -41,6 +41,7 @@ videoOptions::videoOptions()
 	flipMethod  = FLIP_DEFAULT;
 	codec       = CODEC_UNKNOWN;
 	fullScreen 	= false;
+	fov         = 70.0f;
 }
 
 
@@ -69,6 +70,7 @@ void videoOptions::Print( const char* prefix ) const
 	LogInfo("  -- flipMethod: %s\n", FlipMethodToStr(flipMethod));
 	LogInfo("  -- loop:       %i\n", loop);
 	LogInfo("  -- fullscreen: %s\n", fullScreen ? "true" : "false");
+	LogInfo("  -- fov:        %f\n", fov);
 	
 	LogInfo("------------------------------------------------\n");
 }
@@ -171,7 +173,14 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 	{
 		fullScreen = false;
 	}
-	
+
+	if ( type == OUTPUT )
+	{
+		fov = cmdLine.GetFloat("output-fov", 70.0f);
+		if ( fov > 179.0f ) fov = 179.0f;
+		if ( fov < 0.0f ) fov = 0.0f;
+	}
+
 	return true;
 }
 
