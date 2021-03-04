@@ -106,6 +106,13 @@ public:
 	int loop;
 
 	/**
+	 * If true, display full-screen.
+	 * Otherwise, display window mode.
+	 * @note the default is false (window mode).
+	 */
+	bool fullScreen;
+
+	/**
 	 * Device interface types.
 	 */
 	enum DeviceType
