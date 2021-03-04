@@ -320,6 +320,11 @@ bool glDisplay::initWindow()
 	mWindowClosedMsg = XInternAtom(mDisplayX, "WM_DELETE_WINDOW", False);
 	XSetWMProtocols(mDisplayX, win, &mWindowClosedMsg, 1);
 
+	// Add FullScreen output
+	Atom wm_state   = XInternAtom (mDisplayX, "_NET_WM_STATE", true );
+	Atom wm_fullscreen = XInternAtom (mDisplayX, "_NET_WM_STATE_FULLSCREEN", true );
+	XChangeProperty(mDisplayX, win, wm_state, XA_ATOM, 32, PropModeReplace, (unsigned char *)&wm_fullscreen, 1);
+
 	// set default window title
 	XStoreName(mDisplayX, win, DEFAULT_TITLE);
 
