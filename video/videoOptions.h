@@ -113,6 +113,12 @@ public:
 	bool fullScreen;
 
 	/**
+	 * The FOV of the stream (the default is 70degrees(diagonal)).
+	 * This option can be set from the command line using `--output-fov=N`
+	 */
+	float fov;
+
+	/**
 	 * Device interface types.
 	 */
 	enum DeviceType
