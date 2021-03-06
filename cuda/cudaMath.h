@@ -255,6 +255,10 @@ inline __host__ __device__ uchar3 make_uchar3(int3 a)
 {
     return make_uchar3(uchar(a.x), uchar(a.y), uchar(a.z));
 }
+inline __host__ __device__ uchar3 make_uchar3(float s)
+{
+    return make_uchar3(s, s, s);
+}
 inline __host__ __device__ uchar3 make_uchar3(float2 a)
 {
     return make_uchar3(a.x, a.y, 0);
@@ -379,6 +383,10 @@ inline __host__ __device__ uchar4 make_uchar4(uint3 a, uint w)
 inline __host__ __device__ uchar4 make_uchar4(int4 a)
 {
     return make_uchar4(uchar(a.x), uchar(a.y), uchar(a.z), uchar(a.w));
+}
+inline __host__ __device__ uchar4 make_uchar4(float s)
+{
+    return make_uchar4(s, s, s, s);
 }
 inline __host__ __device__ uchar4 make_uchar4(float2 a)
 {

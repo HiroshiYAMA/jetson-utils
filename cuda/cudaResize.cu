@@ -26,93 +26,93 @@
 
 
 // gpuResize. nearest.
-template<typename T>
-__global__ void gpuResize_nearest( float2 scale, T* input, int iWidth, int iHeight, T* output, int oWidth, int oHeight )
+template<typename T, typename S>
+__global__ void gpuResize_nearest( float2 scale, T* input, int iWidth, int iHeight, S* output, int oWidth, int oHeight )
 {
 	const int dst_x = blockIdx.x * blockDim.x + threadIdx.x;
 	const int dst_y = blockIdx.y * blockDim.y + threadIdx.y;
 
 	if (dst_x < oWidth && dst_y < oHeight)
 	{
-		const T px = cudaFilterPixel<FILTER_POINT>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale);
+		const S px = cast_vec<S>(cudaFilterPixel<FILTER_POINT>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale));
 		output[dst_y * oWidth + dst_x] = px;
 	}
 }
 
 // gpuResize. linear.
-template <typename T>
-__global__ void gpuResize_linear( float2 scale, T* input, int iWidth, int iHeight, T* output, int oWidth, int oHeight, float max_value )
+template <typename T, typename S>
+__global__ void gpuResize_linear( float2 scale, T* input, int iWidth, int iHeight, S* output, int oWidth, int oHeight, float max_value )
 {
 	const int dst_x = blockDim.x * blockIdx.x + threadIdx.x;
 	const int dst_y = blockDim.y * blockIdx.y + threadIdx.y;
 
 	if (dst_x < oWidth && dst_y < oHeight)
 	{
-		T out = cudaFilterPixel<FILTER_LINEAR>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value);
+		S out = cast_vec<S>(cudaFilterPixel<FILTER_LINEAR>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value));
 		output[dst_y * oWidth + dst_x] = out;
 	}
 }
 
 // gpuResize. cubic.
-template <typename T>
-__global__ void gpuResize_cubic( float2 scale, T* input, int iWidth, int iHeight, T* output, int oWidth, int oHeight, float max_value )
+template <typename T, typename S>
+__global__ void gpuResize_cubic( float2 scale, T* input, int iWidth, int iHeight, S* output, int oWidth, int oHeight, float max_value )
 {
 	const int dst_x = blockDim.x * blockIdx.x + threadIdx.x;
 	const int dst_y = blockDim.y * blockIdx.y + threadIdx.y;
 
 	if (dst_x < oWidth && dst_y < oHeight)
 	{
-		T out = cudaFilterPixel<FILTER_CUBIC>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value);
+		S out = cast_vec<S>(cudaFilterPixel<FILTER_CUBIC>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value));
 		output[dst_y * oWidth + dst_x] = out;
 	}
 }
 
 // gpuResize. area.
-template <typename T>
-__global__ void gpuResize_area( float2 scale, T* input, int iWidth, int iHeight, T* output, int oWidth, int oHeight, float max_value )
+template <typename T, typename S>
+__global__ void gpuResize_area( float2 scale, T* input, int iWidth, int iHeight, S* output, int oWidth, int oHeight, float max_value )
 {
 	const int dst_x = blockIdx.x * blockDim.x + threadIdx.x;
 	const int dst_y = blockIdx.y * blockDim.y + threadIdx.y;
 
 	if (dst_x < oWidth && dst_y < oHeight)
 	{
-		T out = cudaFilterPixel<FILTER_AREA>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value);
+		S out = cast_vec<S>(cudaFilterPixel<FILTER_AREA>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value));
 		output[dst_y * oWidth + dst_x] = out;
 	}
 }
 
 // gpuResize. lanczos4.
-template <typename T>
-__global__ void gpuResize_lanczos4( float2 scale, T* input, int iWidth, int iHeight, T* output, int oWidth, int oHeight, float max_value )
+template <typename T, typename S>
+__global__ void gpuResize_lanczos4( float2 scale, T* input, int iWidth, int iHeight, S* output, int oWidth, int oHeight, float max_value )
 {
 	const int dst_x = blockDim.x * blockIdx.x + threadIdx.x;
 	const int dst_y = blockDim.y * blockIdx.y + threadIdx.y;
 
 	if (dst_x < oWidth && dst_y < oHeight)
 	{
-		T out = cudaFilterPixel<FILTER_LANCZOS4>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value);
+		S out = cast_vec<S>(cudaFilterPixel<FILTER_LANCZOS4>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value));
 		output[dst_y * oWidth + dst_x] = out;
 	}
 }
 
 // gpuResize. spline36.
-template <typename T>
-__global__ void gpuResize_spline36( float2 scale, T* input, int iWidth, int iHeight, T* output, int oWidth, int oHeight, float max_value )
+template <typename T, typename S>
+__global__ void gpuResize_spline36( float2 scale, T* input, int iWidth, int iHeight, S* output, int oWidth, int oHeight, float max_value )
 {
 	const int dst_x = blockDim.x * blockIdx.x + threadIdx.x;
 	const int dst_y = blockDim.y * blockIdx.y + threadIdx.y;
 
 	if (dst_x < oWidth && dst_y < oHeight)
 	{
-		T out = cudaFilterPixel<FILTER_SPLINE36>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value);
+		S out = cast_vec<S>(cudaFilterPixel<FILTER_SPLINE36>(input, dst_x, dst_y, iWidth, iHeight, oWidth, oHeight, scale, max_value));
 		output[dst_y * oWidth + dst_x] = out;
 	}
 }
 
 // launchResize
-template<typename T>
+template<typename T, typename S>
 static cudaError_t launchResize( T* input, size_t inputWidth, size_t inputHeight,
-				             T* output, size_t outputWidth, size_t outputHeight, int mode, float max_value )
+				             S* output, size_t outputWidth, size_t outputHeight, int mode, float max_value )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -127,85 +127,89 @@ static cudaError_t launchResize( T* input, size_t inputWidth, size_t inputHeight
 	const dim3 blockDim(32, 8);
 	const dim3 gridDim(iDivUp(outputWidth,blockDim.x), iDivUp(outputHeight,blockDim.y));
 
-	if (mode == static_cast<int>(InterpolationFlags::INTER_LINEAR)) {
-		if (inputWidth == outputWidth && inputHeight == outputHeight) {
-			gpuResize_nearest<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight);
-		} else {
-			gpuResize_linear<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
-		}
-
-	} else if (mode == static_cast<int>(InterpolationFlags::INTER_CUBIC)) {
-		if (inputWidth == outputWidth && inputHeight == outputHeight) {
-			gpuResize_nearest<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight);
-		} else {
-			gpuResize_cubic<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
-		}
-
-	} else if (mode == static_cast<int>(InterpolationFlags::INTER_AREA)) {
-		if (inputWidth == outputWidth && inputHeight == outputHeight) {
-			gpuResize_nearest<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight);
-		} else if (inputWidth < outputWidth || inputHeight < outputHeight) {
-			gpuResize_linear<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
-		} else {
-			gpuResize_area<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
-		}
-
-	} else if (mode == static_cast<int>(InterpolationFlags::INTER_LANCZOS4)) {
-		if (inputWidth == outputWidth && inputHeight == outputHeight) {
-			gpuResize_nearest<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight);
-		} else {
-			gpuResize_lanczos4<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
-		}
-
-	} else if (mode == static_cast<int>(InterpolationFlags::INTER_SPLINE36)) {
-		if (inputWidth == outputWidth && inputHeight == outputHeight) {
-			gpuResize_nearest<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight);
-		} else {
-			gpuResize_spline36<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
-		}
+	if ((inputWidth == outputWidth && inputHeight == outputHeight) || mode == static_cast<int>(InterpolationFlags::INTER_NEAREST)) {
+		gpuResize_nearest<T, S><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight);
 
 	} else {
-		gpuResize_nearest<T><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight);
+		if (mode == static_cast<int>(InterpolationFlags::INTER_LINEAR)) {
+			gpuResize_linear<T, S><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
+
+		} else if (mode == static_cast<int>(InterpolationFlags::INTER_CUBIC)) {
+			gpuResize_cubic<T, S><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
+
+		} else if (mode == static_cast<int>(InterpolationFlags::INTER_AREA)) {
+			if (inputWidth < outputWidth || inputHeight < outputHeight) {
+				gpuResize_linear<T, S><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
+			} else {
+				gpuResize_area<T, S><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
+			}
+
+		} else if (mode == static_cast<int>(InterpolationFlags::INTER_LANCZOS4)) {
+			gpuResize_lanczos4<T, S><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
+
+		} else if (mode == static_cast<int>(InterpolationFlags::INTER_SPLINE36)) {
+			gpuResize_spline36<T, S><<<gridDim, blockDim>>>(scale, input, inputWidth, inputHeight, output, outputWidth, outputHeight, max_value);
+		}
 	}
 
 	return CUDA(cudaGetLastError());
 }
 
-// cudaResize (uint8 grayscale)
-cudaError_t cudaResize( uint8_t* input, size_t inputWidth, size_t inputHeight, uint8_t* output, size_t outputWidth, size_t outputHeight, int mode, float max_value )
-{
-	return launchResize<uint8_t>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value);
+#define FUNC_CUDA_RESIZE(T, S) \
+cudaError_t cudaResize( T* input, size_t inputWidth, size_t inputHeight, S* output, size_t outputWidth, size_t outputHeight, int mode, float max_value ) \
+{ \
+	return launchResize<T, S>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value); \
 }
+
+// cudaResize (uint8 grayscale)
+FUNC_CUDA_RESIZE(uint8_t, uint8_t);
+FUNC_CUDA_RESIZE(float, uint8_t);
+FUNC_CUDA_RESIZE(uchar3, uint8_t);
+FUNC_CUDA_RESIZE(uchar4, uint8_t);
+FUNC_CUDA_RESIZE(float3, uint8_t);
+FUNC_CUDA_RESIZE(float4, uint8_t);
 
 // cudaResize (float grayscale)
-cudaError_t cudaResize( float* input, size_t inputWidth, size_t inputHeight, float* output, size_t outputWidth, size_t outputHeight, int mode, float max_value )
-{
-	return launchResize<float>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value);
-}
+FUNC_CUDA_RESIZE(uint8_t, float);
+FUNC_CUDA_RESIZE(float, float);
+FUNC_CUDA_RESIZE(uchar3, float);
+FUNC_CUDA_RESIZE(uchar4, float);
+FUNC_CUDA_RESIZE(float3, float);
+FUNC_CUDA_RESIZE(float4, float);
 
 // cudaResize (uchar3)
-cudaError_t cudaResize( uchar3* input, size_t inputWidth, size_t inputHeight, uchar3* output, size_t outputWidth, size_t outputHeight, int mode, float max_value )
-{
-	return launchResize<uchar3>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value);
-}
+FUNC_CUDA_RESIZE(uint8_t, uchar3);
+FUNC_CUDA_RESIZE(float, uchar3);
+FUNC_CUDA_RESIZE(uchar3, uchar3);
+FUNC_CUDA_RESIZE(uchar4, uchar3);
+FUNC_CUDA_RESIZE(float3, uchar3);
+FUNC_CUDA_RESIZE(float4, uchar3);
 
 // cudaResize (uchar4)
-cudaError_t cudaResize( uchar4* input, size_t inputWidth, size_t inputHeight, uchar4* output, size_t outputWidth, size_t outputHeight, int mode, float max_value )
-{
-	return launchResize<uchar4>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value);
-}
+FUNC_CUDA_RESIZE(uint8_t, uchar4);
+FUNC_CUDA_RESIZE(float, uchar4);
+FUNC_CUDA_RESIZE(uchar3, uchar4);
+FUNC_CUDA_RESIZE(uchar4, uchar4);
+FUNC_CUDA_RESIZE(float3, uchar4);
+FUNC_CUDA_RESIZE(float4, uchar4);
 
 // cudaResize (float3)
-cudaError_t cudaResize( float3* input, size_t inputWidth, size_t inputHeight, float3* output, size_t outputWidth, size_t outputHeight, int mode, float max_value )
-{
-	return launchResize<float3>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value);
-}
+FUNC_CUDA_RESIZE(uint8_t, float3);
+FUNC_CUDA_RESIZE(float, float3);
+FUNC_CUDA_RESIZE(uchar3, float3);
+FUNC_CUDA_RESIZE(uchar4, float3);
+FUNC_CUDA_RESIZE(float3, float3);
+FUNC_CUDA_RESIZE(float4, float3);
 
 // cudaResize (float4)
-cudaError_t cudaResize( float4* input, size_t inputWidth, size_t inputHeight, float4* output, size_t outputWidth, size_t outputHeight, int mode, float max_value )
-{
-	return launchResize<float4>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value);
-}
+FUNC_CUDA_RESIZE(uint8_t, float4);
+FUNC_CUDA_RESIZE(float, float4);
+FUNC_CUDA_RESIZE(uchar3, float4);
+FUNC_CUDA_RESIZE(uchar4, float4);
+FUNC_CUDA_RESIZE(float3, float4);
+FUNC_CUDA_RESIZE(float4, float4);
+
+#undef FUNC_CUDA_RESIZE
 
 //-----------------------------------------------------------------------------------
 cudaError_t cudaResize( void* input,  size_t inputWidth,  size_t inputHeight,

@@ -72,12 +72,23 @@ template<> inline __host__ __device__ float4 make_vec( float x, float y, float z
 
 
 // cast_vec<T> templates
+template<typename T> inline __host__ __device__ T cast_vec( const uchar a )				{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
 // template<typename T> inline __host__ __device__ T cast_vec( const uchar2& a )				{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
 template<typename T> inline __host__ __device__ T cast_vec( const uchar3& a )				{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
 template<typename T> inline __host__ __device__ T cast_vec( const uchar4& a )				{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
+template<typename T> inline __host__ __device__ T cast_vec( const float a )				{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
 template<typename T> inline __host__ __device__ T cast_vec( const float2& a )				{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
 template<typename T> inline __host__ __device__ T cast_vec( const float3& a )				{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
 template<typename T> inline __host__ __device__ T cast_vec( const float4& a )				{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
+
+template<> inline __host__ __device__ uchar  cast_vec( const uchar a )					{ return a; }
+template<> inline __host__ __device__ float  cast_vec( const uchar a )					{ return float(a); }
+// template<> inline __host__ __device__ uchar2 cast_vec( const uchar a )					{ return a; }
+template<> inline __host__ __device__ uchar3 cast_vec( const uchar a )					{ return make_uchar3(a); }
+template<> inline __host__ __device__ uchar4 cast_vec( const uchar a )					{ return make_uchar4(a); }
+template<> inline __host__ __device__ float2 cast_vec( const uchar a )					{ return make_float2(a); }
+template<> inline __host__ __device__ float3 cast_vec( const uchar a )					{ return make_float3(a); }
+template<> inline __host__ __device__ float4 cast_vec( const uchar a )					{ return make_float4(a); }
 
 // template<> inline __host__ __device__ uchar  cast_vec( const uchar2& a )					{ return a.x; }
 // template<> inline __host__ __device__ float  cast_vec( const uchar2& a )					{ return float(a.x); }
@@ -105,6 +116,15 @@ template<> inline __host__ __device__ uchar4 cast_vec( const uchar4& a )					{ r
 template<> inline __host__ __device__ float2 cast_vec( const uchar4& a )					{ return make_float2(a); }
 template<> inline __host__ __device__ float3 cast_vec( const uchar4& a )					{ return make_float3(a); }
 template<> inline __host__ __device__ float4 cast_vec( const uchar4& a )					{ return make_float4(a); }
+
+template<> inline __host__ __device__ uchar  cast_vec( const float a )					{ return uchar(a); }
+template<> inline __host__ __device__ float  cast_vec( const float a )					{ return a; }
+// template<> inline __host__ __device__ uchar2 cast_vec( const float a )					{ return make_uchar2(a); }
+template<> inline __host__ __device__ uchar3 cast_vec( const float a )					{ return make_uchar3(a); }
+template<> inline __host__ __device__ uchar4 cast_vec( const float a )					{ return make_uchar4(a); }
+template<> inline __host__ __device__ float2 cast_vec( const float a )					{ return make_float2(a); }
+template<> inline __host__ __device__ float3 cast_vec( const float a )					{ return make_float3(a); }
+template<> inline __host__ __device__ float4 cast_vec( const float a )					{ return make_float4(a); }
 
 template<> inline __host__ __device__ uchar  cast_vec( const float2& a )					{ return uchar(a.x); }
 template<> inline __host__ __device__ float  cast_vec( const float2& a )					{ return a.x; }
