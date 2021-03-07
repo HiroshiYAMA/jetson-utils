@@ -25,8 +25,8 @@
 
 
 // cudaCollo
-template<typename T>
-__global__ void cudaCollo( T* input, T* output, st_COLLO_param collo_prm )
+template<typename T, typename S>
+__global__ void cudaCollo( T* input, S* output, st_COLLO_param collo_prm )
 {
 	const int2 uv_out = make_int2(blockDim.x * blockIdx.x + threadIdx.x,
 				               blockDim.y * blockIdx.y + threadIdx.y);
@@ -96,26 +96,26 @@ __global__ void cudaCollo( T* input, T* output, st_COLLO_param collo_prm )
 	float max_value = 255.0f;
 	switch (collo_prm.filter_mode) {
 	case FILTER_LINEAR:	// Bi-linear. 3x3 filter.
-		output[uv_out.y * oW + uv_out.x] = cudaFilterPixel<FILTER_LINEAR>(input, u, v, iW, iH, oW, oH, scale, max_value);
+		output[uv_out.y * oW + uv_out.x] = cast_vec<S>(cudaFilterPixel<FILTER_LINEAR>(input, u, v, iW, iH, oW, oH, scale, max_value));
 		break;
 	case FILTER_CUBIC:	// Bi-cubic. 5x5 filter.
-		output[uv_out.y * oW + uv_out.x] = cudaFilterPixel<FILTER_CUBIC>(input, u, v, iW, iH, oW, oH, scale, max_value);
+		output[uv_out.y * oW + uv_out.x] = cast_vec<S>(cudaFilterPixel<FILTER_CUBIC>(input, u, v, iW, iH, oW, oH, scale, max_value));
 		break;
 	case FILTER_SPLINE36:	// Spline36. 7x7 filter.
-		output[uv_out.y * oW + uv_out.x] = cudaFilterPixel<FILTER_SPLINE36>(input, u, v, iW, iH, oW, oH, scale, max_value);
+		output[uv_out.y * oW + uv_out.x] = cast_vec<S>(cudaFilterPixel<FILTER_SPLINE36>(input, u, v, iW, iH, oW, oH, scale, max_value));
 		break;
 	case FILTER_LANCZOS4:	// slowest. Lanczos4. 9x9 filter.
-		output[uv_out.y * oW + uv_out.x] = cudaFilterPixel<FILTER_LANCZOS4>(input, u, v, iW, iH, oW, oH, scale, max_value);
+		output[uv_out.y * oW + uv_out.x] = cast_vec<S>(cudaFilterPixel<FILTER_LANCZOS4>(input, u, v, iW, iH, oW, oH, scale, max_value));
 		break;
 	case FILTER_POINT:	// fastest. nearest.
 	default:
-		output[uv_out.y * oW + uv_out.x] = cudaFilterPixel<FILTER_POINT>(input, u, v, iW, iH, oW, oH, scale, max_value);
+		output[uv_out.y * oW + uv_out.x] = cast_vec<S>(cudaFilterPixel<FILTER_POINT>(input, u, v, iW, iH, oW, oH, scale, max_value));
 	}
 }
 
 
 // cudaWarpCollo
-template<typename T> inline cudaError_t cudaWarpCollo__( T* input, T* output, st_COLLO_param collo_prm )
+template<typename T, typename S> inline cudaError_t cudaWarpCollo__( T* input, S* output, st_COLLO_param collo_prm )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -127,13 +127,59 @@ template<typename T> inline cudaError_t cudaWarpCollo__( T* input, T* output, st
 	const dim3 blockDim(8, 8);
 	const dim3 gridDim(iDivUp(collo_prm.oW,blockDim.x), iDivUp(collo_prm.oH,blockDim.y));
 
-	cudaCollo<<<gridDim, blockDim>>>(input, output, collo_prm);
+	cudaCollo<T, S><<<gridDim, blockDim>>>(input, output, collo_prm);
 
 	return CUDA(cudaGetLastError());
 }
-cudaError_t cudaWarpCollo( uint8_t* input, uint8_t* output, st_COLLO_param collo_prm ) { return cudaWarpCollo__( input, output, collo_prm ); }
-cudaError_t cudaWarpCollo( float* input, float* output, st_COLLO_param collo_prm ) { return cudaWarpCollo__( input, output, collo_prm ); }
-cudaError_t cudaWarpCollo( uchar3* input, uchar3* output, st_COLLO_param collo_prm ) { return cudaWarpCollo__( input, output, collo_prm ); }
-cudaError_t cudaWarpCollo( float3* input, float3* output, st_COLLO_param collo_prm ) { return cudaWarpCollo__( input, output, collo_prm ); }
-cudaError_t cudaWarpCollo( uchar4* input, uchar4* output, st_COLLO_param collo_prm ) { return cudaWarpCollo__( input, output, collo_prm ); }
-cudaError_t cudaWarpCollo( float4* input, float4* output, st_COLLO_param collo_prm ) { return cudaWarpCollo__( input, output, collo_prm ); }
+#define FUNC_CUDA_WARP_COLLO(T, S) \
+cudaError_t cudaWarpCollo( T* input, S* output, st_COLLO_param collo_prm ) { return cudaWarpCollo__<T, S>( input, output, collo_prm ); }
+
+// cudaWarpCollo (uint8 grayscale)
+FUNC_CUDA_WARP_COLLO(uint8_t, uint8_t);
+FUNC_CUDA_WARP_COLLO(float, uint8_t);
+FUNC_CUDA_WARP_COLLO(uchar3, uint8_t);
+FUNC_CUDA_WARP_COLLO(uchar4, uint8_t);
+FUNC_CUDA_WARP_COLLO(float3, uint8_t);
+FUNC_CUDA_WARP_COLLO(float4, uint8_t);
+
+// cudaWarpCollo (float grayscale)
+FUNC_CUDA_WARP_COLLO(uint8_t, float);
+FUNC_CUDA_WARP_COLLO(float, float);
+FUNC_CUDA_WARP_COLLO(uchar3, float);
+FUNC_CUDA_WARP_COLLO(uchar4, float);
+FUNC_CUDA_WARP_COLLO(float3, float);
+FUNC_CUDA_WARP_COLLO(float4, float);
+
+// cudaWarpCollo (uchar3)
+FUNC_CUDA_WARP_COLLO(uint8_t, uchar3);
+FUNC_CUDA_WARP_COLLO(float, uchar3);
+FUNC_CUDA_WARP_COLLO(uchar3, uchar3);
+FUNC_CUDA_WARP_COLLO(uchar4, uchar3);
+FUNC_CUDA_WARP_COLLO(float3, uchar3);
+FUNC_CUDA_WARP_COLLO(float4, uchar3);
+
+// cudaWarpCollo (uchar4)
+FUNC_CUDA_WARP_COLLO(uint8_t, uchar4);
+FUNC_CUDA_WARP_COLLO(float, uchar4);
+FUNC_CUDA_WARP_COLLO(uchar3, uchar4);
+FUNC_CUDA_WARP_COLLO(uchar4, uchar4);
+FUNC_CUDA_WARP_COLLO(float3, uchar4);
+FUNC_CUDA_WARP_COLLO(float4, uchar4);
+
+// cudaWarpCollo (float3)
+FUNC_CUDA_WARP_COLLO(uint8_t, float3);
+FUNC_CUDA_WARP_COLLO(float, float3);
+FUNC_CUDA_WARP_COLLO(uchar3, float3);
+FUNC_CUDA_WARP_COLLO(uchar4, float3);
+FUNC_CUDA_WARP_COLLO(float3, float3);
+FUNC_CUDA_WARP_COLLO(float4, float3);
+
+// cudaWarpCollo (float4)
+FUNC_CUDA_WARP_COLLO(uint8_t, float4);
+FUNC_CUDA_WARP_COLLO(float, float4);
+FUNC_CUDA_WARP_COLLO(uchar3, float4);
+FUNC_CUDA_WARP_COLLO(uchar4, float4);
+FUNC_CUDA_WARP_COLLO(float3, float4);
+FUNC_CUDA_WARP_COLLO(float4, float4);
+
+#undef FUNC_CUDA_WARP_COLLO
