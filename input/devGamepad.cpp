@@ -21,6 +21,11 @@ GamepadDevice::GamepadDevice()
 				LogError("Could not open gamecontroller %i: %s\n", i, SDL_GetError());
 			}
 
+			event = {};
+			axis_motion = false;
+			button_down = false;
+			button_up   = false;
+
 			SDL_GameControllerEventState(SDL_ENABLE);
 			break;	// first gamepad.
 		}
@@ -60,7 +65,29 @@ std::unique_ptr<GamepadDevice> GamepadDevice::Create( const char* name )
 // Poll
 bool GamepadDevice::Poll( uint32_t timeout )
 {
-	SDL_GameControllerUpdate();
+	axis_motion = false;
+	button_down = false;
+	button_up   = false;
+
+	while (SDL_PollEvent(&event)) {
+		switch (event.type) {
+		case SDL_CONTROLLERAXISMOTION:
+		// case SDL_JOYAXISMOTION:
+			axis_motion = true;
+			break;
+		case SDL_CONTROLLERBUTTONDOWN:
+		// case SDL_JOYBUTTONDOWN:
+			button_down = true;
+			break;
+		case SDL_CONTROLLERBUTTONUP:
+		// case SDL_JOYBUTTONUP:
+			button_up = true;
+			break;
+		default:
+			;
+		}
+		// printf("[GamePad]: Event: %d\n", event.type);
+    }
 
 	return true;	
 }
