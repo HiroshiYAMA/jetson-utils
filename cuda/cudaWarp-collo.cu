@@ -51,7 +51,7 @@ __global__ void cudaCollo( T* input, S* output, st_COLLO_param collo_prm )
 	const float cy = ((uv_out.y / oH_f) - 0.5f) * 2.0f;
 
 	// 2D -> 3D.
-	// right-handed system. x: right(->), x: down(|v), z: far(X).
+	// right-handed system. x: right(->), y: down(|v), z: far(X).
 	float3 po = {
 		.x = cx * fov,
 		.y = cy * fov,

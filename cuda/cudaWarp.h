@@ -121,8 +121,8 @@ template<typename T, typename S> inline __host__ __device__ T rotY(T p, S th)
 {
 	T p_rot = p;
 
-	p_rot.x = cos(th) * p.x - sin(th) * p.z;
-	p_rot.z = sin(th) * p.x + cos(th) * p.z;
+	p_rot.x =  cos(th) * p.x + sin(th) * p.z;
+	p_rot.z = -sin(th) * p.x + cos(th) * p.z;
 
 	return p_rot;
 }
