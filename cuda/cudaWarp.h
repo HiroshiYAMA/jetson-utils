@@ -176,8 +176,15 @@ struct st_COLLO_param {
 	float lens_radius_scale;
 	st_COLLO_lens_table lens_tbl;
 
+	// rotation mode.
+	bool absolute;
+
 	// rotaion.
 	st_COLLO_rotation rot;
+
+	// target XY.
+	float target_x;
+	float target_y;
 
 	// pixel sampling filter.
 	int filter_mode;

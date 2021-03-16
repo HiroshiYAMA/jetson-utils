@@ -63,9 +63,15 @@ __global__ void cudaCollo( T* input, S* output, st_COLLO_param collo_prm )
 
 	// pan, tilt.
 	float3 p_rot = p_roll;
-	p_rot = rotX(p_rot, collo_prm.rot.x);	// X. tilt.
-	p_rot = rotY(p_rot, collo_prm.rot.y);	// Y. pan.
-	p_rot = rotZ(p_rot, collo_prm.rot.z);	// Z. outer roll.
+	if (collo_prm.absolute) {
+		p_rot = rotX(p_rot, -collo_prm.target_y * M_PI / 4.0f);	// X. tilt.
+		p_rot = rotY(p_rot, collo_prm.target_x * M_PI / 4.0f);	// Y. pan.
+		p_rot = rotZ(p_rot, collo_prm.rot.z);	// Z. outer roll.
+	} else {
+		p_rot = rotX(p_rot, collo_prm.rot.x);	// X. tilt.
+		p_rot = rotY(p_rot, collo_prm.rot.y);	// Y. pan.
+		p_rot = rotZ(p_rot, collo_prm.rot.z);	// Z. outer roll.
+	}
 
 	// normalized sphere. r = 1.0.
 	float3 p_sph = normalize(p_rot);
