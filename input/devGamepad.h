@@ -37,6 +37,12 @@ public:
 	 */
 	bool Poll( uint32_t timeout=0 );
 
+	// Open 1st device.
+	void Open1stDevice();
+
+	// Is Gamepad Attached.
+	bool IsAttached() const { return SDL_GameControllerGetAttached(Gamepad); }
+
 	// Get Axis.
 	int16_t GetAxis(SDL_GameControllerAxis axis) const {
 		return SDL_GameControllerGetAxis(Gamepad, axis);

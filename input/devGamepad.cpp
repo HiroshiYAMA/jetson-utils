@@ -8,8 +8,8 @@
 #include "logging.h"
 
 
-// constructor
-GamepadDevice::GamepadDevice()
+// Open 1st device.
+void GamepadDevice::Open1stDevice()
 {
 	auto num = SDL_NumJoysticks();
 	LogInfo("Num of Joystick: %d\n", num);
@@ -32,6 +32,12 @@ GamepadDevice::GamepadDevice()
 	}
 }
 
+// constructor
+GamepadDevice::GamepadDevice()
+{
+	Open1stDevice();
+}
+
 
 // destructor
 GamepadDevice::~GamepadDevice()
@@ -44,19 +50,21 @@ GamepadDevice::~GamepadDevice()
 std::unique_ptr<GamepadDevice> GamepadDevice::Create( const char* name )
 {
 	auto gpad = std::make_unique<GamepadDevice>();
+	printf("======== Gamepad(%s) ========\n",
+		SDL_GameControllerGetAttached(gpad->Gamepad) ? "Attached" : "***** Removed *****");
 
 	auto name_str = SDL_GameControllerName(gpad->Gamepad);
 	auto map_str = SDL_GameControllerMapping(gpad->Gamepad);
 
 	if (name_str == NULL || map_str == NULL) {
 		LogError("gamepad -- can't opened device\n");
-		return std::move(nullptr);
+		// return std::move(nullptr);
+	} else {
+		LogSuccess("gamepad -- opened device %s:%s\n", name_str, map_str);
+
+		// SDL_free(const_cast<char *>(name_str));
+		// SDL_free(const_cast<char *>(map_str));
 	}
-
-	LogSuccess("gamepad -- opened device %s:%s\n", name_str, map_str);
-
-	// SDL_free(const_cast<char *>(name_str));
-	// SDL_free(const_cast<char *>(map_str));
 
 	return std::move(gpad);
 }
@@ -72,21 +80,26 @@ bool GamepadDevice::Poll( uint32_t timeout )
 	while (SDL_PollEvent(&event)) {
 		switch (event.type) {
 		case SDL_CONTROLLERAXISMOTION:
-		// case SDL_JOYAXISMOTION:
 			axis_motion = true;
 			break;
 		case SDL_CONTROLLERBUTTONDOWN:
-		// case SDL_JOYBUTTONDOWN:
 			button_down = true;
 			break;
 		case SDL_CONTROLLERBUTTONUP:
-		// case SDL_JOYBUTTONUP:
 			button_up = true;
+			break;
+		case SDL_CONTROLLERDEVICEADDED:
+			LogInfo("*** Gamepad Attached ***\n");
+			Open1stDevice();
+			break;
+		case SDL_CONTROLLERDEVICEREMOVED:
+			LogInfo("*** Gamepad Removed ***\n");
+			// SDL_GameControllerClose(Gamepad);
 			break;
 		default:
 			;
 		}
-		// printf("[GamePad]: Event: %d\n", event.type);
+		// LogInfo("[GamePad]: Event: %d\n", event.type);
     }
 
 	return true;	
