@@ -158,11 +158,21 @@ struct st_COLLO_rotation {
 	float roll;
 };
 
+enum class em_COLLO_projection_mode : int {
+	NORMAL,
+	PANORAMA,
+};
+
 struct st_COLLO_param {
 	// input.
 	uint32_t iW;
 	uint32_t iH;
 	float iAspect;
+
+	// input(panorama).
+	uint32_t panoW;
+	uint32_t panoH;
+	float panoAspect;
 
 	// output.
 	uint32_t oW;
@@ -188,6 +198,12 @@ struct st_COLLO_param {
 
 	// pixel sampling filter.
 	int filter_mode;
+
+	// // projection mode.
+	// em_COLLO_projection_mode projection_mode;
+
+	// overlay panorama background.
+	bool overlay_panorama;
 };
 
 /**
@@ -197,7 +213,7 @@ struct st_COLLO_param {
  * @ingroup warping
  */
 #define FUNC_CUDA_WARP_COLLO_HEADER(T, S) \
-cudaError_t cudaWarpCollo( T* input, S* output, st_COLLO_param collo_prm );
+cudaError_t cudaWarpCollo( T* input, uchar3* input_panorama, S* output, st_COLLO_param collo_prm );
 
 // cudaWarpCollo (uint8 grayscale)
 FUNC_CUDA_WARP_COLLO_HEADER(uint8_t, uint8_t);

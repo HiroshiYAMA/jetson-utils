@@ -106,34 +106,49 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 	//zeroCopy = cmdLine.GetFlag("zero-copy");	// no default returned, so disable this for now
 
 	// width
-	width = (type == INPUT) ? cmdLine.GetUnsignedInt("input-width")
-					    : cmdLine.GetUnsignedInt("output-width");
+	width = (type == INPUT)
+		? cmdLine.GetUnsignedInt("input-width")
+		: (type == OUTPUT)
+			? cmdLine.GetUnsignedInt("output-width")
+			: 0;
 
 	if( width == 0 )
 		width = cmdLine.GetUnsignedInt("width");
 
 	// height
-	height = (type == INPUT) ? cmdLine.GetUnsignedInt("input-height")
-					     : cmdLine.GetUnsignedInt("output-height");
+	height = (type == INPUT)
+		? cmdLine.GetUnsignedInt("input-height")
+		: (type == OUTPUT)
+			? cmdLine.GetUnsignedInt("output-height")
+			: 0;
 
 	if( height == 0 )
 		height = cmdLine.GetUnsignedInt("height");
 
 	// framerate
-	frameRate = (type == INPUT) ? cmdLine.GetFloat("input-rate", frameRate)
-						   : cmdLine.GetFloat("output-rate", frameRate);
+	frameRate = (type == INPUT)
+		? cmdLine.GetFloat("input-rate", frameRate)
+		: (type == OUTPUT)
+			? cmdLine.GetFloat("output-rate", frameRate)
+			: 0;
 
 	if( frameRate == 0 )
 		frameRate = cmdLine.GetFloat("framerate");
 
 	// flip-method
-	const char* flipStr = (type == INPUT) ? cmdLine.GetString("input-flip")
-								   : cmdLine.GetString("output-flip");
+	const char* flipStr = (type == INPUT)
+		? cmdLine.GetString("input-flip")
+		: (type == OUTPUT)
+			? cmdLine.GetString("output-flip")
+			: nullptr;
 
 	if( !flipStr )
 	{
-		flipStr = (type == INPUT) ? cmdLine.GetString("input-flip-method")
-							 : cmdLine.GetString("output-flip-method");
+		flipStr = (type == INPUT)
+			? cmdLine.GetString("input-flip-method")
+			: (type == OUTPUT)
+				? cmdLine.GetString("output-flip-method")
+				: nullptr;
 
 		if( !flipStr )
 			flipStr = cmdLine.GetString("flip-method");
@@ -142,10 +157,13 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 	flipMethod = videoOptions::FlipMethodFromStr(flipStr);
 
 	// codec
-	const char* codecStr = (type == INPUT) ? cmdLine.GetString("input-codec")
-								    : cmdLine.GetString("output-codec");
+	const char* codecStr = (type == INPUT)
+		? cmdLine.GetString("input-codec")
+		: (type == OUTPUT)
+			? cmdLine.GetString("output-codec")
+			: nullptr;
 
-	if( !codecStr && type == OUTPUT )
+	if( !codecStr && (type == OUTPUT || type == PANORAMA) )
 		codecStr = cmdLine.GetString("codec");
 
 	if( codecStr != NULL )	
@@ -156,7 +174,7 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 		bitRate = cmdLine.GetUnsignedInt("bitrate", bitRate);
 
 	// loop
-	if( type == INPUT )
+	if( type == INPUT || type == PANORAMA )
 	{
 		loop = cmdLine.GetInt("input-loop", -999);
 		
@@ -199,7 +217,7 @@ bool videoOptions::Parse( const commandLine& cmdLine, videoOptions::IoType type,
 
 	if( !resourceStr )
 	{
-		if( type == INPUT )
+		if( type == INPUT || type == PANORAMA )
 		{
 			resourceStr = cmdLine.GetString("camera", "csi://0");
 
@@ -235,6 +253,7 @@ const char* videoOptions::IoTypeToStr( videoOptions::IoType type )
 	{
 		case INPUT:  return "input";
 		case OUTPUT: return "output";
+		case PANORAMA: return "panorama";
 	}
 	return nullptr;
 }
@@ -246,7 +265,7 @@ videoOptions::IoType videoOptions::IoTypeFromStr( const char* str )
 	if( !str )
 		return INPUT;
 
-	for( int n=0; n <= OUTPUT; n++ )
+	for( int n=0; n <= PANORAMA; n++ )
 	{
 		const IoType value = (IoType)n;
 

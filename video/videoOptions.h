@@ -143,6 +143,7 @@ public:
 	{
 		INPUT = 0,			/**< Input stream (e.g. camera, video/image file, ect.) */
 		OUTPUT,				/**< Output stream (e.g. display, video/image file, ect.) */
+		PANORAMA,			/**< Input stream (Panorama) (e.g. camera, video/image file, ect.) */
 	};
 
 	/**

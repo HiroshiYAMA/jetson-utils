@@ -119,8 +119,9 @@ videoSource* videoSource::Create( const int argc, char** argv, int positionArg )
 videoSource* videoSource::Create( const commandLine& cmdLine, int positionArg )
 {
 	videoOptions opt;
+	videoOptions::IoType io_type = positionArg == 1 ? videoOptions::PANORAMA : videoOptions::INPUT;
 
-	if( !opt.Parse(cmdLine, videoOptions::INPUT, positionArg) )
+	if( !opt.Parse(cmdLine, io_type, positionArg) )
 	{
 		LogError(LOG_VIDEO "videoSource -- failed to parse command line options\n");
 		return NULL;

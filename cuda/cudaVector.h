@@ -157,9 +157,11 @@ template<> inline __host__ __device__ float4 cast_vec( const float4& a )					{ r
 // extract alpha color component
 template<typename T> inline __device__ typename cudaVectorTypeInfo<T>::Base alpha( T vec, typename cudaVectorTypeInfo<T>::Base default_alpha=255 )	{ static_assert(cuda_assert_false<T>::value, "invalid vector type - supported types are uchar3, uchar4, float3, float4");  }
 
+template<> inline __host__ __device__ uint8_t alpha( uint8_t vec, uint8_t default_alpha )		{ return default_alpha; }
 template<> inline __host__ __device__ uint8_t alpha( uchar3 vec, uint8_t default_alpha )		{ return default_alpha; }
 template<> inline __host__ __device__ uint8_t alpha( uchar4 vec, uint8_t default_alpha )		{ return vec.w; }
 
+template<> inline __host__ __device__ float alpha( float vec, float default_alpha )			    { return default_alpha; }
 template<> inline __host__ __device__ float alpha( float3 vec, float default_alpha )			{ return default_alpha; }
 template<> inline __host__ __device__ float alpha( float4 vec, float default_alpha )			{ return vec.w; }
 
