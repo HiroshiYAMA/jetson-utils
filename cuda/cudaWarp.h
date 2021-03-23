@@ -152,13 +152,42 @@ template<typename T, typename S> inline __host__ __device__ T rotZ(T p, S th)
 	return p_rot;
 }
 
-template<typename T> constexpr inline __host__ __device__ T f_Equidistant(T theta, T k) { return k * theta; };
+enum class em_COLLO_lens_spec : int {
+	NORMAL,						// y = f * tan(theta).
+	FISHEYE_EQUIDISTANT,		// y = f * theta.
+	FISHEYE_EQUISOLID_ANGLE,	// y = f * 2 * sin(theta / 2).
+	FISHEYE_ORTHOGRAPHIC,		// y = f * sin(theta).
+	FISHEYE_STEREOGRAPHIC,		// y = f * 2 * tan(theta / 2).
+};
+constexpr auto em_ls_normal      = em_COLLO_lens_spec::NORMAL;
+constexpr auto em_ls_equidistant = em_COLLO_lens_spec::FISHEYE_EQUIDISTANT;
+constexpr auto em_ls_equi_angle  = em_COLLO_lens_spec::FISHEYE_EQUISOLID_ANGLE;
+constexpr auto em_ls_ortho       = em_COLLO_lens_spec::FISHEYE_ORTHOGRAPHIC;
+constexpr auto em_ls_st_graphic  = em_COLLO_lens_spec::FISHEYE_STEREOGRAPHIC;
+
+template<typename T> constexpr inline __host__ __device__ T f_Equidistant(T theta, T k)     { return k * theta; };
 template<typename T> constexpr inline __host__ __device__ T f_Equisolid_angle(T theta, T k) { return static_cast<T>(k * 2.0 * sin(theta / 2.0)); };
-template<typename T> constexpr inline __host__ __device__ T f_Orthographic(T theta, T k) { return static_cast<T>(k * sin(theta)); };
-template<typename T> constexpr inline __host__ __device__ T f_Stereographic(T theta, T k) { return static_cast<T>(k * 2.0 * tan(theta / 2.0)); };
-template<typename T> constexpr inline __host__ __device__ T f_Rectilinear(T theta, T k) { return static_cast<T>(k * tan(theta)); };
+template<typename T> constexpr inline __host__ __device__ T f_Orthographic(T theta, T k)    { return static_cast<T>(k * sin(theta)); };
+template<typename T> constexpr inline __host__ __device__ T f_Stereographic(T theta, T k)   { return static_cast<T>(k * 2.0 * tan(theta / 2.0)); };
+template<typename T> constexpr inline __host__ __device__ T f_Rectilinear(T theta, T k)     { return static_cast<T>(k * tan(theta)); };
 //
-template<typename T> constexpr inline __host__ __device__ T f_lens_radius(T theta, T k) { return f_Equisolid_angle(theta, k); };
+template<typename T> constexpr inline __host__ __device__ T f_lens_radius(T theta, T k, em_COLLO_lens_spec lens_type)
+{
+	switch (lens_type) {
+	case em_ls_normal:
+		return f_Rectilinear(theta, k);
+	case em_ls_equidistant:
+		return f_Equidistant(theta, k);
+	case em_ls_equi_angle:
+		return f_Equisolid_angle(theta, k);
+	case em_ls_ortho:
+		return f_Orthographic(theta, k);
+	case em_ls_st_graphic:
+		return f_Stereographic(theta, k);
+	default:
+		return f_Equisolid_angle(theta, k);
+	}
+};
 
 constexpr auto COLLO_LENS_TBL_NUM = 36;
 struct st_COLLO_lens_table {
@@ -201,6 +230,7 @@ struct st_COLLO_param {
 	float ycenter;
 	float lens_radius_scale;
 	st_COLLO_lens_table lens_tbl;
+	em_COLLO_lens_spec lens_type;
 
 	// rotaion.
 	st_COLLO_rotation rot;

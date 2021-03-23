@@ -84,7 +84,7 @@ __global__ void cudaCollo( T* input, Tpano* input_panorama, S* output, st_COLLO_
 	float theta_z = acosf(p_sph.z);
 
 	// 3D -> 2D.
-	float r = f_lens_radius(theta_z, k);
+	float r = f_lens_radius(theta_z, k, collo_prm.lens_type);
 	float tx = r * __cosf(theta_x);
 	float ty = r * __sinf(theta_x);
 
