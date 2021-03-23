@@ -117,9 +117,20 @@ __global__ void cudaCollo( T* input, Tpano* input_panorama, S* output, st_COLLO_
 	float v_pano;
 	bool over_edge_pano = false;
 	if (collo_prm.overlay_panorama) {
+		// rotate background only.
+		glm::vec3 p_rot_back_tmp = collo_prm.quat_view_back * p_org;
+		float3 p_rot_back = {
+			p_rot_back_tmp.x,
+			p_rot_back_tmp.y,
+			p_rot_back_tmp.z,
+		};
+
+		// normalized back sphere. r = 1.0.
+		float3 p_sph_back = normalize(p_rot_back);
+
 		// for input panorama.
-		theta_x_pano = atan2f(-p_sph.x, -p_sph.z);
-		theta_z_pano = acosf(-p_sph.y);
+		theta_x_pano = atan2f(-p_sph_back.x, -p_sph_back.z);
+		theta_z_pano = acosf(-p_sph_back.y);
 		if (theta_x_pano < 0.0f) theta_x_pano += (2.0f * M_PI);
 
 		// 3D -> 2D. for input panorama.

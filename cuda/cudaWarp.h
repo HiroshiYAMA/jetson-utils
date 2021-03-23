@@ -235,6 +235,7 @@ struct st_COLLO_param {
 	// rotaion.
 	st_COLLO_rotation rot;
 	glm::quat quat_view;
+	glm::quat quat_view_back;
 
 	// pixel sampling filter.
 	int filter_mode;
