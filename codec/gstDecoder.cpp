@@ -551,17 +551,23 @@ bool gstDecoder::buildLaunchStr()
 
 #if GST_CHECK_VERSION(1,0,0)
 	if( mOptions.codec == videoOptions::CODEC_H264 )
-		ss << "omxh264dec ! ";
+		// ss << "omxh264dec ! ";
+		ss << "nvv4l2decoder ! ";
 	else if( mOptions.codec == videoOptions::CODEC_H265 )
-		ss << "omxh265dec ! ";
+		// ss << "omxh265dec ! ";
+		ss << "nvv4l2decoder ! ";
 	else if( mOptions.codec == videoOptions::CODEC_VP8 )
-		ss << "omxvp8dec ! ";
+		// ss << "omxvp8dec ! ";
+		ss << "nvv4l2decoder ! ";
 	else if( mOptions.codec == videoOptions::CODEC_VP9 )
-		ss << "omxvp9dec ! ";
+		// ss << "omxvp9dec ! ";
+		ss << "nvv4l2decoder ! ";
 	else if( mOptions.codec == videoOptions::CODEC_MPEG2 )
-		ss << "omxmpeg2videodec ! ";
+		// ss << "omxmpeg2videodec ! ";
+		ss << "nvv4l2decoder ! ";
 	else if( mOptions.codec == videoOptions::CODEC_MPEG4 )
-		ss << "omxmpeg4videodec ! ";
+		// ss << "omxmpeg4videodec ! ";
+		ss << "nvv4l2decoder ! ";
 	else if( mOptions.codec == videoOptions::CODEC_MJPEG )
 		ss << "nvjpegdec ! ";
 #else
