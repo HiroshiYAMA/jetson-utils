@@ -94,11 +94,18 @@ __global__ void cudaCollo( T* input, Tpano* input_panorama, S* output, st_COLLO_
 	u += collo_prm.xcenter;
 	v += collo_prm.ycenter;
 
-	if( u < 0.0f ) u = 0.0f;
-	if( v < 0.0f ) v = 0.0f;
+	// if( u < 0.0f ) u = 0.0f;
+	// if( v < 0.0f ) v = 0.0f;
 
-	if( u > iW_f - 1.0f ) u = iW_f - 1.0f;
-	if( v > iH_f - 1.0f ) v = iH_f - 1.0f;
+	// if( u > iW_f - 1.0f ) u = iW_f - 1.0f;
+	// if( v > iH_f - 1.0f ) v = iH_f - 1.0f;
+
+	bool over_edge = (
+		( u < 0.0f )
+		|| ( v < 0.0f )
+		|| ( u > iW_f - 1.0f )
+		|| ( v > iH_f - 1.0f )
+	);
 
 	// panorama.
 	float theta_x_pano;
@@ -107,6 +114,7 @@ __global__ void cudaCollo( T* input, Tpano* input_panorama, S* output, st_COLLO_
 	float ty_pano;
 	float u_pano;
 	float v_pano;
+	bool over_edge_pano = false;
 	if (collo_prm.overlay_panorama) {
 		// for input panorama.
 		theta_x_pano = atan2f(-p_sph.x, -p_sph.z);
@@ -121,11 +129,18 @@ __global__ void cudaCollo( T* input, Tpano* input_panorama, S* output, st_COLLO_
 		u_pano = tx_pano * (panoW_f - 2.0f) + 0.0f;	// TODO: (W - 2) < x <= (W - 1): Bi-linear between (W - 2) and W(=0).
 		v_pano = ty_pano * (panoH_f - 1.0f);
 
-		if( u_pano < 0.0f ) u_pano = 0.0f;
-		if( v_pano < 0.0f ) v_pano = 0.0f;
+		// if( u_pano < 0.0f ) u_pano = 0.0f;
+		// if( v_pano < 0.0f ) v_pano = 0.0f;
 
-		if( u_pano > panoW_f - 1.0f ) u_pano = panoW_f - 1.0f;
-		if( v_pano > panoH_f - 1.0f ) v_pano = panoH_f - 1.0f;
+		// if( u_pano > panoW_f - 1.0f ) u_pano = panoW_f - 1.0f;
+		// if( v_pano > panoH_f - 1.0f ) v_pano = panoH_f - 1.0f;
+
+		over_edge_pano = (
+			( u_pano < 0.0f )
+			|| ( v_pano < 0.0f )
+			|| ( u_pano > panoW_f - 1.0f )
+			|| ( v_pano > panoH_f - 1.0f )
+		);
 	}
 	
 	// sampling pixel.
@@ -156,11 +171,15 @@ __global__ void cudaCollo( T* input, Tpano* input_panorama, S* output, st_COLLO_
 
 	float2 scale = { 1.0f, 1.0f };
 	float max_value = 255.0f;
-	T pix_in = get_pixel(input, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode);
+	T pix_in = !over_edge
+		? get_pixel(input, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
+		: cast_vec<T>(0.0f);
 
 	S pix_out;
 	if (collo_prm.overlay_panorama) {
-		Tpano pix_pano = get_pixel(input_panorama, u_pano, v_pano, panoW, panoH, oW, oH, scale, max_value, collo_prm.filter_mode);
+		Tpano pix_pano = !over_edge_pano
+			? get_pixel(input_panorama, u_pano, v_pano, panoW, panoH, oW, oH, scale, max_value, collo_prm.filter_mode)
+			: cast_vec<Tpano>(0.0f);
 		float a = alpha(pix_in) / 255.0f;
 		pix_out = cast_vec<S>(cast_vec<float4>(pix_in * a) + cast_vec<float4>(pix_pano * (1.0f - a)));
 	} else {
