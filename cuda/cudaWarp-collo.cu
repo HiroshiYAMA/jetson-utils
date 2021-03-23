@@ -105,6 +105,7 @@ __global__ void cudaCollo( T* input, Tpano* input_panorama, S* output, st_COLLO_
 		|| ( v < 0.0f )
 		|| ( u > iW_f - 1.0f )
 		|| ( v > iH_f - 1.0f )
+		|| (collo_prm.lens_type == em_ls_normal && p_sph.z <= 0.0f)
 	);
 
 	// panorama.
