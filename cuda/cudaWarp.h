@@ -219,6 +219,8 @@ struct st_COLLO_param {
 	// lens spec.
 	float xcenter;
 	float ycenter;
+	float xcenter_HiReso;
+	float ycenter_HiReso;
 	float lens_radius_scale;
 	st_COLLO_lens_table lens_tbl;
 	em_COLLO_lens_spec lens_type;

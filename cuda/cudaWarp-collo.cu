@@ -99,10 +99,10 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 	v += collo_prm.ycenter;
 
 	// -> XY(input_HiReso). with adjustment of lens center.
-	float u_HiReso = ((tx * 0.5f / collo_prm.iAspect) + 0.5f) * iW_HiReso_f;
+	float u_HiReso = ((tx * 0.5f / collo_prm.iAspect_HiReso) + 0.5f) * iW_HiReso_f;
 	float v_HiReso = ((ty * 0.5f) + 0.5f) * iH_HiReso_f;
-	u_HiReso += collo_prm.xcenter;
-	v_HiReso += collo_prm.ycenter;
+	u_HiReso += collo_prm.xcenter_HiReso;
+	v_HiReso += collo_prm.ycenter_HiReso;
 
 	// if( u < 0.0f ) u = 0.0f;
 	// if( v < 0.0f ) v = 0.0f;
@@ -209,18 +209,17 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 		? get_pixel(input_HiReso, u_HiReso, v_HiReso, iW_HiReso, iH_HiReso, oW, oH, scale, max_value, collo_prm.filter_mode)
 		: cast_vec<T_HiReso>(0.0f);
 
-	S pix_out;
+	float4 pix_bg;
 	if (collo_prm.overlay_panorama) {
 		Tpano pix_pano = !over_edge_pano
 			? get_pixel(input_panorama, u_pano, v_pano, panoW, panoH, oW, oH, scale, max_value, collo_prm.filter_mode)
 			: cast_vec<Tpano>(0.0f);
-		float a = alpha(pix_in) / 255.0f;
-		pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + cast_vec<float4>(pix_pano * (1.0f - a)));
+		pix_bg = cast_vec<float4>(pix_pano);
 	} else {
-		float a = alpha(pix_in) / 255.0f;
-		constexpr float4 bg_color = { 120.0f, 255.0f, 155.0f, 255.0f };
-		pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + cast_vec<float4>(bg_color * (1.0f - a)));
+		pix_bg = cast_vec<float4>(pix_in);
 	}
+	float a = alpha(pix_in) / 255.0f;
+	S pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + (pix_bg * (1.0f - a)));
 
 	output[uv_out.y * oW + uv_out.x] = pix_out;
 }
