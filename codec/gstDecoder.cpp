@@ -105,6 +105,10 @@ gstDecoder::gstDecoder( const videoOptions& options ) : videoSource(options)
 	mFormatYUV  = IMAGE_UNKNOWN;
 
 	mBufferRGB.SetThreaded(false);
+
+	if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
+		mStream = NULL;
+	}
 }
 
 
@@ -849,7 +853,8 @@ void gstDecoder::checkBuffer()
 		release_return;
 	}
 
-	memcpy(nextBuffer, gstData, gstSize);
+	// memcpy(nextBuffer, gstData, gstSize);
+	cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
 	mBufferYUV.Next(RingBuffer::Write);
 	mWaitEvent.Wake();
 	mFrameCount++;
@@ -898,7 +903,7 @@ bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 	// perform colorspace conversion
 	void* nextRGB = mBufferRGB.Next(RingBuffer::Write);
 
-	if( CUDA_FAILED(cudaConvertColor(latestYUV, mFormatYUV, nextRGB, format, GetWidth(), GetHeight())) )
+	if( CUDA_FAILED(cudaConvertColor(latestYUV, mFormatYUV, nextRGB, format, GetWidth(), GetHeight(), make_float2(0,255), mStream)) )
 	{
 		LogError(LOG_GSTREAMER "gstDecoder::Capture() -- unsupported image format (%s)\n", imageFormatToStr(format));
 		LogError(LOG_GSTREAMER "                         supported formats are:\n");
