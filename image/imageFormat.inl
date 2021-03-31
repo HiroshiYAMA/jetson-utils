@@ -234,8 +234,10 @@ template<typename T> inline imageFormat imageFormatFromType()
 	static_assert(__image_format_assert_false<T>::value, "invalid image format type - supported types are uchar3, uchar4, float3, float4"); 
 }
 
+template<> inline imageFormat imageFormatFromType<uint8_t>()	{ return IMAGE_GRAY8; }
 template<> inline imageFormat imageFormatFromType<uchar3>()	{ return IMAGE_RGB8; }
 template<> inline imageFormat imageFormatFromType<uchar4>()	{ return IMAGE_RGBA8; }
+template<> inline imageFormat imageFormatFromType<float>()	{ return IMAGE_GRAY32F; }
 template<> inline imageFormat imageFormatFromType<float3>()	{ return IMAGE_RGB32F; }
 template<> inline imageFormat imageFormatFromType<float4>()	{ return IMAGE_RGBA32F; }
 

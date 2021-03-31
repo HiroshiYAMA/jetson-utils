@@ -262,15 +262,15 @@ cudaError_t cudaWarpCollo( T* input, uchar3* input_HiReso, uchar3* input_panoram
 
 // cudaWarpCollo (float grayscale)
 // FUNC_CUDA_WARP_COLLO_HEADER(uint8_t, float);
-// FUNC_CUDA_WARP_COLLO_HEADER(float, float);
-// FUNC_CUDA_WARP_COLLO_HEADER(uchar3, float);
+FUNC_CUDA_WARP_COLLO_HEADER(float, float);
+FUNC_CUDA_WARP_COLLO_HEADER(uchar3, float);
 // FUNC_CUDA_WARP_COLLO_HEADER(uchar4, float);
 // FUNC_CUDA_WARP_COLLO_HEADER(float3, float);
-// FUNC_CUDA_WARP_COLLO_HEADER(float4, float);
+FUNC_CUDA_WARP_COLLO_HEADER(float4, float);
 
 // cudaWarpCollo (uchar3)
 // FUNC_CUDA_WARP_COLLO_HEADER(uint8_t, uchar3);
-// FUNC_CUDA_WARP_COLLO_HEADER(float, uchar3);
+FUNC_CUDA_WARP_COLLO_HEADER(float, uchar3);
 FUNC_CUDA_WARP_COLLO_HEADER(uchar3, uchar3);
 // FUNC_CUDA_WARP_COLLO_HEADER(uchar4, uchar3);
 // FUNC_CUDA_WARP_COLLO_HEADER(float3, uchar3);
@@ -294,7 +294,7 @@ FUNC_CUDA_WARP_COLLO_HEADER(float4, uchar3);
 
 // cudaWarpCollo (float4)
 // FUNC_CUDA_WARP_COLLO_HEADER(uint8_t, float4);
-// FUNC_CUDA_WARP_COLLO_HEADER(float, float4);
+FUNC_CUDA_WARP_COLLO_HEADER(float, float4);
 FUNC_CUDA_WARP_COLLO_HEADER(uchar3, float4);
 // FUNC_CUDA_WARP_COLLO_HEADER(uchar4, float4);
 // FUNC_CUDA_WARP_COLLO_HEADER(float3, float4);
