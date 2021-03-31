@@ -238,6 +238,9 @@ struct st_COLLO_param {
 
 	// overlay panorama background.
 	bool overlay_panorama;
+
+	// mask. background color.
+	float4 bg_color;
 };
 
 /**
