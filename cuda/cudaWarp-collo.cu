@@ -218,7 +218,7 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 	} else {
 		pix_bg = cast_vec<float4>(collo_prm.bg_color);
 	}
-	float a = alpha(make_float4(pix_in)) / 255.0f;
+	float a = collo_prm.alpha_blend ? alpha(make_float4(pix_in)) / 255.0f : 1.0f;
 	S pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + (pix_bg * (1.0f - a)));
 
 	output[uv_out.y * oW + uv_out.x] = pix_out;

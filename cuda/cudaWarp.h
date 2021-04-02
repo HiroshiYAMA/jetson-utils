@@ -236,6 +236,9 @@ struct st_COLLO_param {
 	// // projection mode.
 	// em_COLLO_projection_mode projection_mode;
 
+	// alpha blend.
+	bool alpha_blend;
+
 	// overlay panorama background.
 	bool overlay_panorama;
 
