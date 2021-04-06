@@ -620,6 +620,7 @@ bool gstDecoder::buildLaunchStr()
 	}
 	else
 	{
+		ss << "nvvidconv ! ";
 		ss << "video/x-raw ! ";
 	}
 
