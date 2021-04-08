@@ -24,6 +24,92 @@
 #include "cudaFilterMode.cuh"
 
 
+// XY(output) -> 3D position w/ rotation.
+inline __device__ float3 conv_2Dto3D_rotated(float cx, float cy, float fov, glm::quat q_view)
+{
+	// 2D -> 3D.
+	// right-handed system. x: right(->), y: down(|v), z: far(X).
+	float3 po = {
+		.x = cx * fov,
+		.y = cy * fov,
+		.z = 1.0f,
+	};
+
+	// pan, tilt, roll.
+	glm::vec3 p_org(po.x, po.y, po.z);
+	glm::vec3 p_rot_tmp = q_view * p_org;
+	float3 p_rot = {
+		p_rot_tmp.x,
+		p_rot_tmp.y,
+		p_rot_tmp.z,
+	};
+
+	// normalized sphere. r = 1.0.
+	float3 p_sph = normalize(p_rot);
+
+	return p_sph;
+}
+
+// 3D position -> 2D position.
+inline __device__ float2 conv_3Dto2D(float3 p_sph, float k, em_COLLO_lens_spec lens_type)
+{
+	// XYZ -> theta_x, theta_z.
+	float theta_x = atan2f(p_sph.y, p_sph.x);
+	float theta_z = acosf(p_sph.z);
+
+	// 3D -> 2D.
+	float r = f_lens_radius(theta_z, k, lens_type);
+	float tx = r * __cosf(theta_x);
+	float ty = r * __sinf(theta_x);
+
+	return float2{tx, ty};
+}
+inline __device__ float2 conv_3Dto2D_panorama(float3 p_sph)
+{
+	// XYZ -> theta_x, theta_z. for input panorama.
+	float theta_x = atan2f(-p_sph.x, -p_sph.z);
+	float theta_z = acosf(-p_sph.y);
+	if (theta_x < 0.0f) theta_x += (2.0f * M_PI);
+
+	// 3D -> 2D. for input panorama.
+	float tx = theta_x / (2.0f * M_PI);
+	float ty = theta_z / M_PI;
+
+	return float2{tx, ty};
+}
+
+// -> XY(input). with adjustment of lens center.
+inline __device__ float2 conv_toUV(float2 p, float aspect, float width, float height, float xcenter, float ycenter)
+{
+	float u = ((p.x * 0.5f / aspect) + 0.5f) * width;
+	float v = ((p.y * 0.5f) + 0.5f) * height;
+	u += xcenter;
+	v += ycenter;
+
+	return float2{u, v};
+}
+inline __device__ float2 conv_toUV_panorama(float2 p, float width, float height)
+{
+	// -> XY(input). with adjustment of lens center.
+	float u = p.x * (width  - 2.0f) + 0.0f;	// TODO: (W - 2) < x <= (W - 1): Bi-linear between (W - 2) and W(=0).
+	float v = p.y * (height - 1.0f);
+
+	return float2{u, v};
+}
+
+// check over edge.
+inline __device__ bool is_over_edge(float u, float v, float w, float h)
+{
+	bool over_edge = (
+		( u < 0.0f )
+		|| ( v < 0.0f )
+		|| ( u > w - 1.0f )
+		|| ( v > h - 1.0f )
+	);
+
+	return over_edge;
+}
+
 // cudaCollo
 template<typename T, typename T_HiReso, typename Tpano, typename S>
 __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm )
@@ -63,114 +149,60 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 	const float cx = ((uv_out.x / oW_f) - 0.5f) * 2.0f * collo_prm.oAspect;	
 	const float cy = ((uv_out.y / oH_f) - 0.5f) * 2.0f;
 
-	// 2D -> 3D.
-	// right-handed system. x: right(->), y: down(|v), z: far(X).
-	float3 po = {
-		.x = cx * fov,
-		.y = cy * fov,
-		.z = 1.0f,
-	};
+	// XY(output) -> 3D position w/ rotation.
+	float3 p_sph = conv_2Dto3D_rotated(cx, cy, fov, collo_prm.quat_view);
 
-	// pan, tilt, roll.
-	glm::vec3 p_org(po.x, po.y, po.z);
-	glm::vec3 p_rot_tmp = collo_prm.quat_view * p_org;
-	float3 p_rot = {
-		p_rot_tmp.x,
-		p_rot_tmp.y,
-		p_rot_tmp.z,
-	};
-
-	// normalized sphere. r = 1.0.
-	float3 p_sph = normalize(p_rot);
-
-	// XYZ -> theta_x, theta_z.
-	float theta_x = atan2f(p_sph.y, p_sph.x);
-	float theta_z = acosf(p_sph.z);
-
-	// 3D -> 2D.
-	float r = f_lens_radius(theta_z, k, collo_prm.lens_type);
-	float tx = r * __cosf(theta_x);
-	float ty = r * __sinf(theta_x);
+	// 3D position -> 2D position.
+	float2 txy = conv_3Dto2D(p_sph, k, collo_prm.lens_type);
 
 	// -> XY(input). with adjustment of lens center.
-	float u = ((tx * 0.5f / collo_prm.iAspect) + 0.5f) * iW_f;
-	float v = ((ty * 0.5f) + 0.5f) * iH_f;
-	u += collo_prm.xcenter;
-	v += collo_prm.ycenter;
+	float2 uv = conv_toUV(txy, collo_prm.iAspect, iW_f, iH_f, collo_prm.xcenter, collo_prm.ycenter);
+	float u = uv.x;
+	float v = uv.y;
 
 	// -> XY(input_HiReso). with adjustment of lens center.
-	float u_HiReso = ((tx * 0.5f / collo_prm.iAspect_HiReso) + 0.5f) * iW_HiReso_f;
-	float v_HiReso = ((ty * 0.5f) + 0.5f) * iH_HiReso_f;
-	u_HiReso += collo_prm.xcenter_HiReso;
-	v_HiReso += collo_prm.ycenter_HiReso;
+	float2 uv_HiReso = conv_toUV(txy, collo_prm.iAspect_HiReso, iW_HiReso_f, iH_HiReso_f, collo_prm.xcenter_HiReso, collo_prm.ycenter_HiReso);
+	float u_HiReso = uv_HiReso.x;
+	float v_HiReso = uv_HiReso.y;
 
-	// if( u < 0.0f ) u = 0.0f;
-	// if( v < 0.0f ) v = 0.0f;
-
-	// if( u > iW_f - 1.0f ) u = iW_f - 1.0f;
-	// if( v > iH_f - 1.0f ) v = iH_f - 1.0f;
-
-	bool over_edge = (
-		( u < 0.0f )
-		|| ( v < 0.0f )
-		|| ( u > iW_f - 1.0f )
-		|| ( v > iH_f - 1.0f )
-		|| (collo_prm.lens_type == em_ls_normal && p_sph.z <= 0.0f)
-	);
-
-	bool over_edge_HiReso = (
-		( u_HiReso < 0.0f )
-		|| ( v_HiReso < 0.0f )
-		|| ( u_HiReso > iW_HiReso_f - 1.0f )
-		|| ( v_HiReso > iH_HiReso_f - 1.0f )
-		|| (collo_prm.lens_type == em_ls_normal && p_sph.z <= 0.0f)
-	);
+	bool negative_position = (collo_prm.lens_type == em_ls_normal && p_sph.z <= 0.0f);
+	bool over_edge = (is_over_edge(u, v, iW_f, iH_f) || negative_position);
+	bool over_edge_HiReso = (is_over_edge(u_HiReso, v_HiReso, iW_HiReso_f, iH_HiReso_f) || negative_position);
 
 	// panorama.
-	float theta_x_pano;
-	float theta_z_pano;
-	float tx_pano;
-	float ty_pano;
 	float u_pano;
 	float v_pano;
 	bool over_edge_pano = false;
 	if (collo_prm.overlay_panorama) {
 		// rotate background only.
-		glm::vec3 p_rot_back_tmp = collo_prm.quat_view_back * p_org;
-		float3 p_rot_back = {
-			p_rot_back_tmp.x,
-			p_rot_back_tmp.y,
-			p_rot_back_tmp.z,
-		};
+		// XY(output) -> 3D position w/ rotation.
+		float3 p_sph_back = conv_2Dto3D_rotated(cx, cy, fov, collo_prm.quat_view_back);
 
-		// normalized back sphere. r = 1.0.
-		float3 p_sph_back = normalize(p_rot_back);
+		if (collo_prm.panorama_back) {
+			// for input panorama.
+			// 3D position -> 2D position.
+			float2 txy_pano = conv_3Dto2D_panorama(p_sph_back);
 
-		// for input panorama.
-		theta_x_pano = atan2f(-p_sph_back.x, -p_sph_back.z);
-		theta_z_pano = acosf(-p_sph_back.y);
-		if (theta_x_pano < 0.0f) theta_x_pano += (2.0f * M_PI);
+			// -> XY(input). with adjustment of lens center.
+			float2 uv_pano = conv_toUV_panorama(txy_pano, panoW_f, panoH_f);
+			u_pano = uv_pano.x;
+			v_pano = uv_pano.y;
 
-		// 3D -> 2D. for input panorama.
-		tx_pano = theta_x_pano / (2.0f * M_PI);
-		ty_pano = theta_z_pano / M_PI;
+			over_edge_pano = is_over_edge(u_pano, v_pano, panoW_f, panoH_f);
 
-		// -> XY(input). with adjustment of lens center.
-		u_pano = tx_pano * (panoW_f - 2.0f) + 0.0f;	// TODO: (W - 2) < x <= (W - 1): Bi-linear between (W - 2) and W(=0).
-		v_pano = ty_pano * (panoH_f - 1.0f);
+		} else {
+			// for input fisheye.
+			// 3D position -> 2D position.
+			float2 txy_pano = conv_3Dto2D(p_sph_back, k, collo_prm.lens_type);
 
-		// if( u_pano < 0.0f ) u_pano = 0.0f;
-		// if( v_pano < 0.0f ) v_pano = 0.0f;
+			// -> XY(input). with adjustment of lens center.
+			float2 uv_pano = conv_toUV(txy_pano, collo_prm.panoAspect, panoW_f, panoH_f, collo_prm.xcenter, collo_prm.ycenter);
+			u_pano = uv_pano.x;
+			v_pano = uv_pano.y;
 
-		// if( u_pano > panoW_f - 1.0f ) u_pano = panoW_f - 1.0f;
-		// if( v_pano > panoH_f - 1.0f ) v_pano = panoH_f - 1.0f;
-
-		over_edge_pano = (
-			( u_pano < 0.0f )
-			|| ( v_pano < 0.0f )
-			|| ( u_pano > panoW_f - 1.0f )
-			|| ( v_pano > panoH_f - 1.0f )
-		);
+			bool negative_position_back = (collo_prm.lens_type == em_ls_normal && p_sph_back.z <= 0.0f);
+			over_edge_pano = (is_over_edge(u_pano, v_pano, panoW_f, panoH_f) || negative_position_back);
+		}
 	}
 	
 	// sampling pixel.
