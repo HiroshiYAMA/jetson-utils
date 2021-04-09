@@ -144,7 +144,8 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 
 	const float fov      = collo_prm.v_fov_half_tan;
 	const float fov_back = collo_prm.v_fov_half_tan_back;
-	const float k = collo_prm.lens_radius_scale;
+	const float k      = collo_prm.lens_radius_scale;
+	const float k_back = collo_prm.lens_radius_scale_back;
 
 	// convert to cartesian coordinates
 	const float cx = ((uv_out.x / oW_f) - 0.5f) * 2.0f * collo_prm.oAspect;
@@ -194,7 +195,7 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 		} else {
 			// for input fisheye.
 			// 3D position -> 2D position.
-			float2 txy_pano = conv_3Dto2D(p_sph_back, k, collo_prm.lens_type);
+			float2 txy_pano = conv_3Dto2D(p_sph_back, k_back, collo_prm.lens_type_back);
 
 			// -> XY(input). with adjustment of lens center.
 			float2 uv_pano = conv_toUV(txy_pano, collo_prm.panoAspect, panoW_f, panoH_f, collo_prm.xcenter, collo_prm.ycenter);
