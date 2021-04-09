@@ -233,6 +233,9 @@ struct st_COLLO_param {
 	// pixel sampling filter.
 	int filter_mode;
 
+	// (background) input image is panorama.
+	bool panorama_back;
+
 	// // projection mode.
 	// em_COLLO_projection_mode projection_mode;
 
