@@ -142,11 +142,12 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 	const float oW_f = oW;
 	const float oH_f = oH;
 
-	const float fov = collo_prm.v_fov_half_tan;
+	const float fov      = collo_prm.v_fov_half_tan;
+	const float fov_back = collo_prm.v_fov_half_tan_back;
 	const float k = collo_prm.lens_radius_scale;
-	
+
 	// convert to cartesian coordinates
-	const float cx = ((uv_out.x / oW_f) - 0.5f) * 2.0f * collo_prm.oAspect;	
+	const float cx = ((uv_out.x / oW_f) - 0.5f) * 2.0f * collo_prm.oAspect;
 	const float cy = ((uv_out.y / oH_f) - 0.5f) * 2.0f;
 
 	// XY(output) -> 3D position w/ rotation.
@@ -176,7 +177,7 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 	if (collo_prm.overlay_panorama) {
 		// rotate background only.
 		// XY(output) -> 3D position w/ rotation.
-		float3 p_sph_back = conv_2Dto3D_rotated(cx, cy, fov, collo_prm.quat_view_back);
+		float3 p_sph_back = conv_2Dto3D_rotated(cx, cy, fov_back, collo_prm.quat_view_back);
 
 		if (collo_prm.panorama_back) {
 			// for input panorama.
@@ -204,7 +205,7 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 			over_edge_pano = (is_over_edge(u_pano, v_pano, panoW_f, panoH_f) || negative_position_back);
 		}
 	}
-	
+
 	// sampling pixel.
 	auto get_pixel = [](
 		auto input, auto u, auto v, auto iW, auto iH, auto oW, auto oH,

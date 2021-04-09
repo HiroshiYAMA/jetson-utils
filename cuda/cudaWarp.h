@@ -215,6 +215,7 @@ struct st_COLLO_param {
 	uint32_t oH;
 	float oAspect;
 	float v_fov_half_tan;
+	float v_fov_half_tan_back;
 
 	// lens spec.
 	float xcenter;
