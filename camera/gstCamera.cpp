@@ -160,7 +160,9 @@ bool gstCamera::buildLaunchStr()
 			if( mOptions.codec == videoOptions::CODEC_RAW )
 				ss << "format=(string)" << gst_format_to_string(mFormatYUV) << ", ";
 			
-			ss << "width=(int)" << GetWidth() << ", height=(int)" << GetHeight() << " ! "; 
+			//ss << "width=(int)" << GetWidth() << ", height=(int)" << GetHeight() << " ! ";
+			// Added framerate settings.
+			ss << "width=(int)" << GetWidth() << ", height=(int)" << GetHeight() << ", framerate=" << (int)mOptions.frameRate << "/1"  << " ! ";
 		}
 		
 		//ss << "queue max-size-buffers=16 ! ";
@@ -339,7 +341,9 @@ bool gstCamera::matchCaps( GstCaps* device_caps )
 		return false;
 	}
 	
-	if( !parseCaps(bestCaps, &mOptions.codec, &mFormatYUV, &mOptions.width, &mOptions.height, &mOptions.frameRate) )
+	//if( !parseCaps(bestCaps, &mOptions.codec, &mFormatYUV, &mOptions.width, &mOptions.height, &mOptions.frameRate) )
+	// Do not overwrite mOptions.frameRate!
+	if( !parseCaps(bestCaps, &mOptions.codec, &mFormatYUV, &mOptions.width, &mOptions.height, &bestFrameRate) )
 		return false;
 	
 	return true;
