@@ -97,6 +97,13 @@ public:
 	 * of RTP/RTSP, it means that the stream has terminated.
 	 */
 	inline bool IsEOS() const				{ return mEOS; }
+	//
+	void GoTo1stFrame()
+	{
+		LogInfo(LOG_GSTREAMER "gstDecoder -- Go to 1st frame.\n");
+		mEOS = true;
+		mStreaming = true;
+	}
 
 	/**
 	 * Return the interface type (gstDecoder::Type)
