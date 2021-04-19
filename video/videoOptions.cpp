@@ -174,12 +174,16 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 		bitRate = cmdLine.GetUnsignedInt("bitrate", bitRate);
 
 	// loop
-	if( type == INPUT || type == PANORAMA )
+	if( type == INPUT )
 	{
 		loop = cmdLine.GetInt("input-loop", -999);
 		
 		if( loop == -999 )
 			loop = cmdLine.GetInt("loop");
+	}
+	if( type == PANORAMA )
+	{
+		loop = cmdLine.GetInt("loop");
 	}
 
 	// fullscreen
