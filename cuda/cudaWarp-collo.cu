@@ -275,7 +275,7 @@ template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename
 		return cudaErrorInvalidValue;
 
 	// launch kernel
-	const dim3 blockDim(8, 8);
+	const dim3 blockDim(32, 8);
 	const dim3 gridDim(iDivUp(collo_prm.oW,blockDim.x), iDivUp(collo_prm.oH,blockDim.y));
 
 	cudaCollo<T, Tmask, T_HiReso, Tpano, S><<<gridDim, blockDim>>>(input, mask, input_HiReso, input_panorama, output, collo_prm);
