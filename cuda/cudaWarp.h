@@ -215,6 +215,7 @@ struct st_COLLO_param {
 	uint32_t oH;
 	float oAspect;
 	float v_fov_half_tan;
+	float v_fov_half_tan_back;
 
 	// lens spec.
 	float xcenter;
@@ -222,8 +223,10 @@ struct st_COLLO_param {
 	float xcenter_HiReso;
 	float ycenter_HiReso;
 	float lens_radius_scale;
+	float lens_radius_scale_back;
 	st_COLLO_lens_table lens_tbl;
 	em_COLLO_lens_spec lens_type;
+	em_COLLO_lens_spec lens_type_back;
 
 	// rotaion.
 	st_COLLO_rotation rot;
