@@ -269,7 +269,7 @@ template<typename T, typename T_HiReso, typename Tpano, typename S> inline cudaE
 		return cudaErrorInvalidValue;
 
 	// launch kernel
-	const dim3 blockDim(8, 8);
+	const dim3 blockDim(32, 8);
 	const dim3 gridDim(iDivUp(collo_prm.oW,blockDim.x), iDivUp(collo_prm.oH,blockDim.y));
 
 	cudaCollo<T, T_HiReso, Tpano, S><<<gridDim, blockDim>>>(input, input_HiReso, input_panorama, output, collo_prm);
