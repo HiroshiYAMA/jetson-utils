@@ -69,11 +69,13 @@ inline __device__ float2 conv_3Dto2D_panorama(float3 p_sph)
 	// XYZ -> theta_x, theta_z. for input panorama.
 	float theta_x = atan2f(-p_sph.x, -p_sph.z);
 	float theta_z = acosf(-p_sph.y);
-	if (theta_x < 0.0f) theta_x += (2.0f * M_PI);
+	if (theta_x < 0.0f) theta_x += (2.0f * (float)M_PI);
 
 	// 3D -> 2D. for input panorama.
-	float tx = theta_x / (2.0f * M_PI);
-	float ty = theta_z / M_PI;
+	constexpr float pi_2_inv = 1.0f / (2.0f * (float)M_PI);
+	constexpr float pi_inv = 1.0f / (float)M_PI;
+	float tx = theta_x * pi_2_inv;
+	float ty = theta_z * pi_inv;
 
 	return float2{tx, ty};
 }
@@ -81,10 +83,12 @@ inline __device__ float2 conv_3Dto2D_panorama(float3 p_sph)
 // -> XY(input). with adjustment of lens center.
 inline __device__ float2 conv_toUV(float2 p, float aspect, float width, float height, float xcenter, float ycenter)
 {
-	float u = ((p.x * 0.5f / aspect) + 0.5f) * width;
-	float v = ((p.y * 0.5f) + 0.5f) * height;
-	u += xcenter;
-	v += ycenter;
+	// float u = ((p.x * 0.5f * aspect) + 0.5f) * width;
+	// float v = ((p.y * 0.5f) + 0.5f) * height;
+	// u += xcenter;
+	// v += ycenter;
+	float u = __fmaf_rn(__fmaf_rn(p.x, 0.5f * aspect, 0.5f), width , xcenter);
+	float v = __fmaf_rn(__fmaf_rn(p.y, 0.5f         , 0.5f), height, ycenter);
 
 	return float2{u, v};
 }
@@ -148,8 +152,10 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 	const float k_back = collo_prm.lens_radius_scale_back;
 
 	// convert to cartesian coordinates
-	const float cx = ((uv_out.x / oW_f) - 0.5f) * 2.0f * collo_prm.oAspect;
-	const float cy = ((uv_out.y / oH_f) - 0.5f) * 2.0f;
+	// const float cx = ((uv_out.x / oW_f) - 0.5f) * 2.0f * collo_prm.oAspect;
+	// const float cy = ((uv_out.y / oH_f) - 0.5f) * 2.0f;
+	const float cx = __fmaf_rn(__fdividef(uv_out.x, oW_f), 2.0f, -1.0f) * collo_prm.oAspect;
+	const float cy = __fmaf_rn(__fdividef(uv_out.y, oH_f), 2.0f, -1.0f);
 
 	// XY(output) -> 3D position w/ rotation.
 	float3 p_sph = conv_2Dto3D_rotated(cx, cy, fov, collo_prm.quat_view);
@@ -158,12 +164,12 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 	float2 txy = conv_3Dto2D(p_sph, k, collo_prm.lens_type);
 
 	// -> XY(input). with adjustment of lens center.
-	float2 uv = conv_toUV(txy, collo_prm.iAspect, iW_f, iH_f, collo_prm.xcenter, collo_prm.ycenter);
+	float2 uv = conv_toUV(txy, collo_prm.iAspect_inv, iW_f, iH_f, collo_prm.xcenter, collo_prm.ycenter);
 	float u = uv.x;
 	float v = uv.y;
 
 	// -> XY(input_HiReso). with adjustment of lens center.
-	float2 uv_HiReso = conv_toUV(txy, collo_prm.iAspect_HiReso, iW_HiReso_f, iH_HiReso_f, collo_prm.xcenter_HiReso, collo_prm.ycenter_HiReso);
+	float2 uv_HiReso = conv_toUV(txy, collo_prm.iAspect_HiReso_inv, iW_HiReso_f, iH_HiReso_f, collo_prm.xcenter_HiReso, collo_prm.ycenter_HiReso);
 	float u_HiReso = uv_HiReso.x;
 	float v_HiReso = uv_HiReso.y;
 
@@ -198,7 +204,7 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 			float2 txy_pano = conv_3Dto2D(p_sph_back, k_back, collo_prm.lens_type_back);
 
 			// -> XY(input). with adjustment of lens center.
-			float2 uv_pano = conv_toUV(txy_pano, collo_prm.panoAspect, panoW_f, panoH_f, collo_prm.xcenter, collo_prm.ycenter);
+			float2 uv_pano = conv_toUV(txy_pano, collo_prm.panoAspect_inv, panoW_f, panoH_f, collo_prm.xcenter, collo_prm.ycenter);
 			u_pano = uv_pano.x;
 			v_pano = uv_pano.y;
 
@@ -252,7 +258,8 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 	} else {
 		pix_bg = cast_vec<float4>(collo_prm.bg_color);
 	}
-	float a = collo_prm.alpha_blend ? alpha(make_float4(pix_in)) / 255.0f : 1.0f;
+	constexpr float num255_inv = 1.0f / 255.0f;
+	float a = collo_prm.alpha_blend ? alpha(make_float4(pix_in)) * num255_inv : 1.0f;
 	S pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + (pix_bg * (1.0f - a)));
 
 	output[uv_out.y * oW + uv_out.x] = pix_out;
