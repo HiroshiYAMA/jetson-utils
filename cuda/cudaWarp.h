@@ -108,6 +108,10 @@ cudaError_t cudaWarpFisheye( float4* input, float4* output, uint32_t width, uint
 // dgrees <--> radians.
 template<typename T> constexpr inline __host__ __device__ T RAD(T d) { return static_cast<T>(d * M_PI / 180.0); }
 template<typename T> constexpr inline __host__ __device__ T DEG(T r) { return static_cast<T>(r * 180.0 / M_PI); }
+//
+// fast version for CUDA.
+inline __device__ float RAD_f(float d) { return d * (float)M_PI / 180.0f; }
+inline __device__ float DEG_f(float r) { return r * 180.0f / (float)M_PI; }
 
 // rotation. X, Y, Z.
 template<typename T, typename S> inline __host__ __device__ T rotX(T p, S th)
@@ -134,6 +138,35 @@ template<typename T, typename S> inline __host__ __device__ T rotZ(T p, S th)
 
 	p_rot.x = cos(th) * p.x - sin(th) * p.y;
 	p_rot.y = sin(th) * p.x + cos(th) * p.y;
+
+	return p_rot;
+}
+//
+// fast version for CUDA.
+template<typename T> inline __device__ T rotX_f(T p, float th)
+{
+	T p_rot = p;
+
+	p_rot.y = __cosf(th) * p.y - __sinf(th) * p.z;
+	p_rot.z = __sinf(th) * p.y + __cosf(th) * p.z;
+
+	return p_rot;
+}
+template<typename T> inline __device__ T rotY_f(T p, float th)
+{
+	T p_rot = p;
+
+	p_rot.x =  __cosf(th) * p.x + __sinf(th) * p.z;
+	p_rot.z = -__sinf(th) * p.x + __cosf(th) * p.z;
+
+	return p_rot;
+}
+template<typename T> inline __device__ T rotZ_f(T p, float th)
+{
+	T p_rot = p;
+
+	p_rot.x = __cosf(th) * p.x - __sinf(th) * p.y;
+	p_rot.y = __sinf(th) * p.x + __cosf(th) * p.y;
 
 	return p_rot;
 }
@@ -174,6 +207,31 @@ template<typename T> constexpr inline __host__ __device__ T f_lens_radius(T thet
 		return f_Equisolid_angle(theta, k);
 	}
 };
+//
+// fast version for CUDA.
+inline __device__ float f_Equidistant_f(float theta, float k)     { return k * theta; }
+inline __device__ float f_Equisolid_angle_f(float theta, float k) { return k * 2.0f * __sinf(theta / 2.0f); }
+inline __device__ float f_Orthographic_f(float theta, float k)    { return k * __sinf(theta); }
+inline __device__ float f_Stereographic_f(float theta, float k)   { return k * 2.0f * __tanf(theta / 2.0f); }
+inline __device__ float f_Rectilinear_f(float theta, float k)     { return k * __tanf(theta); }
+//
+inline __device__ float f_lens_radius_f(float theta, float k, em_COLLO_lens_spec lens_type)
+{
+	switch (lens_type) {
+	case em_ls_normal:
+		return f_Rectilinear_f(theta, k);
+	case em_ls_equidistant:
+		return f_Equidistant_f(theta, k);
+	case em_ls_equi_angle:
+		return f_Equisolid_angle_f(theta, k);
+	case em_ls_ortho:
+		return f_Orthographic_f(theta, k);
+	case em_ls_st_graphic:
+		return f_Stereographic_f(theta, k);
+	default:
+		return f_Equisolid_angle_f(theta, k);
+	}
+}
 
 constexpr auto COLLO_LENS_TBL_NUM = 36;
 struct st_COLLO_lens_table {

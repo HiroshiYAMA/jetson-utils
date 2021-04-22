@@ -58,7 +58,7 @@ inline __device__ float2 conv_3Dto2D(float3 p_sph, float k, em_COLLO_lens_spec l
 	float theta_z = acosf(p_sph.z);
 
 	// 3D -> 2D.
-	float r = f_lens_radius(theta_z, k, lens_type);
+	float r = f_lens_radius_f(theta_z, k, lens_type);
 	float tx = r * __cosf(theta_x);
 	float ty = r * __sinf(theta_x);
 
