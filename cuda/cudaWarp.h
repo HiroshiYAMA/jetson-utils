@@ -185,9 +185,9 @@ constexpr auto em_ls_ortho       = em_COLLO_lens_spec::FISHEYE_ORTHOGRAPHIC;
 constexpr auto em_ls_st_graphic  = em_COLLO_lens_spec::FISHEYE_STEREOGRAPHIC;
 
 template<typename T> constexpr inline __host__ __device__ T f_Equidistant(T theta, T k)     { return k * theta; };
-template<typename T> constexpr inline __host__ __device__ T f_Equisolid_angle(T theta, T k) { return static_cast<T>(k * 2.0 * sin(theta / 2.0)); };
+template<typename T> constexpr inline __host__ __device__ T f_Equisolid_angle(T theta, T k) { return static_cast<T>(k * 2.0 * sin(theta * 0.5)); };
 template<typename T> constexpr inline __host__ __device__ T f_Orthographic(T theta, T k)    { return static_cast<T>(k * sin(theta)); };
-template<typename T> constexpr inline __host__ __device__ T f_Stereographic(T theta, T k)   { return static_cast<T>(k * 2.0 * tan(theta / 2.0)); };
+template<typename T> constexpr inline __host__ __device__ T f_Stereographic(T theta, T k)   { return static_cast<T>(k * 2.0 * tan(theta * 0.5)); };
 template<typename T> constexpr inline __host__ __device__ T f_Rectilinear(T theta, T k)     { return static_cast<T>(k * tan(theta)); };
 //
 template<typename T> constexpr inline __host__ __device__ T f_lens_radius(T theta, T k, em_COLLO_lens_spec lens_type)
@@ -210,9 +210,9 @@ template<typename T> constexpr inline __host__ __device__ T f_lens_radius(T thet
 //
 // fast version for CUDA.
 inline __device__ float f_Equidistant_f(float theta, float k)     { return k * theta; }
-inline __device__ float f_Equisolid_angle_f(float theta, float k) { return k * 2.0f * __sinf(theta / 2.0f); }
+inline __device__ float f_Equisolid_angle_f(float theta, float k) { return k * 2.0f * __sinf(theta * 0.5f); }
 inline __device__ float f_Orthographic_f(float theta, float k)    { return k * __sinf(theta); }
-inline __device__ float f_Stereographic_f(float theta, float k)   { return k * 2.0f * __tanf(theta / 2.0f); }
+inline __device__ float f_Stereographic_f(float theta, float k)   { return k * 2.0f * __tanf(theta * 0.5f); }
 inline __device__ float f_Rectilinear_f(float theta, float k)     { return k * __tanf(theta); }
 //
 inline __device__ float f_lens_radius_f(float theta, float k, em_COLLO_lens_spec lens_type)
@@ -257,21 +257,25 @@ struct st_COLLO_param {
 	uint32_t iW;
 	uint32_t iH;
 	float iAspect;
+	float iAspect_inv;
 
 	// input(High Resolution).
 	uint32_t iW_HiReso;
 	uint32_t iH_HiReso;
 	float iAspect_HiReso;
+	float iAspect_HiReso_inv;
 
 	// input(panorama).
 	uint32_t panoW;
 	uint32_t panoH;
 	float panoAspect;
+	float panoAspect_inv;
 
 	// output.
 	uint32_t oW;
 	uint32_t oH;
 	float oAspect;
+	float oAspect_inv;
 	float v_fov_half_tan;
 	float v_fov_half_tan_back;
 
