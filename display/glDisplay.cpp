@@ -451,7 +451,7 @@ void glDisplay::BeginRender( bool processEvents )
 	GL(glXMakeCurrent(mDisplayX, mWindowX, mContextGL));
 
 	GL(glClearColor(mBgColor[0], mBgColor[1], mBgColor[2], mBgColor[3]));
-	GL(glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT));
+	// GL(glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_STENCIL_BUFFER_BIT));
 
 	activateViewport();	
 }
@@ -607,7 +607,7 @@ void glDisplay::RenderImage( void* img, uint32_t width, uint32_t height, imageFo
 
 	if( tex_map != NULL )
 	{
-		CUDA(cudaMemcpy(tex_map, img, interopTex->GetSize(), cudaMemcpyDeviceToDevice));
+		CUDA(cudaMemcpyAsync(tex_map, img, interopTex->GetSize(), cudaMemcpyDeviceToDevice));
 		//CUDA(cudaDeviceSynchronize());
 		interopTex->Unmap();
 	}
