@@ -321,7 +321,7 @@ struct st_COLLO_param {
  * @ingroup warping
  */
 #define FUNC_CUDA_WARP_COLLO_HEADER(T, S) \
-cudaError_t cudaWarpCollo( T* input, uchar3* input_HiReso, uchar3* input_panorama, S* output, st_COLLO_param collo_prm );
+cudaError_t cudaWarpCollo( T* input, float* mask, uchar3* input_HiReso, uchar3* input_panorama, S* output, st_COLLO_param collo_prm );
 
 // cudaWarpCollo (uint8 grayscale)
 // FUNC_CUDA_WARP_COLLO_HEADER(uint8_t, uint8_t);
