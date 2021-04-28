@@ -229,6 +229,7 @@ private:
 	
 	RingBuffer mBufferYUV;
 	RingBuffer mBufferRGB;
+	cudaStream_t  mStream;
 
 	Event mWaitEvent;
 };
