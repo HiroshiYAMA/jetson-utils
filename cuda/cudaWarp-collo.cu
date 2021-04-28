@@ -115,8 +115,8 @@ inline __device__ bool is_over_edge(float u, float v, float w, float h)
 }
 
 // cudaCollo
-template<typename T, typename T_HiReso, typename Tpano, typename S>
-__global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm )
+template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename S>
+__global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm )
 {
 	const int2 uv_out = make_int2(
 		blockDim.x * blockIdx.x + threadIdx.x,
@@ -245,9 +245,13 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 		? get_pixel(input, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
 		: cast_vec<T>(0.0f);
 
-	T_HiReso pix_in_HiReso = !over_edge_HiReso
-		? get_pixel(input_HiReso, u_HiReso, v_HiReso, iW_HiReso, iH_HiReso, oW, oH, scale, max_value, collo_prm.filter_mode)
-		: cast_vec<T_HiReso>(0.0f);
+	Tmask pix_mask = !over_edge
+		? get_pixel(mask, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
+		: cast_vec<Tmask>(0.0f);
+
+	// T_HiReso pix_in_HiReso = !over_edge_HiReso
+	// 	? get_pixel(input_HiReso, u_HiReso, v_HiReso, iW_HiReso, iH_HiReso, oW, oH, scale, max_value, collo_prm.filter_mode)
+	// 	: cast_vec<T_HiReso>(0.0f);
 
 	float4 pix_bg;
 	if (collo_prm.overlay_panorama) {
@@ -259,15 +263,17 @@ __global__ void cudaCollo( T* input, T_HiReso* input_HiReso, Tpano* input_panora
 		pix_bg = cast_vec<float4>(collo_prm.bg_color);
 	}
 	constexpr float num255_inv = 1.0f / 255.0f;
-	float a = collo_prm.alpha_blend ? alpha(make_float4(pix_in)) * num255_inv : 1.0f;
-	S pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + (pix_bg * (1.0f - a)));
+	// float a = collo_prm.alpha_blend ? alpha(make_float4(pix_in)) * num255_inv : 1.0f;
+	float a = collo_prm.alpha_blend ? pix_mask * num255_inv : 1.0f;
+	// S pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + (pix_bg * (1.0f - a)));
+	S pix_out = cast_vec<S>(cast_vec<float4>(pix_in * a) + (pix_bg * (1.0f - a)));
 
 	output[uv_out.y * oW + uv_out.x] = pix_out;
 }
 
 
 // cudaWarpCollo
-template<typename T, typename T_HiReso, typename Tpano, typename S> inline cudaError_t cudaWarpCollo__( T* input, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm )
+template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename S> inline cudaError_t cudaWarpCollo__( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -279,14 +285,14 @@ template<typename T, typename T_HiReso, typename Tpano, typename S> inline cudaE
 	const dim3 blockDim(32, 8);
 	const dim3 gridDim(iDivUp(collo_prm.oW,blockDim.x), iDivUp(collo_prm.oH,blockDim.y));
 
-	cudaCollo<T, T_HiReso, Tpano, S><<<gridDim, blockDim>>>(input, input_HiReso, input_panorama, output, collo_prm);
+	cudaCollo<T, Tmask, T_HiReso, Tpano, S><<<gridDim, blockDim>>>(input, mask, input_HiReso, input_panorama, output, collo_prm);
 
 	return CUDA(cudaGetLastError());
 }
 #define FUNC_CUDA_WARP_COLLO(T, S) \
-cudaError_t cudaWarpCollo( T* input, uchar3* input_HiReso, uchar3* input_panorama, S* output, st_COLLO_param collo_prm ) \
+cudaError_t cudaWarpCollo( T* input, float* mask, uchar3* input_HiReso, uchar3* input_panorama, S* output, st_COLLO_param collo_prm ) \
 { \
-	return cudaWarpCollo__<T, uchar3, uchar3, S>( input, input_HiReso, input_panorama, output, collo_prm ); \
+	return cudaWarpCollo__<T, float, uchar3, uchar3, S>( input, mask, input_HiReso, input_panorama, output, collo_prm ); \
 }
 
 // cudaWarpCollo (uint8 grayscale)
