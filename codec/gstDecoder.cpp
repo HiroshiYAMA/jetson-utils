@@ -854,8 +854,8 @@ void gstDecoder::checkBuffer()
 		release_return;
 	}
 
-	// memcpy(nextBuffer, gstData, gstSize);
-	cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
+	memcpy(nextBuffer, gstData, gstSize);
+	// cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
 	mBufferYUV.Next(RingBuffer::Write);
 	mWaitEvent.Wake();
 	mFrameCount++;
