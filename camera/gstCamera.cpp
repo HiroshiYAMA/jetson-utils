@@ -48,9 +48,9 @@ gstCamera::gstCamera( const videoOptions& options ) : videoSource(options)
 	
 	mBufferRGB.SetThreaded(false);
 
-	if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
+	// if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
 		mStream = NULL;
-	}
+	// }
 }
 
 
