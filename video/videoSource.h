@@ -302,6 +302,8 @@ public:
 	 */
 	static const char* TypeToStr( uint32_t type );
 
+	virtual void GoTo1stFrame() = 0;
+
 protected:
 	//videoSource();
 	videoSource( const videoOptions& options );
