@@ -718,6 +718,15 @@ bool gstCamera::Capture( void** output, imageFormat format, uint64_t timeout )
 	
 	// get the latest ringbuffer
 	void* latestYUV = mBufferYUV.Next(RingBuffer::ReadLatestOnce);
+	{
+		// check frame doubler.
+		static uint8_t buf[256] = {};
+		uint8_t *cur = (uint8_t *)latestYUV;
+		if (memcmp(buf, cur, 256) == 0) {
+			LogWarning("---------------------------------------------------------------- same frame\n");
+		}
+		memcpy(buf, cur, 256);
+	}
 
 	if( !latestYUV )
 		return false;

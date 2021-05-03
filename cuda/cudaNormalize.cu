@@ -27,7 +27,7 @@
 // gpuNormalize
 template <typename T>
 __global__ void gpuNormalize( T* input, T* output, int width, int height, 
-					     float2 input_range, float scaling_factor )
+					     float2 input_range, float scaling_factor, float2 output_range )
 {
 	const int x = blockIdx.x * blockDim.x + threadIdx.x;
 	const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -37,7 +37,7 @@ __global__ void gpuNormalize( T* input, T* output, int width, int height,
 
 	const T px = input[ y * width + x ];
 
-	#define rescale(v) ((v - input_range.x) * scaling_factor)
+	#define rescale(v) (clamp((v - input_range.x) * scaling_factor + output_range.x, output_range.x, output_range.y))
 
 	output[y*width+x] = make_vec<T>(rescale(px.x),
 							  rescale(px.y),
@@ -56,13 +56,14 @@ static cudaError_t launchNormalizeRGB( T* input, const float2& input_range,
 	if( width == 0 || height == 0  )
 		return cudaErrorInvalidValue;
 
-	const float multiplier = output_range.y / input_range.y;
+	// const float multiplier = output_range.y / input_range.y;
+	const float multiplier = (output_range.y - output_range.x) / (input_range.y - input_range.x);
 
 	// launch kernel
 	const dim3 blockDim(32,8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuNormalize<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, input_range, multiplier);
+	gpuNormalize<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, input_range, multiplier, output_range);
 
 	return CUDA(cudaGetLastError());
 }
@@ -89,7 +90,7 @@ cudaError_t cudaNormalize( float4* input, const float2& input_range,
 //-----------------------------------------------------------------------------------
 template <typename T>
 __global__ void gpuNormalizeGray( T* input, T* output, int width, int height, 
-					     float2 input_range, float scaling_factor )
+					     float2 input_range, float scaling_factor, float2 output_range )
 {
 	const int x = blockIdx.x * blockDim.x + threadIdx.x;
 	const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -112,13 +113,14 @@ static cudaError_t launchNormalizeGray( T* input, const float2& input_range,
 	if( width == 0 || height == 0  )
 		return cudaErrorInvalidValue;
 
-	const float multiplier = output_range.y / input_range.y;
+	// const float multiplier = output_range.y / input_range.y;
+	const float multiplier = (output_range.y - output_range.x) / (input_range.y - input_range.x);
 
 	// launch kernel
 	const dim3 blockDim(32,8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuNormalizeGray<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, input_range, multiplier);
+	gpuNormalizeGray<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, input_range, multiplier, output_range);
 
 	return CUDA(cudaGetLastError());
 }
