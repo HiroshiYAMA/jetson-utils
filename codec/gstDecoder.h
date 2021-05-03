@@ -159,6 +159,7 @@ protected:
 	Event	   mWaitEvent;
 	RingBuffer   mBufferYUV;
 	RingBuffer   mBufferRGB;
+	cudaStream_t  mStream;
 
 	std::string  mLaunchStr;
 	bool         mCustomSize;

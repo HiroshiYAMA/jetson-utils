@@ -199,6 +199,8 @@ public:
 	 * Default camera height, unless otherwise specified during Create()
  	 */
 	static const uint32_t DefaultHeight = 720;
+
+	void GoTo1stFrame() {}
 	
 private:
 	static void onEOS(_GstAppSink* sink, void* user_data);
@@ -229,6 +231,7 @@ private:
 	
 	RingBuffer mBufferYUV;
 	RingBuffer mBufferRGB;
+	cudaStream_t  mStream;
 
 	Event mWaitEvent;
 };

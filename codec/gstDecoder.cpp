@@ -67,7 +67,7 @@
 // supported image file extensions
 const char* gstDecoder::SupportedExtensions[] = { "mkv", "mp4", "qt", 
 										"flv", "avi", "h264", 
-										"h265", NULL };
+										"h265", "mov", NULL };
 
 bool gstDecoder::IsSupportedExtension( const char* ext )
 {
@@ -105,6 +105,10 @@ gstDecoder::gstDecoder( const videoOptions& options ) : videoSource(options)
 	mFormatYUV  = IMAGE_UNKNOWN;
 
 	mBufferRGB.SetThreaded(false);
+
+	// if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
+		mStream = NULL;
+	// }
 }
 
 
@@ -453,7 +457,7 @@ bool gstDecoder::buildLaunchStr()
 
 		if( uri.extension == "mkv" )
 			ss << "matroskademux ! ";
-		else if( uri.extension == "mp4" || uri.extension == "qt" )
+		else if( uri.extension == "mp4" || uri.extension == "qt" || uri.extension == "mov" )
 			ss << "qtdemux ! ";
 		else if( uri.extension == "flv" )
 			ss << "flvdemux ! ";
@@ -464,7 +468,7 @@ bool gstDecoder::buildLaunchStr()
 			LogError(LOG_GSTREAMER "gstDecoder -- unsupported video file extension (%s)\n", uri.extension.c_str());
 			LogError(LOG_GSTREAMER "              supported video extensions are:\n");
 			LogError(LOG_GSTREAMER "                 * mkv\n");
-			LogError(LOG_GSTREAMER "                 * mp4, qt\n");
+			LogError(LOG_GSTREAMER "                 * mp4, qt, mov\n");
 			LogError(LOG_GSTREAMER "                 * flv\n");
 			LogError(LOG_GSTREAMER "                 * avi\n");
 			LogError(LOG_GSTREAMER "                 * h264, h265\n");
@@ -851,6 +855,7 @@ void gstDecoder::checkBuffer()
 	}
 
 	memcpy(nextBuffer, gstData, gstSize);
+	// cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
 	mBufferYUV.Next(RingBuffer::Write);
 	mWaitEvent.Wake();
 	mFrameCount++;
@@ -899,7 +904,7 @@ bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 	// perform colorspace conversion
 	void* nextRGB = mBufferRGB.Next(RingBuffer::Write);
 
-	if( CUDA_FAILED(cudaConvertColor(latestYUV, mFormatYUV, nextRGB, format, GetWidth(), GetHeight())) )
+	if( CUDA_FAILED(cudaConvertColor(latestYUV, mFormatYUV, nextRGB, format, GetWidth(), GetHeight(), make_float2(0,255), mStream)) )
 	{
 		LogError(LOG_GSTREAMER "gstDecoder::Capture() -- unsupported image format (%s)\n", imageFormatToStr(format));
 		LogError(LOG_GSTREAMER "                         supported formats are:\n");

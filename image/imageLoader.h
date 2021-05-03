@@ -25,6 +25,7 @@
 
 
 #include "videoSource.h"
+#include "imageIO.h"
 
 #include <string>
 #include <vector>
@@ -98,6 +99,12 @@ public:
 	 * disabled or all loops have already been run.
 	 */
 	inline bool IsEOS() const				{ return mEOS; }
+	//
+	void GoTo1stFrame()
+	{
+		LogInfo(LOG_IMAGE "imageLoader -- Go to 1st frame.\n");
+		mNextFile = 0;
+	}
 
 	/**
 	 * Return the interface type (imageLoader::Type)

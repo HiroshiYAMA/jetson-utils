@@ -59,7 +59,7 @@
 cudaError_t cudaConvertColor( void* input, imageFormat inputFormat,
 					     void* output, imageFormat outputFormat,
 					     size_t width, size_t height,
-						const float2& pixel_range=make_float2(0,255));
+						const float2& pixel_range=make_float2(0,255), cudaStream_t stream = NULL);
 
 /**
  * Convert between to image formats using the GPU.
@@ -86,9 +86,9 @@ cudaError_t cudaConvertColor( void* input, imageFormat inputFormat,
 template<typename T_in, typename T_out> 
 cudaError_t cudaConvertColor( T_in* input, T_out* output,
 					     size_t width, size_t height,
-						const float2& pixel_range=make_float2(0,255))	
+						const float2& pixel_range=make_float2(0,255), cudaStream_t stream = NULL)
 { 
-	return cudaConvertColor(input, imageFormatFromType<T_in>(), output, imageFormatFromType<T_out>(), width, height, pixel_range); 
+	return cudaConvertColor(input, imageFormatFromType<T_in>(), output, imageFormatFromType<T_out>(), width, height, pixel_range, stream);
 }
 	
 

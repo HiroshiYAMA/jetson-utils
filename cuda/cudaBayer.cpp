@@ -27,7 +27,7 @@
 
 
 // cudaBayerToRGB
-cudaError_t cudaBayerToRGB( uint8_t* input, uchar3* output, size_t width, size_t height, imageFormat format )
+cudaError_t cudaBayerToRGB( uint8_t* input, uchar3* output, size_t width, size_t height, imageFormat format, cudaStream_t stream )
 {
 	NppiSize size;
 	size.width = width;
@@ -65,7 +65,7 @@ cudaError_t cudaBayerToRGB( uint8_t* input, uchar3* output, size_t width, size_t
 }
 
 
-cudaError_t cudaBayerToRGBA( uint8_t* input, uchar3* output, size_t width, size_t height, imageFormat format )
+cudaError_t cudaBayerToRGBA( uint8_t* input, uchar3* output, size_t width, size_t height, imageFormat format, cudaStream_t stream )
 {
 	return cudaErrorInvalidValue;
 	
