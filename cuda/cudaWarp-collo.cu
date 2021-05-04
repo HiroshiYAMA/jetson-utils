@@ -245,7 +245,7 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 		? get_pixel(input, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
 		: cast_vec<T>(0.0f);
 
-	Tmask pix_mask = !over_edge
+	Tmask pix_mask = !over_edge && !collo_prm.rgba
 		? get_pixel(mask, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
 		: cast_vec<Tmask>(0.0f);
 
@@ -253,20 +253,24 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 	// 	? get_pixel(input_HiReso, u_HiReso, v_HiReso, iW_HiReso, iH_HiReso, oW, oH, scale, max_value, collo_prm.filter_mode)
 	// 	: cast_vec<T_HiReso>(0.0f);
 
-	float4 pix_bg;
+	float3 pix_bg;
 	if (collo_prm.overlay_panorama) {
 		Tpano pix_pano = !over_edge_pano
 			? get_pixel(input_panorama, u_pano, v_pano, panoW, panoH, oW, oH, scale, max_value, collo_prm.filter_mode)
 			: cast_vec<Tpano>(0.0f);
-		pix_bg = cast_vec<float4>(pix_pano);
+		pix_bg = cast_vec<float3>(pix_pano);
 	} else {
-		pix_bg = cast_vec<float4>(collo_prm.bg_color);
+		pix_bg = cast_vec<float3>(collo_prm.bg_color);
 	}
 	constexpr float num255_inv = 1.0f / 255.0f;
 	// float a = collo_prm.alpha_blend ? alpha(make_float4(pix_in)) * num255_inv : 1.0f;
-	float a = collo_prm.alpha_blend ? pix_mask * num255_inv : 1.0f;
+	// float a = collo_prm.alpha_blend ? pix_mask * num255_inv : 1.0f;
+	float a = collo_prm.rgba
+		? collo_prm.alpha_blend ? alpha(make_float4(pix_in)) * num255_inv : 1.0f
+		: collo_prm.alpha_blend ? pix_mask * num255_inv : 1.0f;
 	// S pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + (pix_bg * (1.0f - a)));
-	S pix_out = cast_vec<S>(cast_vec<float4>(pix_in * a) + (pix_bg * (1.0f - a)));
+	// S pix_out = cast_vec<S>(cast_vec<float4>(pix_in * a) + (pix_bg * (1.0f - a)));
+	S pix_out = cast_vec<S>(make_float4(cast_vec<float3>(pix_in * a) + (pix_bg * (1.0f - a)), 255.0f));
 
 	output[uv_out.y * oW + uv_out.x] = pix_out;
 }

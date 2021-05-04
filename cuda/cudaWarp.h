@@ -253,6 +253,9 @@ enum class em_COLLO_projection_mode : int {
 };
 
 struct st_COLLO_param {
+	// type of input.
+	bool rgba;
+
 	// input.
 	uint32_t iW;
 	uint32_t iH;
