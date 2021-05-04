@@ -290,9 +290,9 @@ template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename
 	return CUDA(cudaGetLastError());
 }
 #define FUNC_CUDA_WARP_COLLO(T, S) \
-cudaError_t cudaWarpCollo( T* input, float* mask, uchar3* input_HiReso, uchar3* input_panorama, S* output, st_COLLO_param collo_prm ) \
+cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, S* output, st_COLLO_param collo_prm ) \
 { \
-	return cudaWarpCollo__<T, float, uchar3, uchar3, S>( input, mask, input_HiReso, input_panorama, output, collo_prm ); \
+	return cudaWarpCollo__<T, float, uchar4, uchar4, S>( input, mask, input_HiReso, input_panorama, output, collo_prm ); \
 }
 
 // cudaWarpCollo (uint8 grayscale)
@@ -306,26 +306,26 @@ cudaError_t cudaWarpCollo( T* input, float* mask, uchar3* input_HiReso, uchar3* 
 // cudaWarpCollo (float grayscale)
 // FUNC_CUDA_WARP_COLLO(uint8_t, float);
 FUNC_CUDA_WARP_COLLO(float, float);
-FUNC_CUDA_WARP_COLLO(uchar3, float);
-// FUNC_CUDA_WARP_COLLO(uchar4, float);
+// FUNC_CUDA_WARP_COLLO(uchar3, float);
+FUNC_CUDA_WARP_COLLO(uchar4, float);
 // FUNC_CUDA_WARP_COLLO(float3, float);
 FUNC_CUDA_WARP_COLLO(float4, float);
 
 // cudaWarpCollo (uchar3)
 // FUNC_CUDA_WARP_COLLO(uint8_t, uchar3);
-FUNC_CUDA_WARP_COLLO(float, uchar3);
-FUNC_CUDA_WARP_COLLO(uchar3, uchar3);
+// FUNC_CUDA_WARP_COLLO(float, uchar3);
+// FUNC_CUDA_WARP_COLLO(uchar3, uchar3);
 // FUNC_CUDA_WARP_COLLO(uchar4, uchar3);
 // FUNC_CUDA_WARP_COLLO(float3, uchar3);
-FUNC_CUDA_WARP_COLLO(float4, uchar3);
+// FUNC_CUDA_WARP_COLLO(float4, uchar3);
 
 // cudaWarpCollo (uchar4)
 // FUNC_CUDA_WARP_COLLO(uint8_t, uchar4);
-// FUNC_CUDA_WARP_COLLO(float, uchar4);
+FUNC_CUDA_WARP_COLLO(float, uchar4);
 // FUNC_CUDA_WARP_COLLO(uchar3, uchar4);
-// FUNC_CUDA_WARP_COLLO(uchar4, uchar4);
+FUNC_CUDA_WARP_COLLO(uchar4, uchar4);
 // FUNC_CUDA_WARP_COLLO(float3, uchar4);
-// FUNC_CUDA_WARP_COLLO(float4, uchar4);
+FUNC_CUDA_WARP_COLLO(float4, uchar4);
 
 // cudaWarpCollo (float3)
 // FUNC_CUDA_WARP_COLLO(uint8_t, float3);
@@ -338,8 +338,8 @@ FUNC_CUDA_WARP_COLLO(float4, uchar3);
 // cudaWarpCollo (float4)
 // FUNC_CUDA_WARP_COLLO(uint8_t, float4);
 FUNC_CUDA_WARP_COLLO(float, float4);
-FUNC_CUDA_WARP_COLLO(uchar3, float4);
-// FUNC_CUDA_WARP_COLLO(uchar4, float4);
+// FUNC_CUDA_WARP_COLLO(uchar3, float4);
+FUNC_CUDA_WARP_COLLO(uchar4, float4);
 // FUNC_CUDA_WARP_COLLO(float3, float4);
 FUNC_CUDA_WARP_COLLO(float4, float4);
 
