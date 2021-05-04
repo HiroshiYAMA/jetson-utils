@@ -245,7 +245,7 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 		? get_pixel(input, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
 		: cast_vec<T>(0.0f);
 
-	Tmask pix_mask = !over_edge
+	Tmask pix_mask = !over_edge && !collo_prm.rgba
 		? get_pixel(mask, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
 		: cast_vec<Tmask>(0.0f);
 
@@ -253,20 +253,24 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 	// 	? get_pixel(input_HiReso, u_HiReso, v_HiReso, iW_HiReso, iH_HiReso, oW, oH, scale, max_value, collo_prm.filter_mode)
 	// 	: cast_vec<T_HiReso>(0.0f);
 
-	float4 pix_bg;
+	float3 pix_bg;
 	if (collo_prm.overlay_panorama) {
 		Tpano pix_pano = !over_edge_pano
 			? get_pixel(input_panorama, u_pano, v_pano, panoW, panoH, oW, oH, scale, max_value, collo_prm.filter_mode)
 			: cast_vec<Tpano>(0.0f);
-		pix_bg = cast_vec<float4>(pix_pano);
+		pix_bg = cast_vec<float3>(pix_pano);
 	} else {
-		pix_bg = cast_vec<float4>(collo_prm.bg_color);
+		pix_bg = cast_vec<float3>(collo_prm.bg_color);
 	}
 	constexpr float num255_inv = 1.0f / 255.0f;
 	// float a = collo_prm.alpha_blend ? alpha(make_float4(pix_in)) * num255_inv : 1.0f;
-	float a = collo_prm.alpha_blend ? pix_mask * num255_inv : 1.0f;
+	// float a = collo_prm.alpha_blend ? pix_mask * num255_inv : 1.0f;
+	float a = collo_prm.rgba
+		? collo_prm.alpha_blend ? alpha(make_float4(pix_in)) * num255_inv : 1.0f
+		: collo_prm.alpha_blend ? pix_mask * num255_inv : 1.0f;
 	// S pix_out = cast_vec<S>(cast_vec<float4>(pix_in_HiReso * a) + (pix_bg * (1.0f - a)));
-	S pix_out = cast_vec<S>(cast_vec<float4>(pix_in * a) + (pix_bg * (1.0f - a)));
+	// S pix_out = cast_vec<S>(cast_vec<float4>(pix_in * a) + (pix_bg * (1.0f - a)));
+	S pix_out = cast_vec<S>(make_float4(cast_vec<float3>(pix_in * a) + (pix_bg * (1.0f - a)), 255.0f));
 
 	output[uv_out.y * oW + uv_out.x] = pix_out;
 }
@@ -290,9 +294,9 @@ template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename
 	return CUDA(cudaGetLastError());
 }
 #define FUNC_CUDA_WARP_COLLO(T, S) \
-cudaError_t cudaWarpCollo( T* input, float* mask, uchar3* input_HiReso, uchar3* input_panorama, S* output, st_COLLO_param collo_prm ) \
+cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, S* output, st_COLLO_param collo_prm ) \
 { \
-	return cudaWarpCollo__<T, float, uchar3, uchar3, S>( input, mask, input_HiReso, input_panorama, output, collo_prm ); \
+	return cudaWarpCollo__<T, float, uchar4, uchar4, S>( input, mask, input_HiReso, input_panorama, output, collo_prm ); \
 }
 
 // cudaWarpCollo (uint8 grayscale)
@@ -306,26 +310,26 @@ cudaError_t cudaWarpCollo( T* input, float* mask, uchar3* input_HiReso, uchar3* 
 // cudaWarpCollo (float grayscale)
 // FUNC_CUDA_WARP_COLLO(uint8_t, float);
 FUNC_CUDA_WARP_COLLO(float, float);
-FUNC_CUDA_WARP_COLLO(uchar3, float);
-// FUNC_CUDA_WARP_COLLO(uchar4, float);
+// FUNC_CUDA_WARP_COLLO(uchar3, float);
+FUNC_CUDA_WARP_COLLO(uchar4, float);
 // FUNC_CUDA_WARP_COLLO(float3, float);
 FUNC_CUDA_WARP_COLLO(float4, float);
 
 // cudaWarpCollo (uchar3)
 // FUNC_CUDA_WARP_COLLO(uint8_t, uchar3);
-FUNC_CUDA_WARP_COLLO(float, uchar3);
-FUNC_CUDA_WARP_COLLO(uchar3, uchar3);
+// FUNC_CUDA_WARP_COLLO(float, uchar3);
+// FUNC_CUDA_WARP_COLLO(uchar3, uchar3);
 // FUNC_CUDA_WARP_COLLO(uchar4, uchar3);
 // FUNC_CUDA_WARP_COLLO(float3, uchar3);
-FUNC_CUDA_WARP_COLLO(float4, uchar3);
+// FUNC_CUDA_WARP_COLLO(float4, uchar3);
 
 // cudaWarpCollo (uchar4)
 // FUNC_CUDA_WARP_COLLO(uint8_t, uchar4);
-// FUNC_CUDA_WARP_COLLO(float, uchar4);
+FUNC_CUDA_WARP_COLLO(float, uchar4);
 // FUNC_CUDA_WARP_COLLO(uchar3, uchar4);
-// FUNC_CUDA_WARP_COLLO(uchar4, uchar4);
+FUNC_CUDA_WARP_COLLO(uchar4, uchar4);
 // FUNC_CUDA_WARP_COLLO(float3, uchar4);
-// FUNC_CUDA_WARP_COLLO(float4, uchar4);
+FUNC_CUDA_WARP_COLLO(float4, uchar4);
 
 // cudaWarpCollo (float3)
 // FUNC_CUDA_WARP_COLLO(uint8_t, float3);
@@ -338,8 +342,8 @@ FUNC_CUDA_WARP_COLLO(float4, uchar3);
 // cudaWarpCollo (float4)
 // FUNC_CUDA_WARP_COLLO(uint8_t, float4);
 FUNC_CUDA_WARP_COLLO(float, float4);
-FUNC_CUDA_WARP_COLLO(uchar3, float4);
-// FUNC_CUDA_WARP_COLLO(uchar4, float4);
+// FUNC_CUDA_WARP_COLLO(uchar3, float4);
+FUNC_CUDA_WARP_COLLO(uchar4, float4);
 // FUNC_CUDA_WARP_COLLO(float3, float4);
 FUNC_CUDA_WARP_COLLO(float4, float4);
 
