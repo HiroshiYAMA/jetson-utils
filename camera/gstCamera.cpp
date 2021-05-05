@@ -47,6 +47,10 @@ gstCamera::gstCamera( const videoOptions& options ) : videoSource(options)
 	mFormatYUV  = IMAGE_UNKNOWN;
 	
 	mBufferRGB.SetThreaded(false);
+
+	// if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
+		mStream = NULL;
+	// }
 }
 
 
@@ -681,6 +685,7 @@ void gstCamera::checkBuffer()
 	}
 
 	memcpy(nextBuffer, gstData, gstSize);
+	// cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
 	mBufferYUV.Next(RingBuffer::Write);
 	mWaitEvent.Wake();
 	mFrameCount++;
@@ -713,6 +718,15 @@ bool gstCamera::Capture( void** output, imageFormat format, uint64_t timeout )
 	
 	// get the latest ringbuffer
 	void* latestYUV = mBufferYUV.Next(RingBuffer::ReadLatestOnce);
+	{
+		// check frame doubler.
+		static uint8_t buf[256] = {};
+		uint8_t *cur = (uint8_t *)latestYUV;
+		if (memcmp(buf, cur, 256) == 0) {
+			LogWarning("---------------------------------------------------------------- same frame\n");
+		}
+		memcpy(buf, cur, 256);
+	}
 
 	if( !latestYUV )
 		return false;
@@ -729,7 +743,7 @@ bool gstCamera::Capture( void** output, imageFormat format, uint64_t timeout )
 	// perform colorspace conversion
 	void* nextRGB = mBufferRGB.Next(RingBuffer::Write);
 
-	if( CUDA_FAILED(cudaConvertColor(latestYUV, mFormatYUV, nextRGB, format, GetWidth(), GetHeight())) )
+	if( CUDA_FAILED(cudaConvertColor(latestYUV, mFormatYUV, nextRGB, format, GetWidth(), GetHeight(), make_float2(0,255), mStream)) )
 	{
 		LogError(LOG_GSTREAMER "gstCamera::Capture() -- unsupported image format (%s)\n", imageFormatToStr(format));
 		LogError(LOG_GSTREAMER "                        supported formats are:\n");

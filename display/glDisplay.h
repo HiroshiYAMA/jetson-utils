@@ -66,6 +66,16 @@ public:
 	 */
 	static glDisplay* Create( const videoOptions& options );
 
+	void EnableCTX()
+	{
+		GL(glXMakeCurrent(mDisplayX, mWindowX, mContextGL));
+	}
+	void DisableCTX()
+	{
+		GL(glXMakeCurrent(mDisplayX, None, NULL));
+	}
+
+
 	/**
 	 * Destroy window
 	 */
@@ -632,6 +642,8 @@ protected:
 	std::vector<glWidget*> mWidgets;
 	std::vector<glTexture*> mTextures;
 	std::vector<eventHandler> mEventHandlers;
+
+	cudaStream_t  mStream;
 };
 
 /**

@@ -13,6 +13,11 @@ void GamepadDevice::Open1stDevice()
 {
 	auto num = SDL_NumJoysticks();
 	LogInfo("Num of Joystick: %d\n", num);
+	Gamepad = NULL;
+	event = {};
+	axis_motion = false;
+	button_down = false;
+	button_up   = false;
 
 	for (int i = 0; i < num; i++) {
 		if (SDL_IsGameController(i)) {
@@ -20,11 +25,6 @@ void GamepadDevice::Open1stDevice()
 			if (Gamepad == NULL) {
 				LogError("Could not open gamecontroller %i: %s\n", i, SDL_GetError());
 			}
-
-			event = {};
-			axis_motion = false;
-			button_down = false;
-			button_up   = false;
 
 			SDL_GameControllerEventState(SDL_ENABLE);
 			break;	// first gamepad.

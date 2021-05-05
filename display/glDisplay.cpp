@@ -103,6 +103,10 @@ glDisplay::glDisplay( const videoOptions& options ) : videoOutput(options)
 	
 	// register default event handler
 	AddEventHandler(&onEvent, this);
+
+	// if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
+		mStream = NULL;
+	// }
 }
 
 
@@ -593,7 +597,7 @@ void glDisplay::RenderImage( void* img, uint32_t width, uint32_t height, imageFo
 		// rescale image pixel intensities for display
 		if( CUDA_FAILED(cudaNormalize(img, make_float2(0.0f, 255.0f), 
 							  mNormalizedCUDA, make_float2(0.0f, 1.0f), 
-	 						  width, height, format)) )
+							  width, height, format, mStream)) )
 		{
 			LogError(LOG_GL "glDisplay.Render() failed to normalize image\n");
 			return;
@@ -607,7 +611,7 @@ void glDisplay::RenderImage( void* img, uint32_t width, uint32_t height, imageFo
 
 	if( tex_map != NULL )
 	{
-		CUDA(cudaMemcpyAsync(tex_map, img, interopTex->GetSize(), cudaMemcpyDeviceToDevice));
+		CUDA(cudaMemcpyAsync(tex_map, img, interopTex->GetSize(), cudaMemcpyDeviceToDevice, mStream));
 		//CUDA(cudaDeviceSynchronize());
 		interopTex->Unmap();
 	}
