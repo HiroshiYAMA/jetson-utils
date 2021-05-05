@@ -282,11 +282,19 @@ struct st_COLLO_param {
 	float v_fov_half_tan;
 	float v_fov_half_tan_back;
 
+	// mask.
+	uint32_t mW;
+	uint32_t mH;
+	float mAspect;
+	float mAspect_inv;
+
 	// lens spec.
 	float xcenter;
 	float ycenter;
 	float xcenter_HiReso;
 	float ycenter_HiReso;
+	float xcenter_mask;
+	float ycenter_mask;
 	float lens_radius_scale;
 	float lens_radius_scale_back;
 	st_COLLO_lens_table lens_tbl;
@@ -297,6 +305,9 @@ struct st_COLLO_param {
 	st_COLLO_rotation rot;
 	glm::quat quat_view;
 	glm::quat quat_view_back;
+
+	// resolution mode of input image.
+	bool HiReso;
 
 	// pixel sampling filter.
 	int filter_mode;
