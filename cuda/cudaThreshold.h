@@ -21,7 +21,7 @@ enum class BinarizationFlags : int {
  * @ingroup threshold
  */
 cudaError_t cudaThreshold(void* input, void* output, size_t width, size_t height, imageFormat format,
-    float threshold, float max_value, int mode);
+    float threshold, float max_value, int mode, cudaStream_t stream = NULL);
 
 #endif
 

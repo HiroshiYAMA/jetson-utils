@@ -31,19 +31,19 @@ __global__ void gpuPerspectiveWarp( T* input, T* output, int width, int height,
 {
 	const int x = blockDim.x * blockIdx.x + threadIdx.x;
 	const int y = blockDim.y * blockIdx.y + threadIdx.y;
-				   
+
 	if( x >= width || y >= height )
 		return;
-	
+
 	const float3 vec = make_float3(x, y, 1.0f);
-				 
+
 	const float3 vec_out = make_float3( m0.x * vec.x + m0.y * vec.y + m0.z * vec.z,
 								 m1.x * vec.x + m1.y * vec.y + m1.z * vec.z,
 								 m2.x * vec.x + m2.y * vec.y + m2.z * vec.z );
-	
+
 	const int u = vec_out.x;
 	const int v = vec_out.y;
-	
+
 	T px;
 
 	px.x = 0; px.y = 255;
@@ -51,12 +51,12 @@ __global__ void gpuPerspectiveWarp( T* input, T* output, int width, int height,
 
 	if( u < width && v < height && u >= 0 && v >= 0 )
 		px = input[v * width + u];
-		
+
      //if( x != u && y != v )
 	//	printf("(%i, %i) -> (%i, %i)\n", u, v, x, y);
 
 	output[y * width + x] = px;
-} 
+}
 
 
 // setup the transformation for the CUDA kernel
@@ -90,7 +90,7 @@ inline static void invertTransform( float3 cuda_mat[3], const float transform[3]
 
 // cudaWarpPerspective
 cudaError_t cudaWarpPerspective( uchar4* input, uchar4* output, uint32_t width, uint32_t height,
-						   const float transform[3][3], bool transform_inverted )
+						   const float transform[3][3], bool transform_inverted, cudaStream_t stream )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -106,7 +106,7 @@ cudaError_t cudaWarpPerspective( uchar4* input, uchar4* output, uint32_t width, 
 	const dim3 blockDim(8, 8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuPerspectiveWarp<<<gridDim, blockDim>>>(input, output, width, height, 
+	gpuPerspectiveWarp<<<gridDim, blockDim, 0, stream>>>(input, output, width, height,
 	                                          cuda_mat[0], cuda_mat[1], cuda_mat[2]);
 
 	return CUDA(cudaGetLastError());
@@ -115,7 +115,7 @@ cudaError_t cudaWarpPerspective( uchar4* input, uchar4* output, uint32_t width, 
 
 // cudaWarpPerspective
 cudaError_t cudaWarpPerspective( float4* input, float4* output, uint32_t width, uint32_t height,
-						   const float transform[3][3], bool transform_inverted )
+						   const float transform[3][3], bool transform_inverted, cudaStream_t stream )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -131,7 +131,7 @@ cudaError_t cudaWarpPerspective( float4* input, float4* output, uint32_t width, 
 	const dim3 blockDim(8, 8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuPerspectiveWarp<<<gridDim, blockDim>>>(input, output, width, height, 
+	gpuPerspectiveWarp<<<gridDim, blockDim, 0, stream>>>(input, output, width, height,
 	                                          cuda_mat[0], cuda_mat[1], cuda_mat[2]);
 
 	return CUDA(cudaGetLastError());
@@ -140,7 +140,7 @@ cudaError_t cudaWarpPerspective( float4* input, float4* output, uint32_t width, 
 
 // cudaWarpAffine
 cudaError_t cudaWarpAffine( float4* input, float4* output, uint32_t width, uint32_t height,
-					   const float transform[2][3], bool transform_inverted )
+					   const float transform[2][3], bool transform_inverted, cudaStream_t stream )
 {
 	float psp_transform[3][3];
 
@@ -153,13 +153,13 @@ cudaError_t cudaWarpAffine( float4* input, float4* output, uint32_t width, uint3
 	psp_transform[2][1] = 0;
 	psp_transform[2][2] = 1;
 
-	return CUDA(cudaWarpPerspective(input, output, width, height, psp_transform, transform_inverted));
+	return CUDA(cudaWarpPerspective(input, output, width, height, psp_transform, transform_inverted, stream));
 }
 
 
 // cudaWarpAffine
 cudaError_t cudaWarpAffine( uchar4* input, uchar4* output, uint32_t width, uint32_t height,
-					   const float transform[2][3], bool transform_inverted )
+					   const float transform[2][3], bool transform_inverted, cudaStream_t stream )
 {
 	float psp_transform[3][3];
 
@@ -172,7 +172,7 @@ cudaError_t cudaWarpAffine( uchar4* input, uchar4* output, uint32_t width, uint3
 	psp_transform[2][1] = 0;
 	psp_transform[2][2] = 1;
 
-	return CUDA(cudaWarpPerspective(input, output, width, height, psp_transform, transform_inverted));
+	return CUDA(cudaWarpPerspective(input, output, width, height, psp_transform, transform_inverted, stream));
 }
 
 

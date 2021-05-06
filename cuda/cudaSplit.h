@@ -12,12 +12,12 @@
  * Split an image on the GPU (supports RGB/BGR, RGBA/BGRA to some single color planes(using GRAY format))
  * @ingroup split
  */
-cudaError_t cudaSplit(void *input, void **output, size_t width, size_t height, imageFormat format);
+cudaError_t cudaSplit(void *input, void **output, size_t width, size_t height, imageFormat format, cudaStream_t stream = NULL);
 
 /**
  * Split an image on the GPU (supports RGBA/BGRA to 3 colors and alpha plane)
  * @ingroup split
  */
-cudaError_t cudaSplit(void *input, void *output_color, void *output_alpha, size_t width, size_t height, imageFormat format);
+cudaError_t cudaSplit(void *input, void *output_color, void *output_alpha, size_t width, size_t height, imageFormat format, cudaStream_t stream = NULL);
 
 #endif

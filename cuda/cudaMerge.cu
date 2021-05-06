@@ -45,7 +45,7 @@ __global__ void gpuMerge(T *input_color, S *input_alpha, R *output, size_t width
 // launchMerge
 // * Merge an image on the GPU (supports RGB/BGR, RGBA/BGRA from some single color planes(using GRAY format))
 template<typename T, int CH>
-static cudaError_t launchMerge(T **input, T *output, size_t width, size_t height)
+static cudaError_t launchMerge(T **input, T *output, size_t width, size_t height, cudaStream_t stream)
 {
 	if( !input[0] || !input[1] || !input[2] || (CH == 4 ? !input[3] : false) || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -57,7 +57,7 @@ static cudaError_t launchMerge(T **input, T *output, size_t width, size_t height
 	const dim3 blockDim(32, 8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuMerge<T, CH><<<gridDim, blockDim>>>(input[0], input[1], input[2], (CH == 4) ? input[3] : nullptr, output, width, height);
+	gpuMerge<T, CH><<<gridDim, blockDim, 0, stream>>>(input[0], input[1], input[2], (CH == 4) ? input[3] : nullptr, output, width, height);
 
 	return CUDA(cudaGetLastError());
 }
@@ -65,7 +65,7 @@ static cudaError_t launchMerge(T **input, T *output, size_t width, size_t height
 // launchMerge
 // * Merge an image on the GPU (supports RGB/BGR, RGBA/BGRA from 3 colors and alpha plane)
 template<typename T, typename S, typename R>
-static cudaError_t launchMerge(T *input_color, S *input_alpha, R *output, size_t width, size_t height)
+static cudaError_t launchMerge(T *input_color, S *input_alpha, R *output, size_t width, size_t height, cudaStream_t stream)
 {
 	if( !input_color || !input_alpha || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -77,22 +77,22 @@ static cudaError_t launchMerge(T *input_color, S *input_alpha, R *output, size_t
 	const dim3 blockDim(32, 8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuMerge<T, S, R><<<gridDim, blockDim>>>(input_color, input_alpha, output, width, height);
+	gpuMerge<T, S, R><<<gridDim, blockDim, 0, stream>>>(input_color, input_alpha, output, width, height);
 
 	return CUDA(cudaGetLastError());
 }
 
 //-----------------------------------------------------------------------------------
-cudaError_t cudaMerge(void **input, void *output, size_t width, size_t height, imageFormat format)
+cudaError_t cudaMerge(void **input, void *output, size_t width, size_t height, imageFormat format, cudaStream_t stream)
 {
 	if( format == IMAGE_RGB8 || format == IMAGE_BGR8 )
-		return launchMerge<uchar, 3>((uchar **)input, (uchar *)output, width, height);
+		return launchMerge<uchar, 3>((uchar **)input, (uchar *)output, width, height, stream);
 	else if( format == IMAGE_RGBA8 || format == IMAGE_BGRA8 )
-		return launchMerge<uchar, 4>((uchar **)input, (uchar *)output, width, height);
+		return launchMerge<uchar, 4>((uchar **)input, (uchar *)output, width, height, stream);
 	else if( format == IMAGE_RGB32F || format == IMAGE_BGR32F )
-		return launchMerge<float, 3>((float **)input, (float *)output, width, height);
+		return launchMerge<float, 3>((float **)input, (float *)output, width, height, stream);
 	else if( format == IMAGE_RGBA32F || format == IMAGE_BGRA32F )
-		return launchMerge<float, 4>((float **)input, (float *)output, width, height);
+		return launchMerge<float, 4>((float **)input, (float *)output, width, height, stream);
 
 	LogError(LOG_CUDA "cudaMerge() -- invalid image format '%s'\n", imageFormatToStr(format));
 	LogError(LOG_CUDA "                supported formats are:\n");
@@ -104,12 +104,12 @@ cudaError_t cudaMerge(void **input, void *output, size_t width, size_t height, i
 	return cudaErrorInvalidValue;
 }
 
-cudaError_t cudaMerge(void *input_color, void *input_alpha, void *output, size_t width, size_t height, imageFormat format)
+cudaError_t cudaMerge(void *input_color, void *input_alpha, void *output, size_t width, size_t height, imageFormat format, cudaStream_t stream)
 {
 	if( format == IMAGE_RGBA8 || format == IMAGE_BGRA8 )
-		return launchMerge<uchar3, uchar, uchar4>((uchar3 *)input_color, (uchar *)input_alpha, (uchar4 *)output, width, height);
+		return launchMerge<uchar3, uchar, uchar4>((uchar3 *)input_color, (uchar *)input_alpha, (uchar4 *)output, width, height, stream);
 	else if( format == IMAGE_RGBA32F || format == IMAGE_BGRA32F )
-		return launchMerge<float3, float, float4>((float3 *)input_color, (float *)input_alpha, (float4 *)output, width, height);
+		return launchMerge<float3, float, float4>((float3 *)input_color, (float *)input_alpha, (float4 *)output, width, height, stream);
 
 	LogError(LOG_CUDA "cudaMerge() -- invalid image format '%s'\n", imageFormatToStr(format));
 	LogError(LOG_CUDA "                supported formats are:\n");

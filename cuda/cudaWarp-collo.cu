@@ -288,7 +288,7 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 
 
 // cudaWarpCollo
-template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename S> inline cudaError_t cudaWarpCollo__( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm )
+template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename S> inline cudaError_t cudaWarpCollo__( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm, cudaStream_t stream )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -300,14 +300,14 @@ template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename
 	const dim3 blockDim(32, 8);
 	const dim3 gridDim(iDivUp(collo_prm.oW,blockDim.x), iDivUp(collo_prm.oH,blockDim.y));
 
-	cudaCollo<T, Tmask, T_HiReso, Tpano, S><<<gridDim, blockDim>>>(input, mask, input_HiReso, input_panorama, output, collo_prm);
+	cudaCollo<T, Tmask, T_HiReso, Tpano, S><<<gridDim, blockDim, 0, stream>>>(input, mask, input_HiReso, input_panorama, output, collo_prm);
 
 	return CUDA(cudaGetLastError());
 }
 #define FUNC_CUDA_WARP_COLLO(T, S) \
-cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, S* output, st_COLLO_param collo_prm ) \
+cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, S* output, st_COLLO_param collo_prm, cudaStream_t stream ) \
 { \
-	return cudaWarpCollo__<T, float, uchar4, uchar4, S>( input, mask, input_HiReso, input_panorama, output, collo_prm ); \
+	return cudaWarpCollo__<T, float, uchar4, uchar4, S>( input, mask, input_HiReso, input_panorama, output, collo_prm, stream ); \
 }
 
 // cudaWarpCollo (uint8 grayscale)

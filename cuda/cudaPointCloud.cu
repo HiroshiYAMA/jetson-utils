@@ -71,7 +71,7 @@ __global__ void gpuPointCloudExtract( float* depth, float4* rgba, int width, int
 
 // Extract
 bool cudaPointCloud::Extract( float* depth, uint32_t depth_width, uint32_t depth_height,
-						float4* rgba, uint32_t color_width, uint32_t color_height )
+						float4* rgba, uint32_t color_width, uint32_t color_height, cudaStream_t stream )
 {
 	if( !depth )
 	{
@@ -135,9 +135,9 @@ bool cudaPointCloud::Extract( float* depth, uint32_t depth_width, uint32_t depth
 	const dim3 gridDim(iDivUp(depth_width,blockDim.x), iDivUp(depth_height,blockDim.y));
 
 	if( mHasRGB )
-		gpuPointCloudExtract<true><<<gridDim, blockDim>>>(depth, rgba, depth_width, depth_height, mFocalLength, mPrincipalPoint, mPointsGPU);
+		gpuPointCloudExtract<true><<<gridDim, blockDim, 0, stream>>>(depth, rgba, depth_width, depth_height, mFocalLength, mPrincipalPoint, mPointsGPU);
 	else
-		gpuPointCloudExtract<false><<<gridDim, blockDim>>>(depth, rgba, depth_width, depth_height, mFocalLength, mPrincipalPoint, mPointsGPU);
+		gpuPointCloudExtract<false><<<gridDim, blockDim, 0, stream>>>(depth, rgba, depth_width, depth_height, mFocalLength, mPrincipalPoint, mPointsGPU);
 
 	// check for launch errors
 	if( CUDA_FAILED(cudaGetLastError()) )
@@ -154,9 +154,9 @@ bool cudaPointCloud::Extract( float* depth, uint32_t depth_width, uint32_t depth
 
 
 // Extract
-bool cudaPointCloud::Extract( float* depth, float4* rgba, uint32_t width, uint32_t height )
+bool cudaPointCloud::Extract( float* depth, float4* rgba, uint32_t width, uint32_t height, cudaStream_t stream )
 {
-	return Extract(depth, width, height, rgba, width, height);
+	return Extract(depth, width, height, rgba, width, height, stream);
 }
 
 

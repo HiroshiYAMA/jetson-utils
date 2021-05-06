@@ -13,8 +13,8 @@
  * @ingroup mask
  */
 cudaError_t cudaMask(void *input, void *mask, void *output, size_t width, size_t height,
-    imageFormat format, imageFormat format_mask, float bg_color[3], float2 range);
+    imageFormat format, imageFormat format_mask, float bg_color[3], float2 range, cudaStream_t stream = NULL);
 cudaError_t cudaMask(void *input, void *mask, void *output, size_t width, size_t height,
-    imageFormat format, imageFormat format_mask, float bg_color[3]);
+    imageFormat format, imageFormat format_mask, float bg_color[3], cudaStream_t stream = NULL);
 
 #endif

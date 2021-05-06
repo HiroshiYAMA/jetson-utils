@@ -100,7 +100,7 @@ __global__ void gpuBlur_v( T* input, S* output, int width, int height, float max
 template<typename T, typename S>
 static cudaError_t launchBlur(
 	T* input, S* tmp_buf, S* output,
-	size_t width, size_t height, int blur_type, float max_value )
+	size_t width, size_t height, int blur_type, float max_value, cudaStream_t stream )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -114,33 +114,33 @@ static cudaError_t launchBlur(
 
 	switch (blur_type) {
 	case BlurType::BLUR_3X3:
-		gpuBlur_h<T, S, 3><<<gridDim, blockDim>>>(input, tmp_buf, width, height, max_value);
-		gpuBlur_v<S, S, 3><<<gridDim, blockDim>>>(tmp_buf, output, width, height, max_value);
+		gpuBlur_h<T, S, 3><<<gridDim, blockDim, 0, stream>>>(input, tmp_buf, width, height, max_value);
+		gpuBlur_v<S, S, 3><<<gridDim, blockDim, 0, stream>>>(tmp_buf, output, width, height, max_value);
 		break;
 	case BlurType::BLUR_5X5:
-		gpuBlur_h<T, S, 5><<<gridDim, blockDim>>>(input, tmp_buf, width, height, max_value);
-		gpuBlur_v<S, S, 5><<<gridDim, blockDim>>>(tmp_buf, output, width, height, max_value);
+		gpuBlur_h<T, S, 5><<<gridDim, blockDim, 0, stream>>>(input, tmp_buf, width, height, max_value);
+		gpuBlur_v<S, S, 5><<<gridDim, blockDim, 0, stream>>>(tmp_buf, output, width, height, max_value);
 		break;
 	case BlurType::BLUR_7X7:
-		gpuBlur_h<T, S, 7><<<gridDim, blockDim>>>(input, tmp_buf, width, height, max_value);
-		gpuBlur_v<S, S, 7><<<gridDim, blockDim>>>(tmp_buf, output, width, height, max_value);
+		gpuBlur_h<T, S, 7><<<gridDim, blockDim, 0, stream>>>(input, tmp_buf, width, height, max_value);
+		gpuBlur_v<S, S, 7><<<gridDim, blockDim, 0, stream>>>(tmp_buf, output, width, height, max_value);
 		break;
 	case BlurType::BLUR_9X9:
-		gpuBlur_h<T, S, 9><<<gridDim, blockDim>>>(input, tmp_buf, width, height, max_value);
-		gpuBlur_v<S, S, 9><<<gridDim, blockDim>>>(tmp_buf, output, width, height, max_value);
+		gpuBlur_h<T, S, 9><<<gridDim, blockDim, 0, stream>>>(input, tmp_buf, width, height, max_value);
+		gpuBlur_v<S, S, 9><<<gridDim, blockDim, 0, stream>>>(tmp_buf, output, width, height, max_value);
 		break;
 	default:
-		gpuBlur_h<T, S, 1><<<gridDim, blockDim>>>(input, tmp_buf, width, height, max_value);
-		gpuBlur_v<S, S, 1><<<gridDim, blockDim>>>(tmp_buf, output, width, height, max_value);
+		gpuBlur_h<T, S, 1><<<gridDim, blockDim, 0, stream>>>(input, tmp_buf, width, height, max_value);
+		gpuBlur_v<S, S, 1><<<gridDim, blockDim, 0, stream>>>(tmp_buf, output, width, height, max_value);
 	}
 
 	return CUDA(cudaGetLastError());
 }
 
 #define FUNC_CUDA_BLUR(T, S) \
-cudaError_t cudaBlur( T* input, S* tmp_buf, S* output, size_t width, size_t height, int blur_type, float max_value ) \
+cudaError_t cudaBlur( T* input, S* tmp_buf, S* output, size_t width, size_t height, int blur_type, float max_value, cudaStream_t stream ) \
 { \
-	return launchBlur<T, S>(input, tmp_buf, output, width, height, blur_type, max_value); \
+	return launchBlur<T, S>(input, tmp_buf, output, width, height, blur_type, max_value, stream); \
 }
 
 // cudaBlur (uint8 grayscale)
@@ -196,20 +196,20 @@ FUNC_CUDA_BLUR(float4, float4);
 //-----------------------------------------------------------------------------------
 cudaError_t cudaBlur(
 	void* input,  void* tmp_buf, void* output,
-	size_t width, size_t height, imageFormat format, int blur_type )
+	size_t width, size_t height, imageFormat format, int blur_type, cudaStream_t stream )
 {
 	if( format == IMAGE_RGB8 || format == IMAGE_BGR8 )
-		return cudaBlur((uchar3*)input, (uchar3*)tmp_buf, (uchar3*)output, width, height, blur_type);
+		return cudaBlur((uchar3*)input, (uchar3*)tmp_buf, (uchar3*)output, width, height, blur_type, 255.0f, stream);
 	else if( format == IMAGE_RGBA8 || format == IMAGE_BGRA8 )
-		return cudaBlur((uchar4*)input, (uchar4*)tmp_buf, (uchar4*)output, width, height, blur_type);
+		return cudaBlur((uchar4*)input, (uchar4*)tmp_buf, (uchar4*)output, width, height, blur_type, 255.0f, stream);
 	else if( format == IMAGE_RGB32F || format == IMAGE_BGR32F )
-		return cudaBlur((float3*)input, (float3*)tmp_buf, (float3*)output, width, height, blur_type);
+		return cudaBlur((float3*)input, (float3*)tmp_buf, (float3*)output, width, height, blur_type, FLT_MAX, stream);
 	else if( format == IMAGE_RGBA32F || format == IMAGE_BGRA32F )
-		return cudaBlur((float4*)input, (float4*)tmp_buf, (float4*)output, width, height, blur_type);
+		return cudaBlur((float4*)input, (float4*)tmp_buf, (float4*)output, width, height, blur_type, FLT_MAX, stream);
 	else if( format == IMAGE_GRAY8 )
-		return cudaBlur((uint8_t*)input, (uint8_t*)tmp_buf, (uint8_t*)output, width, height, blur_type);
+		return cudaBlur((uint8_t*)input, (uint8_t*)tmp_buf, (uint8_t*)output, width, height, blur_type, 255.0f, stream);
 	else if( format == IMAGE_GRAY32F )
-		return cudaBlur((float*)input, (float*)tmp_buf, (float*)output, width, height, blur_type);
+		return cudaBlur((float*)input, (float*)tmp_buf, (float*)output, width, height, blur_type, FLT_MAX, stream);
 
 	LogError(LOG_CUDA "cudaBlur() -- invalid image format '%s'\n", imageFormatToStr(format));
 	LogError(LOG_CUDA "                supported formats are:\n");

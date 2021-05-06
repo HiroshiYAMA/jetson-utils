@@ -34,9 +34,9 @@
 /**
  * Determine an appropriate font size given a particular dimension to use
  * (typically an image's width). Then the font won't be radically unsized.
- * 
+ *
  * @param dimension The dimension's size to fit against (i.e. image width)
- * @returns a font size between 10 and 32 pixels tall. 
+ * @returns a font size between 10 and 32 pixels tall.
  * @ingroup cudaFont
  */
 float adaptFontSize( uint32_t dimension );
@@ -61,7 +61,7 @@ public:
 	 * @param size The desired height of the font, in pixels.
 	 */
 	static cudaFont* Create( const char* font, float size );
-	
+
 	/**
 	 * Create new CUDA font overlay object using baked fonts.
 	 * @param font A list of font names that are acceptable to use.
@@ -75,49 +75,49 @@ public:
 	 * Destructor
 	 */
 	~cudaFont();
-	
+
 	/**
 	 * Render text overlay onto image
 	 */
 	bool OverlayText( void* image, imageFormat format,
-				   uint32_t width, uint32_t height, 
-			        const char* str, int x, int y, 
-				   const float4& color=make_float4(0, 0, 0, 255),
-				   const float4& background=make_float4(0, 0, 0, 0),
-				   int backgroundPadding=5 );
+					uint32_t width, uint32_t height,
+					const char* str, int x, int y,
+					const float4& color=make_float4(0, 0, 0, 255),
+					const float4& background=make_float4(0, 0, 0, 0),
+					int backgroundPadding=5, cudaStream_t stream = NULL );
 
 	/**
 	 * Render text overlay onto image
 	 */
-	bool OverlayText( void* image, imageFormat format, 
-				   uint32_t width, uint32_t height, 
-			        const std::vector< std::pair< std::string, int2 > >& text,
-			        const float4& color=make_float4(0, 0, 0, 255),
-				   const float4& background=make_float4(0, 0, 0, 0),
-				   int backgroundPadding=5 );
+	bool OverlayText( void* image, imageFormat format,
+					uint32_t width, uint32_t height,
+					const std::vector< std::pair< std::string, int2 > >& text,
+					const float4& color=make_float4(0, 0, 0, 255),
+					const float4& background=make_float4(0, 0, 0, 0),
+					int backgroundPadding=5, cudaStream_t stream = NULL );
 
 	/**
 	 * Render text overlay onto image
 	 */
-	template<typename T> bool OverlayText( T* image, uint32_t width, uint32_t height, 
-			        				    const char* str, int x, int y, 
-				   				    const float4& color=make_float4(0, 0, 0, 255),
-				   				    const float4& background=make_float4(0, 0, 0, 0),
-				   				    int backgroundPadding=5 )		
-	{ 
-		return OverlayText(image, imageFormatFromType<T>(), width, height, str, x, y, color, background, backgroundPadding); 
+	template<typename T> bool OverlayText( T* image, uint32_t width, uint32_t height,
+										const char* str, int x, int y,
+										const float4& color=make_float4(0, 0, 0, 255),
+										const float4& background=make_float4(0, 0, 0, 0),
+										int backgroundPadding=5, cudaStream_t stream = NULL )
+	{
+		return OverlayText(image, imageFormatFromType<T>(), width, height, str, x, y, color, background, backgroundPadding, stream);
 	}
-			
+
 	/**
-	 * Render text overlay onto image
-	 */
-	template<typename T> bool OverlayText( T* image, uint32_t width, uint32_t height, 
-			        				    const std::vector< std::pair< std::string, int2 > >& text, 
-				   				    const float4& color=make_float4(0, 0, 0, 255),
-				   				    const float4& background=make_float4(0, 0, 0, 0),
-				   				    int backgroundPadding=5 )		
-	{ 
-		return OverlayText(image, imageFormatFromType<T>(), width, height, text, color, background, backgroundPadding); 
+		* Render text overlay onto image
+		*/
+	template<typename T> bool OverlayText( T* image, uint32_t width, uint32_t height,
+										const std::vector< std::pair< std::string, int2 > >& text,
+										const float4& color=make_float4(0, 0, 0, 255),
+										const float4& background=make_float4(0, 0, 0, 0),
+										int backgroundPadding=5, cudaStream_t stream = NULL )
+	{
+		return OverlayText(image, imageFormatFromType<T>(), width, height, text, color, background, backgroundPadding, stream);
 	}
 
 	/**
@@ -132,10 +132,10 @@ protected:
 
 	uint8_t* mFontMapCPU;
 	uint8_t* mFontMapGPU;
-	
+
 	int mFontMapWidth;
 	int mFontMapHeight;
-	
+
 	void* mCommandCPU;
 	void* mCommandGPU;
 	int   mCmdIndex;

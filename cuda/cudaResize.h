@@ -42,7 +42,7 @@ enum class InterpolationFlags : int {
 
 #define FUNC_CUDA_RESIZE_HEADER(T, S, M) \
 cudaError_t cudaResize( T* input,  size_t inputWidth,  size_t inputHeight, \
-				        S* output, size_t outputWidth, size_t outputHeight, int mode, float max_value = M );
+				        S* output, size_t outputWidth, size_t outputHeight, int mode, float max_value = M, cudaStream_t stream = NULL );
 
 /**
  * Rescale a uint8 grayscale image on the GPU.
@@ -118,7 +118,7 @@ FUNC_CUDA_RESIZE_HEADER(float4, float4, FLT_MAX);
  */
 cudaError_t cudaResize( void* input,  size_t inputWidth,  size_t inputHeight,
 				    void* output, size_t outputWidth, size_t outputHeight, 
-				    imageFormat format, int mode );
+				    imageFormat format, int mode, cudaStream_t stream = NULL );
 
 #endif
 

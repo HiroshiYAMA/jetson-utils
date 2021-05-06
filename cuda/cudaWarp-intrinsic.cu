@@ -64,7 +64,7 @@ __global__ void gpuIntrinsicWarp( T* input, T* output, int width, int height,
 
 // cudaWarpIntrinsic
 cudaError_t cudaWarpIntrinsic( uchar4* input, uchar4* output, uint32_t width, uint32_t height,
-						 const float2& focalLength, const float2& principalPoint, const float4& distortion )
+						 const float2& focalLength, const float2& principalPoint, const float4& distortion, cudaStream_t stream )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -76,7 +76,7 @@ cudaError_t cudaWarpIntrinsic( uchar4* input, uchar4* output, uint32_t width, ui
 	const dim3 blockDim(8, 8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuIntrinsicWarp<<<gridDim, blockDim>>>(input, output, width, height,
+	gpuIntrinsicWarp<<<gridDim, blockDim, 0, stream>>>(input, output, width, height,
 									focalLength, principalPoint,
 									distortion.x, distortion.y, distortion.z, distortion.w);
 
@@ -86,7 +86,7 @@ cudaError_t cudaWarpIntrinsic( uchar4* input, uchar4* output, uint32_t width, ui
 
 // cudaWarpIntrinsic
 cudaError_t cudaWarpIntrinsic( float4* input, float4* output, uint32_t width, uint32_t height,
-						 const float2& focalLength, const float2& principalPoint, const float4& distortion )
+						 const float2& focalLength, const float2& principalPoint, const float4& distortion, cudaStream_t stream )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -98,7 +98,7 @@ cudaError_t cudaWarpIntrinsic( float4* input, float4* output, uint32_t width, ui
 	const dim3 blockDim(8, 8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuIntrinsicWarp<<<gridDim, blockDim>>>(input, output, width, height,
+	gpuIntrinsicWarp<<<gridDim, blockDim, 0, stream>>>(input, output, width, height,
 									focalLength, principalPoint,
 									distortion.x, distortion.y, distortion.z, distortion.w);
 

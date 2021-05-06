@@ -34,7 +34,7 @@
  * @ingroup warping
  */
 cudaError_t cudaWarpAffine( uchar4* input, uchar4* output, uint32_t width, uint32_t height,
-					   const float transform[2][3], bool transform_inverted=false );
+					   const float transform[2][3], bool transform_inverted=false, cudaStream_t stream = NULL );
 
 
 /**
@@ -44,7 +44,7 @@ cudaError_t cudaWarpAffine( uchar4* input, uchar4* output, uint32_t width, uint3
  * @ingroup warping
  */
 cudaError_t cudaWarpAffine( float4* input, float4* output, uint32_t width, uint32_t height,
-					   const float transform[2][3], bool transform_inverted=false );
+					   const float transform[2][3], bool transform_inverted=false, cudaStream_t stream = NULL );
 
 
 /**
@@ -54,7 +54,7 @@ cudaError_t cudaWarpAffine( float4* input, float4* output, uint32_t width, uint3
  * @ingroup warping
  */
 cudaError_t cudaWarpPerspective( uchar4* input, uchar4* output, uint32_t width, uint32_t height,
-					        const float transform[3][3], bool transform_inverted=false );
+					        const float transform[3][3], bool transform_inverted=false, cudaStream_t stream = NULL );
 
 
 /**
@@ -64,7 +64,7 @@ cudaError_t cudaWarpPerspective( uchar4* input, uchar4* output, uint32_t width, 
  * @ingroup warping
  */
 cudaError_t cudaWarpPerspective( float4* input, float4* output, uint32_t width, uint32_t height,
-					        const float transform[3][3], bool transform_inverted=false );
+					        const float transform[3][3], bool transform_inverted=false, cudaStream_t stream = NULL );
 
 
 /**
@@ -73,7 +73,7 @@ cudaError_t cudaWarpPerspective( float4* input, float4* output, uint32_t width, 
  * @ingroup warping
  */
 cudaError_t cudaWarpIntrinsic( uchar4* input, uchar4* output, uint32_t width, uint32_t height,
-						 const float2& focalLength, const float2& principalPoint, const float4& distortion );
+						 const float2& focalLength, const float2& principalPoint, const float4& distortion, cudaStream_t stream = NULL );
 											  
 
 /**
@@ -82,7 +82,7 @@ cudaError_t cudaWarpIntrinsic( uchar4* input, uchar4* output, uint32_t width, ui
  * @ingroup warping
  */
 cudaError_t cudaWarpIntrinsic( float4* input, float4* output, uint32_t width, uint32_t height,
-						 const float2& focalLength, const float2& principalPoint, const float4& distortion );
+						 const float2& focalLength, const float2& principalPoint, const float4& distortion, cudaStream_t stream = NULL );
 											  
 
 /**
@@ -90,7 +90,7 @@ cudaError_t cudaWarpIntrinsic( float4* input, float4* output, uint32_t width, ui
  * @param[in] focus focus of the lens (in mm).
  * @ingroup warping
  */
-cudaError_t cudaWarpFisheye( uchar4* input, uchar4* output, uint32_t width, uint32_t height, float focus );
+cudaError_t cudaWarpFisheye( uchar4* input, uchar4* output, uint32_t width, uint32_t height, float focus, cudaStream_t stream = NULL );
 
 
 /**
@@ -98,7 +98,7 @@ cudaError_t cudaWarpFisheye( uchar4* input, uchar4* output, uint32_t width, uint
  * @param[in] focus focus of the lens (in mm).
  * @ingroup warping
  */
-cudaError_t cudaWarpFisheye( float4* input, float4* output, uint32_t width, uint32_t height, float focus );
+cudaError_t cudaWarpFisheye( float4* input, float4* output, uint32_t width, uint32_t height, float focus, cudaStream_t stream = NULL );
 
 
 #include <math.h>
@@ -335,7 +335,7 @@ struct st_COLLO_param {
  * @ingroup warping
  */
 #define FUNC_CUDA_WARP_COLLO_HEADER(T, S) \
-cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, S* output, st_COLLO_param collo_prm );
+cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, S* output, st_COLLO_param collo_prm, cudaStream_t stream = NULL );
 
 // cudaWarpCollo (uint8 grayscale)
 // FUNC_CUDA_WARP_COLLO_HEADER(uint8_t, uint8_t);

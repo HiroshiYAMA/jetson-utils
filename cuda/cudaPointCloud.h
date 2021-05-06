@@ -95,13 +95,13 @@ public:
 	/**
 	 * Extract point cloud from depth map and optional RGBA image.
 	 */
-	bool Extract( float* depth, float4* rgba, uint32_t width, uint32_t height );
+	bool Extract( float* depth, float4* rgba, uint32_t width, uint32_t height, cudaStream_t stream = NULL );
 
 	/**
 	 * Extract point cloud from depth map and optional RGBA image.
 	 */
 	bool Extract( float* depth, uint32_t depth_width, uint32_t depth_height,
-			    float4* rgba, uint32_t color_width, uint32_t color_height );
+			    float4* rgba, uint32_t color_width, uint32_t color_height, cudaStream_t stream = NULL );
 
 	/**
 	 * Retrieve the number of points being used.

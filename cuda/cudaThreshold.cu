@@ -91,7 +91,7 @@ __global__ void gpuThreshold_tozero_inv(T *input, T *output, size_t width, size_
 // * Binarize an image on the GPU (supports grayscale)
 template<typename T>
 static cudaError_t launchThreshold(T *input, T *output, size_t width, size_t height,
-	float threshold, float max_value, int mode)
+	float threshold, float max_value, int mode, cudaStream_t stream)
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -104,15 +104,15 @@ static cudaError_t launchThreshold(T *input, T *output, size_t width, size_t hei
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	if (mode == static_cast<int>(BinarizationFlags::THRESH_BINARY_INV)) {
-		gpuThreshold_binary_inv<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
+		gpuThreshold_binary_inv<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, threshold, max_value);
 	} else if (mode == static_cast<int>(BinarizationFlags::THRESH_TRUNC)) {
-		gpuThreshold_trunc<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
+		gpuThreshold_trunc<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, threshold, max_value);
 	} else if (mode == static_cast<int>(BinarizationFlags::THRESH_TOZERO)) {
-		gpuThreshold_tozero<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
+		gpuThreshold_tozero<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, threshold, max_value);
 	} else if (mode == static_cast<int>(BinarizationFlags::THRESH_TOZERO_INV)) {
-		gpuThreshold_tozero_inv<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
+		gpuThreshold_tozero_inv<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, threshold, max_value);
 	} else {
-		gpuThreshold_binary<T><<<gridDim, blockDim>>>(input, output, width, height, threshold, max_value);
+		gpuThreshold_binary<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, threshold, max_value);
 	}
 
 	return CUDA(cudaGetLastError());
@@ -120,12 +120,12 @@ static cudaError_t launchThreshold(T *input, T *output, size_t width, size_t hei
 
 //-----------------------------------------------------------------------------------
 cudaError_t cudaThreshold(void* input, void* output, size_t width, size_t height, imageFormat format,
-    float threshold, float max_value, int mode)
+    float threshold, float max_value, int mode, cudaStream_t stream)
 {
 	if( format == IMAGE_GRAY8 )
-		return launchThreshold<uchar>((uchar *)input, (uchar *)output, width, height, threshold, max_value, mode);
+		return launchThreshold<uchar>((uchar *)input, (uchar *)output, width, height, threshold, max_value, mode, stream);
 	else if( format == IMAGE_GRAY32F )
-		return launchThreshold<float>((float *)input, (float *)output, width, height, threshold, max_value, mode);
+		return launchThreshold<float>((float *)input, (float *)output, width, height, threshold, max_value, mode, stream);
 
 	LogError(LOG_CUDA "cudaThreshold() -- invalid image format '%s'\n", imageFormatToStr(format));
 	LogError(LOG_CUDA "                supported formats are:\n");

@@ -40,7 +40,7 @@ enum BlurType {
 #define FUNC_CUDA_BLUR_HEADER(T, S, M) \
 cudaError_t cudaBlur( \
     T* input, S* tmp_buf, S* output, \
-    size_t width, size_t height, int blur_type, float max_value = M );
+    size_t width, size_t height, int blur_type, float max_value = M, cudaStream_t stream = NULL );
 
 /**
  * Blur a uint8 grayscale image on the GPU.
@@ -116,7 +116,7 @@ FUNC_CUDA_BLUR_HEADER(float4, float4, FLT_MAX);
  */
 cudaError_t cudaBlur(
     void* input,  void* tmp_buf, void* output,
-    size_t width, size_t height, imageFormat format, int blur_type );
+    size_t width, size_t height, imageFormat format, int blur_type, cudaStream_t stream = NULL );
 
 #endif
 
