@@ -684,6 +684,15 @@ void gstCamera::checkBuffer()
 		release_return;
 	}
 
+	{
+		// check frame doubler.
+		static uint8_t buf[256] = {};
+		uint8_t *cur = (uint8_t *)gstData;
+		if (memcmp(buf, cur, 256) == 0) {
+			LogWarning("---------------------------------------------------------------- same frame data\n");
+		}
+		memcpy(buf, cur, 256);
+	}
 	memcpy(nextBuffer, gstData, gstSize);
 	// cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
 	mBufferYUV.Next(RingBuffer::Write);
