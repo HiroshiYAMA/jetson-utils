@@ -33,6 +33,10 @@
 videoOutput::videoOutput( const videoOptions& options ) : mOptions(options)
 {
 	mStreaming = false;
+
+	// if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
+		mStream = NULL;
+	// }
 }
 
 

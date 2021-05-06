@@ -304,12 +304,16 @@ public:
 
 	virtual void GoTo1stFrame() = 0;
 
+	inline cudaStream_t GetStream() const { return mStream; }
+
 protected:
 	//videoSource();
 	videoSource( const videoOptions& options );
 
 	bool         mStreaming;
 	videoOptions mOptions;
+
+	cudaStream_t  mStream;
 };
 
 #endif

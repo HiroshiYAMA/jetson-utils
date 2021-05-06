@@ -292,6 +292,8 @@ public:
 	 */
 	static const char* TypeToStr( uint32_t type );
 
+	inline cudaStream_t GetStream() const { return mStream; }
+
 protected:
 	videoOutput( const videoOptions& options );
 
@@ -299,6 +301,8 @@ protected:
 	videoOptions mOptions;
 
 	std::vector<videoOutput*> mOutputs;
+
+	cudaStream_t  mStream;
 };
 
 #endif

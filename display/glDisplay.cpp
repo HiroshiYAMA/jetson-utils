@@ -103,10 +103,6 @@ glDisplay::glDisplay( const videoOptions& options ) : videoOutput(options)
 	
 	// register default event handler
 	AddEventHandler(&onEvent, this);
-
-	// if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
-		mStream = NULL;
-	// }
 }
 
 

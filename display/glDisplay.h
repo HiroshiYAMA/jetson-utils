@@ -642,8 +642,6 @@ protected:
 	std::vector<glWidget*> mWidgets;
 	std::vector<glTexture*> mTextures;
 	std::vector<eventHandler> mEventHandlers;
-
-	cudaStream_t  mStream;
 };
 
 /**

@@ -578,7 +578,7 @@ bool gstEncoder::Render( void* image, uint32_t width, uint32_t height, imageForm
 	// perform colorspace conversion
 	void* nextYUV = mBufferYUV.Next(RingBuffer::Write);
 
-	if( CUDA_FAILED(cudaConvertColor(image, format, nextYUV, IMAGE_I420, width, height)) )
+	if( CUDA_FAILED(cudaConvertColor(image, format, nextYUV, IMAGE_I420, width, height, float2{0, 255}, mStream)) )
 	{
 		LogError(LOG_GSTREAMER "gstEncoder::Render() -- unsupported image format (%s)\n", imageFormatToStr(format));
 		LogError(LOG_GSTREAMER "                        supported formats are:\n");
@@ -591,7 +591,8 @@ bool gstEncoder::Render( void* image, uint32_t width, uint32_t height, imageForm
 		render_end();
 	}
 
-	CUDA(cudaDeviceSynchronize());	// TODO replace with cudaStream?
+	// CUDA(cudaDeviceSynchronize());	// TODO replace with cudaStream?
+	CUDA(cudaStreamSynchronize(mStream));
 	
 	// encode YUV buffer
 	enc_success = encodeYUV(nextYUV, i420Size);

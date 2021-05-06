@@ -105,10 +105,6 @@ gstDecoder::gstDecoder( const videoOptions& options ) : videoSource(options)
 	mFormatYUV  = IMAGE_UNKNOWN;
 
 	mBufferRGB.SetThreaded(false);
-
-	// if (CUDA_FAILED(cudaStreamCreateWithFlags(&mStream, cudaStreamNonBlocking))) {
-		mStream = NULL;
-	// }
 }
 
 
