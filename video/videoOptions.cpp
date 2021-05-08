@@ -358,6 +358,7 @@ const char* videoOptions::CodecToStr( videoOptions::Codec codec )
 	{
 		case CODEC_UNKNOWN:	return "unknown";
 		case CODEC_RAW:	return "raw";
+		case CODEC_QTRLE:	return "qtrle";
 		case CODEC_H264:	return "h264";
 		case CODEC_H265:	return "h265";
 		case CODEC_VP8:	return "vp8";

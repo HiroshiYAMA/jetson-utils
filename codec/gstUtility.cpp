@@ -39,6 +39,8 @@ imageFormat gst_parse_format( GstStructure* caps )
 	
 	if( strcasecmp(format, "rgb") == 0 )
 		return IMAGE_RGB8;
+	else if( strcasecmp(format, "rgba") == 0 )
+		return IMAGE_RGBA8;
 	else if( strcasecmp(format, "yuy2") == 0 )
 		return IMAGE_YUY2;
 	else if( strcasecmp(format, "i420") == 0 )
@@ -70,6 +72,7 @@ const char* gst_format_to_string( imageFormat format )
 	switch(format)
 	{
 		case IMAGE_RGB8:	return "RGB";
+		case IMAGE_RGBA8:	return "RGBA";
 		case IMAGE_YUY2:	return "YUY2";
 		case IMAGE_I420:	return "I420";
 		case IMAGE_NV12:	return "NV12";
