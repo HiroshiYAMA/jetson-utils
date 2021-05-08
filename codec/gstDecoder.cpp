@@ -604,8 +604,6 @@ bool gstDecoder::buildLaunchStr()
 		return false;
 	}
 
-	// resize if requested
-	if( mCustomSize || mOptions.flipMethod != videoOptions::FLIP_NONE )
 	{
 		ss << "nvvidconv";
 
@@ -614,25 +612,15 @@ bool gstDecoder::buildLaunchStr()
 
 		ss << " ! video/x-raw";
 
-		if( mOptions.width != 0 && mOptions.height != 0 )
+		// resize if requested
+		if( mCustomSize && mOptions.width != 0 && mOptions.height != 0 )
 			ss << ", width=(int)" << mOptions.width << ", height=(int)" << mOptions.height << ", format=(string)NV12";
 
 		if (mOptions.codec == videoOptions::CODEC_QTRLE) {
 			ss << ", format=(string)RGBA";
 		}
 
-		ss <<" ! ";
-	}
-	else
-	{
-		ss << "nvvidconv";
-		ss << " ! video/x-raw";
-
-		if (mOptions.codec == videoOptions::CODEC_QTRLE) {
-			ss << ", format=(string)RGBA";
-		}
-
-		ss <<" ! ";
+		ss << " ! ";
 	}
 
 	// rate-limit if requested
