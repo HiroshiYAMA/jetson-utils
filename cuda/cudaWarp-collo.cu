@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Hiroshi Yamamoto. All rights reserved.
+ * Copyright (c) 2021, edgecraft. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -20,7 +20,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-#include "cudaWarp.h"
+#include "cudaWarp-collo.h"
 #include "cudaFilterMode.cuh"
 
 
