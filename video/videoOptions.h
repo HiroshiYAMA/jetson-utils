@@ -192,6 +192,7 @@ public:
 	{
 		CODEC_UNKNOWN = 0,		/**< Unknown/unsupported codec */
 		CODEC_RAW,			/**< Uncompressed (e.g. RGB) */
+		CODEC_QTRLE,			// QT Animation. (RGBA only).
 		CODEC_H264,			/**< H.264 */
 		CODEC_H265,			/**< H.265 */
 		CODEC_VP8,			/**< VP8 */

@@ -67,7 +67,7 @@
 // supported image file extensions
 const char* gstDecoder::SupportedExtensions[] = { "mkv", "mp4", "qt", 
 										"flv", "avi", "h264", 
-										"h265", "mov", NULL };
+										"h265", "mov", "webm", NULL };
 
 bool gstDecoder::IsSupportedExtension( const char* ext )
 {
@@ -451,7 +451,7 @@ bool gstDecoder::buildLaunchStr()
 	{
 		ss << "filesrc location=" << mOptions.resource.location << " ! ";
 
-		if( uri.extension == "mkv" )
+		if( uri.extension == "mkv" || uri.extension == "webm" )
 			ss << "matroskademux ! ";
 		else if( uri.extension == "mp4" || uri.extension == "qt" || uri.extension == "mov" )
 			ss << "qtdemux ! ";
@@ -463,7 +463,7 @@ bool gstDecoder::buildLaunchStr()
 		{
 			LogError(LOG_GSTREAMER "gstDecoder -- unsupported video file extension (%s)\n", uri.extension.c_str());
 			LogError(LOG_GSTREAMER "              supported video extensions are:\n");
-			LogError(LOG_GSTREAMER "                 * mkv\n");
+			LogError(LOG_GSTREAMER "                 * mkv, webm\n");
 			LogError(LOG_GSTREAMER "                 * mp4, qt, mov\n");
 			LogError(LOG_GSTREAMER "                 * flv\n");
 			LogError(LOG_GSTREAMER "                 * avi\n");
@@ -570,6 +570,8 @@ bool gstDecoder::buildLaunchStr()
 		ss << "nvv4l2decoder ! ";
 	else if( mOptions.codec == videoOptions::CODEC_MJPEG )
 		ss << "nvjpegdec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_QTRLE )
+		ss << "avdec_qtrle ! videoconvert ! video/x-raw, format=(string)RGBA ! ";
 #else
 	if( mOptions.codec == videoOptions::CODEC_H264 )
 		ss << "nv_omx_h264dec ! ";
@@ -583,6 +585,8 @@ bool gstDecoder::buildLaunchStr()
 		ss << "nx_omx_mpeg2videodec ! ";
 	else if( mOptions.codec == videoOptions::CODEC_MPEG4 )
 		ss << "nx_omx_mpeg4videodec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_QTRLE )
+		ss << "avdec_qtrle ! videoconvert ! video/x-raw, format=(string)RGBA ! ";
 #endif
 	else
 	{
@@ -595,12 +599,11 @@ bool gstDecoder::buildLaunchStr()
 		LogError(LOG_GSTREAMER "                 * mpeg2\n");
 		LogError(LOG_GSTREAMER "                 * mpeg4\n");
 		LogError(LOG_GSTREAMER "                 * mjpeg\n");
+		LogError(LOG_GSTREAMER "                 * qtrle\n");
 
 		return false;
 	}
 
-	// resize if requested
-	if( mCustomSize || mOptions.flipMethod != videoOptions::FLIP_NONE )
 	{
 		ss << "nvvidconv";
 
@@ -609,15 +612,15 @@ bool gstDecoder::buildLaunchStr()
 
 		ss << " ! video/x-raw";
 
-		if( mOptions.width != 0 && mOptions.height != 0 )
+		// resize if requested
+		if( mCustomSize && mOptions.width != 0 && mOptions.height != 0 )
 			ss << ", width=(int)" << mOptions.width << ", height=(int)" << mOptions.height << ", format=(string)NV12";
 
-		ss <<" ! ";
-	}
-	else
-	{
-		ss << "nvvidconv ! ";
-		ss << "video/x-raw ! ";
+		if (mOptions.codec == videoOptions::CODEC_QTRLE) {
+			ss << ", format=(string)RGBA";
+		}
+
+		ss << " ! ";
 	}
 
 	// rate-limit if requested
