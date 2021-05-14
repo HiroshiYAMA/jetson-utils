@@ -129,8 +129,8 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 	// 	return (collo_prm.projection_mode == em_COLLO_projection_mode::PANORAMA);
 	// };
 
-	const int iW = collo_prm.iW;
-	const int iH = collo_prm.iH;
+	// const int iW = collo_prm.iW;
+	// const int iH = collo_prm.iH;
 	const int iW_HiReso = collo_prm.iW_HiReso;
 	const int iH_HiReso = collo_prm.iH_HiReso;
 	const int panoW = collo_prm.panoW;
@@ -139,8 +139,8 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 	const int oH = collo_prm.oH;
 	const int mW = collo_prm.mW;
 	const int mH = collo_prm.mH;
-	const float iW_f = iW;
-	const float iH_f = iH;
+	// const float iW_f = iW;
+	// const float iH_f = iH;
 	const float iW_HiReso_f = iW_HiReso;
 	const float iH_HiReso_f = iH_HiReso;
 	const float panoW_f = panoW;
@@ -167,10 +167,10 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 	// 3D position -> 2D position.
 	float2 txy = conv_3Dto2D(p_sph, k, collo_prm.lens_type);
 
-	// -> XY(input). with adjustment of lens center.
-	float2 uv = conv_toUV(txy, collo_prm.iAspect_inv, iW_f, iH_f, collo_prm.xcenter, collo_prm.ycenter);
-	float u = uv.x;
-	float v = uv.y;
+	// // -> XY(input). with adjustment of lens center.
+	// float2 uv = conv_toUV(txy, collo_prm.iAspect_inv, iW_f, iH_f, collo_prm.xcenter, collo_prm.ycenter);
+	// float u = uv.x;
+	// float v = uv.y;
 
 	// -> XY(input_HiReso). with adjustment of lens center.
 	float2 uv_HiReso = conv_toUV(txy, collo_prm.iAspect_HiReso_inv, iW_HiReso_f, iH_HiReso_f, collo_prm.xcenter_HiReso, collo_prm.ycenter_HiReso);
@@ -183,7 +183,7 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 	float v_mask = uv_mask.y;
 
 	bool negative_position = (collo_prm.lens_type == em_ls_normal && p_sph.z <= 0.0f);
-	bool over_edge = (is_over_edge(u, v, iW_f, iH_f) || negative_position);
+	// bool over_edge = (is_over_edge(u, v, iW_f, iH_f) || negative_position);
 	bool over_edge_HiReso = (is_over_edge(u_HiReso, v_HiReso, iW_HiReso_f, iH_HiReso_f) || negative_position);
 	bool over_edge_mask = (is_over_edge(u_mask, v_mask, mW_f, mH_f) || negative_position);
 
@@ -251,22 +251,23 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 
 	constexpr float2 scale = { 1.0f, 1.0f };
 	constexpr float max_value = 255.0f;
-	bool hi_reso = (collo_prm.HiReso || collo_prm.rgba);
-	T pix_in = !over_edge && !hi_reso
-		? get_pixel(input, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
-		: cast_vec<T>(0.0f);
+	// bool hi_reso = (collo_prm.HiReso || collo_prm.rgba);
+	// T pix_in = !over_edge && !hi_reso
+	// 	? get_pixel(input, u, v, iW, iH, oW, oH, scale, max_value, collo_prm.filter_mode)
+	// 	: cast_vec<T>(0.0f);
 
 	Tmask pix_mask = !over_edge_mask && !collo_prm.rgba
 		? get_pixel(mask, u_mask, v_mask, mW, mH, oW, oH, scale, max_value, collo_prm.filter_mode)
 		: cast_vec<Tmask>(0.0f);
 
-	T_HiReso pix_in_HiReso = !over_edge_HiReso && hi_reso
+	T_HiReso pix_in_HiReso = !over_edge_HiReso/*  && hi_reso */
 		? get_pixel(input_HiReso, u_HiReso, v_HiReso, iW_HiReso, iH_HiReso, oW, oH, scale, max_value, collo_prm.filter_mode)
 		: cast_vec<T_HiReso>(0.0f);
 
-	float3 pix_fg = hi_reso
-		? cast_vec<float3>(pix_in_HiReso)
-		: cast_vec<float3>(pix_in);
+	// float3 pix_fg = hi_reso
+	// 	? cast_vec<float3>(pix_in_HiReso)
+	// 	: cast_vec<float3>(pix_in);
+	float3 pix_fg = cast_vec<float3>(pix_in_HiReso);
 
 	float3 pix_bg;
 	if (collo_prm.overlay_panorama) {
