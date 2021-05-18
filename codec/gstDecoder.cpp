@@ -862,7 +862,7 @@ void gstDecoder::checkBuffer()
 #if GST_CHECK_VERSION(1,0,0)
 	gst_buffer_unmap(gstBuffer, &map);
 #endif
-	
+
 	release_return;
 }
 
@@ -870,6 +870,9 @@ void gstDecoder::checkBuffer()
 // Capture
 bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 {
+	// start playback.
+	if (!mOptions.dropFrame) Start();
+
 	// verify the output pointer exists
 	if( !output )
 		return false;
@@ -914,6 +917,9 @@ bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 
 		return false;
 	}
+
+	// pause.
+	if (!mOptions.dropFrame) Pause();
 
 	*output = nextRGB;
 	return true;

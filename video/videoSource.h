@@ -304,6 +304,10 @@ public:
 
 	virtual void GoTo1stFrame() = 0;
 
+	virtual void Pause() = 0;
+	virtual void Start() = 0;
+	virtual void NextFrame() = 0;
+
 	inline cudaStream_t GetStream() const { return mStream; }
 
 protected:

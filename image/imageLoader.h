@@ -106,6 +106,10 @@ public:
 		mNextFile = 0;
 	}
 
+	virtual void Pause() {}
+	virtual void Start() {}
+	virtual void NextFrame() {}
+
 	/**
 	 * Return the interface type (imageLoader::Type)
 	 */

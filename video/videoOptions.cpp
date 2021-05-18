@@ -42,6 +42,7 @@ videoOptions::videoOptions()
 	codec       = CODEC_UNKNOWN;
 	fullScreen 	= false;
 	fov         = 70.0f;
+	dropFrame   = true;
 }
 
 
@@ -71,6 +72,7 @@ void videoOptions::Print( const char* prefix ) const
 	LogInfo("  -- loop:       %i\n", loop);
 	LogInfo("  -- fullscreen: %s\n", fullScreen ? "true" : "false");
 	LogInfo("  -- fov:        %f\n", fov);
+	LogInfo("  -- dropFrame:  %s\n", dropFrame ? "true" : "false");
 	
 	LogInfo("------------------------------------------------\n");
 }
@@ -201,6 +203,17 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 		fov = cmdLine.GetFloat("output-fov", 70.0f);
 		if ( fov > 179.0f ) fov = 179.0f;
 		if ( fov < 0.0f ) fov = 0.0f;
+	}
+
+	// dropFrame.
+	if( type == INPUT || type == PANORAMA )
+	{
+		bool flag = cmdLine.GetFlag("no-drop");
+		if (flag) {
+			dropFrame = false;
+		} else {
+			dropFrame = true;
+		}
 	}
 
 	return true;

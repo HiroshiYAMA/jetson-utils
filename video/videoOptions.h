@@ -119,6 +119,13 @@ public:
 	float fov;
 
 	/**
+	 * If true, drop frame as necessary.
+	 * Otherwise, don't drop frame.
+	 * @note the default is true (drop frame).
+	 */
+	bool dropFrame;
+
+	/**
 	 * Device interface types.
 	 */
 	enum DeviceType

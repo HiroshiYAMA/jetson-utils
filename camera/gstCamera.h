@@ -201,6 +201,9 @@ public:
 	static const uint32_t DefaultHeight = 720;
 
 	void GoTo1stFrame() {}
+	virtual void Pause() {}
+	virtual void Start() {}
+	virtual void NextFrame() {}
 	
 private:
 	static void onEOS(_GstAppSink* sink, void* user_data);
