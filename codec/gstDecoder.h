@@ -105,6 +105,18 @@ public:
 		mStreaming = true;
 	}
 
+	virtual void Pause() { gst_element_set_state(mPipeline, GST_STATE_PAUSED); }
+	virtual void Start() { gst_element_set_state(mPipeline, GST_STATE_PLAYING); }
+	virtual void NextFrame() {	// Not as expected.
+		GstElement* appsinkElement = gst_bin_get_by_name(GST_BIN(mPipeline), "mysink");
+		gst_element_send_event(
+			appsinkElement,
+			gst_event_new_step(GST_FORMAT_BUFFERS, 1, 1, TRUE, FALSE)
+			// gst_event_new_step(GST_FORMAT_BUFFERS, 1, 1, FALSE, FALSE)
+			// gst_event_new_step(GST_FORMAT_TIME, 1, 1, FALSE, FALSE)
+		);
+	}
+
 	/**
 	 * Return the interface type (gstDecoder::Type)
 	 */
