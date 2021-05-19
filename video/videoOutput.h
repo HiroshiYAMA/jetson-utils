@@ -47,9 +47,12 @@
 		  "                            * vp8, vp9\n"									\
 		  "                            * mpeg2, mpeg4\n"								\
 		  "                            * mjpeg\n"        								\
-		  "  --bitrate=BITRATE      desired target VBR bitrate for compressed streams,\n"    \
+		  "  --bitrate=BITRATE      desired target VBR bitrate for compressed streams,\n"	\
 		  "                         in bits per second. The default is 4000000 (4 Mbps)\n"	\
-		  "  --headless             don't create a default OpenGL GUI window\n\n"
+		  "  --headless             don't create a default OpenGL GUI window\n"			\
+		  "  --fullscreen           display full-screen\n"								\
+		  "  --output-fov=FOV       desired FOV(diagonal) of output stream.\n"			\
+		  "                         The unit is degree. The default is 70.0 (70.0 degree)\n\n"
 
 
 /**

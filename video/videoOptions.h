@@ -215,7 +215,7 @@ public:
 	 *
 	 * videoSource input streams will attempt to discover the codec type (i.e. from video file),
 	 * however RTP streams need this to be explitly set using the `--input-codec=xyz` option
-	 * (where `xyz` is a string like `h264`, `h265`, `vp8`, `vp9`, `mpeg2`, `mpeg4`, or `mjpeg`).
+	 * (where `xyz` is a string like `h264`, `h265`, `qtrle`, `vp8`, `vp9`, `mpeg2`, `mpeg4`, or `mjpeg`).
 	 *
 	 * A compressed videoOutput stream will default to H.264 encoding, but can be set using
 	 * the `--output-codec=xyz` command line option (same values for `xyz` as above).
