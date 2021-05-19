@@ -50,6 +50,7 @@
 		  "                             * vp8, vp9\n"									\
 		  "                             * mpeg2, mpeg4\n"									\
 		  "                             * mjpeg\n"        								\
+		  "                             * qtrle\n"        								\
 		  "  --input-flip=FLIP      flip method to apply to input (excludes V4L2):\n" 			\
 		  "                             * none (default)\n" 								\
 		  "                             * counterclockwise\n" 								\
@@ -62,7 +63,8 @@
 		  "  --input-loop=LOOP      for file-based inputs, the number of loops to run:\n"		\
 		  "                             * -1 = loop forever\n"								\
 		  "                             *  0 = don't loop (default)\n"						\
-		  "                             * >0 = set number of loops\n\n"
+		  "                             * >0 = set number of loops\n"						\
+		  "  --no-drop              don't drop frame for file-based inputs.\n\n"
 
 
 /**
