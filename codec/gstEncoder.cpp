@@ -269,7 +269,7 @@ bool gstEncoder::buildLaunchStr()
 	//ss << mCapsStr << " ! ";
 
 	if( mOptions.codec == videoOptions::CODEC_H264 )
-		ss << "omxh264enc bitrate=" << mOptions.bitRate << " ! video/x-h264 !  ";	// TODO:  investigate quality-level setting
+		ss << "omxh264enc bitrate=" << mOptions.bitRate << " profile=high ! video/x-h264 !  ";	// TODO:  investigate quality-level setting
 	else if( mOptions.codec == videoOptions::CODEC_H265 )
 		ss << "omxh265enc bitrate=" << mOptions.bitRate << " ! video/x-h265 ! ";
 	else if( mOptions.codec == videoOptions::CODEC_VP8 )
