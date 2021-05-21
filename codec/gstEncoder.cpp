@@ -256,7 +256,7 @@ bool gstEncoder::buildLaunchStr()
 	std::ostringstream ss;
 
 	// setup appsrc input element
-	ss << "appsrc name=mysource is-live=true do-timestamp=true format=3 ! ";
+	ss << "appsrc name=mysource is-live=true do-timestamp=true format=3 ! video/x-raw,colorimetry=bt709 ! ";
 
 	// set default bitrate (if needed)
 	if( mOptions.bitRate == 0 )
