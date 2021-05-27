@@ -564,6 +564,25 @@ GstFlowReturn gstCamera::onBuffer(_GstAppSink* sink, void* user_data)
 
 #define release_return { gst_sample_unref(gstSample); return; }
 
+struct FrameStat {
+	static constexpr auto SZ = 256;
+	static constexpr auto OFFSET = 640 * 360;
+	uint8_t buf[SZ] = {};
+	uint8_t buf2[SZ] = {};
+
+	// check frame doubler.
+	bool check_frame_doubler(void *frame)
+	{
+		uint8_t *cur = (uint8_t *)frame;
+		uint8_t *cur2 = (uint8_t *)frame + OFFSET - SZ;
+		bool ret = (memcmp(buf, cur, SZ) == 0 && memcmp(buf2, cur2, SZ) == 0);
+		memcpy(buf, cur, SZ);
+		memcpy(buf2, cur2, SZ);
+
+		return ret;
+	}
+};
+
 // checkBuffer
 void gstCamera::checkBuffer()
 {
@@ -682,12 +701,10 @@ void gstCamera::checkBuffer()
 
 	{
 		// check frame doubler.
-		static uint8_t buf[256] = {};
-		uint8_t *cur = (uint8_t *)gstData;
-		if (memcmp(buf, cur, 256) == 0) {
+		static FrameStat fs = {};
+		if (fs.check_frame_doubler((void *)gstData)) {
 			LogWarning("---------------------------------------------------------------- same frame data\n");
 		}
-		memcpy(buf, cur, 256);
 	}
 	memcpy(nextBuffer, gstData, gstSize);
 	// cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
@@ -725,12 +742,10 @@ bool gstCamera::Capture( void** output, imageFormat format, uint64_t timeout )
 	void* latestYUV = mBufferYUV.Next(RingBuffer::ReadLatestOnce);
 	{
 		// check frame doubler.
-		static uint8_t buf[256] = {};
-		uint8_t *cur = (uint8_t *)latestYUV;
-		if (memcmp(buf, cur, 256) == 0) {
+		static FrameStat fs = {};
+		if (fs.check_frame_doubler((void *)latestYUV)) {
 			LogWarning("---------------------------------------------------------------- same frame\n");
 		}
-		memcpy(buf, cur, 256);
 	}
 
 	if( !latestYUV )
