@@ -116,7 +116,10 @@ inline __device__ bool is_over_edge(float u, float v, float w, float h)
 
 // cudaCollo
 template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename S>
-__global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm )
+__global__ void cudaCollo(
+	T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano* input_panorama,
+	S* output, S *output_fg, S *output_bg, S *output_mask,
+	st_COLLO_param collo_prm )
 {
 	const int2 uv_out = make_int2(
 		blockDim.x * blockIdx.x + threadIdx.x,
@@ -302,11 +305,21 @@ __global__ void cudaCollo( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano*
 	S pix_out = cast_vec<S>(make_float4((pix_fg * a) + (pix_bg * (1.0f - a)), 255.0f));
 
 	output[uv_out.y * oW + uv_out.x] = pix_out;
+	//
+	if (collo_prm.camera_work) {
+		output_fg[uv_out.y * oW + uv_out.x] = cast_vec<S>(pix_fg);
+		output_bg[uv_out.y * oW + uv_out.x] = cast_vec<S>(pix_bg);
+		output_mask[uv_out.y * oW + uv_out.x] = cast_vec<S>(pix_mask);
+	}
 }
 
 
 // cudaWarpCollo
-template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename S> inline cudaError_t cudaWarpCollo__( T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano* input_panorama, S* output, st_COLLO_param collo_prm, cudaStream_t stream )
+template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename S>
+inline cudaError_t cudaWarpCollo__(
+	T* input, Tmask* mask, T_HiReso* input_HiReso, Tpano* input_panorama,
+	S* output, S *output_fg, S *output_bg, S *output_mask,
+	st_COLLO_param collo_prm, cudaStream_t stream )
 {
 	if( !input || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -318,14 +331,21 @@ template<typename T, typename Tmask, typename T_HiReso, typename Tpano, typename
 	const dim3 blockDim(32, 8);
 	const dim3 gridDim(iDivUp(collo_prm.oW,blockDim.x), iDivUp(collo_prm.oH,blockDim.y));
 
-	cudaCollo<T, Tmask, T_HiReso, Tpano, S><<<gridDim, blockDim, 0, stream>>>(input, mask, input_HiReso, input_panorama, output, collo_prm);
+	cudaCollo<T, Tmask, T_HiReso, Tpano, S><<<gridDim, blockDim, 0, stream>>>(
+		input, mask, input_HiReso, input_panorama,
+		output, output_fg, output_bg, output_mask,
+		collo_prm);
 
 	return CUDA(cudaGetLastError());
 }
 #define FUNC_CUDA_WARP_COLLO(T, S) \
-cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, S* output, st_COLLO_param collo_prm, cudaStream_t stream ) \
+cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, \
+	S* output, S *output_fg, S *output_bg, S *output_mask, \
+	st_COLLO_param collo_prm, cudaStream_t stream ) \
 { \
-	return cudaWarpCollo__<T, float, uchar4, uchar4, S>( input, mask, input_HiReso, input_panorama, output, collo_prm, stream ); \
+	return cudaWarpCollo__<T, float, uchar4, uchar4, S>( input, mask, input_HiReso, input_panorama, \
+		output, output_fg, output_bg, output_mask, \
+		collo_prm, stream ); \
 }
 
 // cudaWarpCollo (uint8 grayscale)

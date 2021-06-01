@@ -251,6 +251,9 @@ struct st_COLLO_param {
 
 	// mask. background color.
 	float4 bg_color;
+
+	// output image with camera work.
+	bool camera_work;
 };
 
 /**
@@ -260,7 +263,9 @@ struct st_COLLO_param {
  * @ingroup warping
  */
 #define FUNC_CUDA_WARP_COLLO_HEADER(T, S) \
-cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, S* output, st_COLLO_param collo_prm, cudaStream_t stream = NULL );
+cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, \
+	S* output, S *output_fg, S *output_bg, S *output_mask, \
+	st_COLLO_param collo_prm, cudaStream_t stream = NULL );
 
 // cudaWarpCollo (uint8 grayscale)
 // FUNC_CUDA_WARP_COLLO_HEADER(uint8_t, uint8_t);
