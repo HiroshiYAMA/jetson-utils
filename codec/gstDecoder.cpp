@@ -218,6 +218,7 @@ bool gstDecoder::init()
 
 	// create pipeline
 	mPipeline = gst_parse_launch(mLaunchStr.c_str(), &err);
+	gst_element_set_state(mPipeline, GST_STATE_PAUSED);
 
 	if( err != NULL )
 	{
@@ -981,7 +982,7 @@ bool gstDecoder::Open()
 	// transition pipline to STATE_PLAYING
 	LogInfo(LOG_GSTREAMER "opening gstDecoder for streaming, transitioning pipeline to GST_STATE_PLAYING\n");
 	
-	const GstStateChangeReturn result = gst_element_set_state(mPipeline, GST_STATE_PLAYING);
+	const GstStateChangeReturn result = gst_element_set_state(mPipeline, mOptions.dropFrame ? GST_STATE_PLAYING : GST_STATE_PAUSED);
 
 	if( result == GST_STATE_CHANGE_ASYNC )
 	{
