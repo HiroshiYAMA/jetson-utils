@@ -854,6 +854,13 @@ void gstDecoder::checkBuffer()
 		release_return;
 	}
 
+	{
+		// check frame doubler.
+		static FrameStat fs = {};
+		if (fs.check_frame_doubler((void *)gstData)) {
+			LogWarning("gstDecoder ---------------------------------------------------------------- same frame data\n");
+		}
+	}
 	memcpy(nextBuffer, gstData, gstSize);
 	// cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
 	mBufferYUV.Next(RingBuffer::Write);
@@ -891,6 +898,13 @@ bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 
 	// get the latest ringbuffer
 	void* latestYUV = mBufferYUV.Next(RingBuffer::ReadLatestOnce);
+	{
+		// check frame doubler.
+		static FrameStat fs = {};
+		if (fs.check_frame_doubler((void *)latestYUV)) {
+			LogWarning("gstDecoder ---------------------------------------------------------------- same frame\n");
+		}
+	}
 	
 	if( !latestYUV )
 		return false;

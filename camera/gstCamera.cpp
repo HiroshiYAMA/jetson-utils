@@ -564,25 +564,6 @@ GstFlowReturn gstCamera::onBuffer(_GstAppSink* sink, void* user_data)
 
 #define release_return { gst_sample_unref(gstSample); return; }
 
-struct FrameStat {
-	static constexpr auto SZ = 256;
-	static constexpr auto OFFSET = 640 * 360;
-	uint8_t buf[SZ] = {};
-	uint8_t buf2[SZ] = {};
-
-	// check frame doubler.
-	bool check_frame_doubler(void *frame)
-	{
-		uint8_t *cur = (uint8_t *)frame;
-		uint8_t *cur2 = (uint8_t *)frame + OFFSET - SZ;
-		bool ret = (memcmp(buf, cur, SZ) == 0 && memcmp(buf2, cur2, SZ) == 0);
-		memcpy(buf, cur, SZ);
-		memcpy(buf2, cur2, SZ);
-
-		return ret;
-	}
-};
-
 // checkBuffer
 void gstCamera::checkBuffer()
 {
