@@ -324,7 +324,7 @@ protected:
 
 struct FrameStat {
 	static constexpr auto SZ = 256;
-	static constexpr auto OFFSET = 640 * 360;
+	static constexpr auto OFFSET = 320 * 180;
 	uint8_t buf[SZ] = {};
 	uint8_t buf2[SZ] = {};
 
