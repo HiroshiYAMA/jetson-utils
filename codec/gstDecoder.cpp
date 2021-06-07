@@ -857,7 +857,7 @@ void gstDecoder::checkBuffer()
 	{
 		// check frame doubler.
 		static FrameStat fs = {};
-		if (fs.check_frame_doubler((void *)gstData)) {
+		if (fs.check_frame_doubler((void *)gstData, gstSize)) {
 			LogWarning("gstDecoder ---------------------------------------------------------------- same frame data\n");
 		}
 	}
@@ -898,13 +898,6 @@ bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 
 	// get the latest ringbuffer
 	void* latestYUV = mBufferYUV.Next(RingBuffer::ReadLatestOnce);
-	{
-		// check frame doubler.
-		static FrameStat fs = {};
-		if (fs.check_frame_doubler((void *)latestYUV)) {
-			LogWarning("gstDecoder ---------------------------------------------------------------- same frame\n");
-		}
-	}
 	
 	if( !latestYUV )
 		return false;
@@ -916,6 +909,14 @@ bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 	{
 		LogError(LOG_GSTREAMER "gstDecoder -- failed to allocate %u buffers (%zu bytes each)\n", mOptions.numBuffers, rgbBufferSize);
 		return false;
+	}
+
+	{
+		// check frame doubler.
+		static FrameStat fs = {};
+		if (fs.check_frame_doubler((void *)latestYUV, rgbBufferSize / 2)) {
+			LogWarning("gstDecoder ---------------------------------------------------------------- same frame\n");
+		}
 	}
 
 	// perform colorspace conversion
