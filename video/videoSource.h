@@ -248,11 +248,13 @@ public:
 	 * Return the width of the stream, in pixels.
 	 */
 	inline uint32_t GetWidth() const				{ return mOptions.width; }
+	inline void SetWidth(uint32_t val)				{ mOptions.width = val; }
 
 	/**
 	 * Return the height of the stream, in pixels.
 	 */
 	inline uint32_t GetHeight() const				{ return mOptions.height; }
+	inline void SetHeight(uint32_t val)				{ mOptions.width = val; }
 	
 	/**
 	 * Return the framerate, in Hz or FPS.
