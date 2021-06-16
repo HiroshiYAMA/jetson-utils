@@ -41,6 +41,24 @@ else()
 			-gencode arch=compute_72,code=sm_72
 		)
 	endif()
+	if(CUDA_VERSION_MAJOR GREATER 10)
+		message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_75")
+
+		set(
+			CUDA_NVCC_FLAGS
+			${CUDA_NVCC_FLAGS};
+			-gencode arch=compute_75,code=sm_75
+		)
+	endif()
+	if(CUDA_VERSION_MAJOR GREATER 11)
+		message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_86")
+
+		set(
+			CUDA_NVCC_FLAGS
+			${CUDA_NVCC_FLAGS};
+			-gencode arch=compute_86,code=sm_86
+		)
+	endif()
 	
 	# setup project output paths
 	set(PROJECT_OUTPUT_DIR  ${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_PROCESSOR})
@@ -110,4 +128,4 @@ add_subdirectory(video/video-viewer)
 #add_subdirectory(camera/v4l2-console)
 #add_subdirectory(camera/v4l2-display)
 add_subdirectory(display/gl-display-test)
-add_subdirectory(python)
+#add_subdirectory(python)
