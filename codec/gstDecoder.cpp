@@ -606,10 +606,11 @@ bool gstDecoder::buildLaunchStr()
 	}
 
 	{
-		ss << "nvvidconv";
+		// ss << "nvvidconv";
+		ss << "nvvideoconvert";
 
-		if( mOptions.flipMethod != videoOptions::FLIP_NONE )
-			ss << " flip-method=" << (int)mOptions.flipMethod;
+		// if( mOptions.flipMethod != videoOptions::FLIP_NONE )
+		// 	ss << " flip-method=" << (int)mOptions.flipMethod;
 
 		ss << " ! video/x-raw";
 
