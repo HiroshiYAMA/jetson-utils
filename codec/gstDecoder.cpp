@@ -615,8 +615,12 @@ bool gstDecoder::buildLaunchStr()
 		ss << " ! video/x-raw";
 
 		// resize if requested
-		if( mCustomSize && mOptions.width != 0 && mOptions.height != 0 )
-			ss << ", width=(int)" << mOptions.width << ", height=(int)" << mOptions.height << ", format=(string)NV12";
+		if( mCustomSize && mOptions.width != 0 && mOptions.height != 0 ) {
+			ss << ", width=(int)" << mOptions.width << ", height=(int)" << mOptions.height;
+			if (mOptions.codec != videoOptions::CODEC_QTRLE) {
+				ss << ", format=(string)NV12";
+			}
+		}
 
 		if (mOptions.codec == videoOptions::CODEC_QTRLE) {
 			ss << ", format=(string)RGBA";
@@ -861,6 +865,7 @@ void gstDecoder::checkBuffer()
 		if (fs.check_frame_doubler((void *)gstData, gstSize)) {
 			LogWarning("gstDecoder ---------------------------------------------------------------- same frame data\n");
 		}
+		// LogWarning("--------------------- gstData: %p\n", gstData);
 	}
 	memcpy(nextBuffer, gstData, gstSize);
 	// cudaMemcpyAsync(nextBuffer, gstData, gstSize, cudaMemcpyHostToDevice, mStream);
@@ -918,10 +923,12 @@ bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 		if (fs.check_frame_doubler((void *)latestYUV, rgbBufferSize / 2)) {
 			LogWarning("gstDecoder ---------------------------------------------------------------- same frame\n");
 		}
+		// LogWarning("--------------------- latestYUV: %p\n", latestYUV);
 	}
 
 	// perform colorspace conversion
 	void* nextRGB = mBufferRGB.Next(RingBuffer::Write);
+	// LogWarning("--------------------- nextRGB: %p\n", nextRGB);
 
 	if( CUDA_FAILED(cudaConvertColor(latestYUV, mFormatYUV, nextRGB, format, GetWidth(), GetHeight(), make_float2(0,255), mStream)) )
 	{
@@ -969,6 +976,7 @@ bool gstDecoder::Open()
 			// seek stream back to the beginning
 			GstEvent *seek_event = NULL;
 
+#if 0	// original code.
 			const bool seek = gst_element_seek(mPipeline, 1.0, GST_FORMAT_TIME,
 						                    (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT),
 						                    GST_SEEK_TYPE_SET, 0LL,
@@ -979,7 +987,93 @@ bool gstDecoder::Open()
 				LogError(LOG_GSTREAMER "gstDecoder -- failed to seek stream to beginning (loop %zu of %i)\n", mLoopCount+1, mOptions.loop);
 				return false;
 			}
-	
+#else	// work around code.
+			// close pipeline.
+			gst_element_set_state(mPipeline, GST_STATE_NULL);
+			usleep(250*1000);
+			checkMsgBus();
+			{
+				if( mAppSink != NULL )
+				{
+					gst_object_unref(mAppSink);
+					mAppSink = NULL;
+				}
+
+				if( mBus != NULL )
+				{
+					gst_object_unref(mBus);
+					mBus = NULL;
+				}
+
+				if( mPipeline != NULL )
+				{
+					gst_object_unref(mPipeline);
+					mPipeline = NULL;
+				}
+			}
+
+			// re-open pipeline.
+			{
+				GError *err;
+				mPipeline = gst_parse_launch(mLaunchStr.c_str(), &err);
+				gst_element_set_state(mPipeline, GST_STATE_PAUSED);
+				if( err != NULL )
+				{
+					LogError(LOG_GSTREAMER "gstDecoder +++++++++++++++++ failed to create pipeline\n");
+					LogError(LOG_GSTREAMER "   (%s)\n", err->message);
+					g_error_free(err);
+				}
+
+				GstPipeline* pipeline = GST_PIPELINE(mPipeline);
+
+				if( !pipeline )
+				{
+					LogError(LOG_GSTREAMER "gstDecoder -- failed to cast GstElement into GstPipeline\n");
+					return false;
+				}
+
+				// retrieve pipeline bus
+				mBus = gst_pipeline_get_bus(pipeline);
+
+				if( !mBus )
+				{
+					LogError(LOG_GSTREAMER "gstDecoder -- failed to retrieve GstBus from pipeline\n");
+					return false;
+				}
+
+				// get the appsrc
+				GstElement* appsinkElement = gst_bin_get_by_name(GST_BIN(pipeline), "mysink");
+				GstAppSink* appsink = GST_APP_SINK(appsinkElement);
+
+				if( !appsinkElement || !appsink)
+				{
+					LogError(LOG_GSTREAMER "gstDecoder -- failed to retrieve AppSink element from pipeline\n");
+					return false;
+				}
+
+				mAppSink = appsink;
+
+				// setup callbacks
+				GstAppSinkCallbacks cb;
+				memset(&cb, 0, sizeof(GstAppSinkCallbacks));
+
+				cb.eos         = onEOS;
+				cb.new_preroll = onPreroll;	// disabled b/c preroll sometimes occurs during Close() and crashes
+			#if GST_CHECK_VERSION(1,0,0)
+				cb.new_sample  = onBuffer;
+			#else
+				cb.new_buffer  = onBuffer;
+			#endif
+
+				gst_app_sink_set_callbacks(mAppSink, &cb, (void*)this, NULL);
+
+				gst_element_set_state(mPipeline, mOptions.dropFrame ? GST_STATE_PLAYING : GST_STATE_PAUSED);
+				checkMsgBus();
+				usleep(100 * 1000);
+				checkMsgBus();
+			}
+#endif
+
 			LogWarning(LOG_GSTREAMER "gstDecoder -- seeking stream to beginning (loop %zu of %i)\n", mLoopCount+1, mOptions.loop);
 
 			mLoopCount++;
