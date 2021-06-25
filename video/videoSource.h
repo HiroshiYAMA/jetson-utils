@@ -326,15 +326,22 @@ protected:
 
 struct FrameStat {
 	static constexpr auto SZ = 256;
-	uint8_t buf[SZ] = {};
+	static constexpr auto NUM = 4;
+	int num = 0;
+	uint8_t buf[NUM][SZ] = {};
 
 	// check frame doubler.
 	bool check_frame_doubler(void *frame, size_t size)
 	{
 #if 0
 		uint8_t *cur = (uint8_t *)frame + (size - SZ) / 2;
-		bool ret = (memcmp(buf, cur, SZ) == 0);
-		memcpy(buf, cur, SZ);
+		bool ret = false;
+		for (auto i = 0; i < NUM; i++) {
+			ret |= (memcmp(buf[i], cur, SZ) == 0);
+		}
+		memcpy(buf[num], cur, SZ);
+		num++;
+		num = (num % NUM);
 #else
 		bool ret = false;
 #endif
