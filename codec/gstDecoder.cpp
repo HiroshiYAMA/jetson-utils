@@ -987,29 +987,15 @@ bool gstDecoder::Open()
 				LogError(LOG_GSTREAMER "gstDecoder -- failed to seek stream to beginning (loop %zu of %i)\n", mLoopCount+1, mOptions.loop);
 				return false;
 			}
-#else	// work around code.
+#else	// workaround code.
 			// close pipeline.
-			gst_element_set_state(mPipeline, GST_STATE_NULL);
-			usleep(250*1000);
-			checkMsgBus();
 			{
-				if( mAppSink != NULL )
-				{
-					gst_object_unref(mAppSink);
-					mAppSink = NULL;
-				}
-
-				if( mBus != NULL )
-				{
-					gst_object_unref(mBus);
-					mBus = NULL;
-				}
-
-				if( mPipeline != NULL )
-				{
-					gst_object_unref(mPipeline);
-					mPipeline = NULL;
-				}
+				gst_element_set_state(mPipeline, GST_STATE_NULL);
+				usleep(250*1000);
+				checkMsgBus();
+				if ( mAppSink != NULL )  gst_object_unref(mAppSink);  mAppSink = NULL;
+				if ( mBus != NULL )      gst_object_unref(mBus);      mBus = NULL;
+				if ( mPipeline != NULL ) gst_object_unref(mPipeline); mPipeline = NULL;
 			}
 
 			// re-open pipeline.
@@ -1025,7 +1011,6 @@ bool gstDecoder::Open()
 				}
 
 				GstPipeline* pipeline = GST_PIPELINE(mPipeline);
-
 				if( !pipeline )
 				{
 					LogError(LOG_GSTREAMER "gstDecoder -- failed to cast GstElement into GstPipeline\n");
@@ -1034,7 +1019,6 @@ bool gstDecoder::Open()
 
 				// retrieve pipeline bus
 				mBus = gst_pipeline_get_bus(pipeline);
-
 				if( !mBus )
 				{
 					LogError(LOG_GSTREAMER "gstDecoder -- failed to retrieve GstBus from pipeline\n");
@@ -1044,19 +1028,16 @@ bool gstDecoder::Open()
 				// get the appsrc
 				GstElement* appsinkElement = gst_bin_get_by_name(GST_BIN(pipeline), "mysink");
 				GstAppSink* appsink = GST_APP_SINK(appsinkElement);
-
 				if( !appsinkElement || !appsink)
 				{
 					LogError(LOG_GSTREAMER "gstDecoder -- failed to retrieve AppSink element from pipeline\n");
 					return false;
 				}
-
 				mAppSink = appsink;
 
 				// setup callbacks
 				GstAppSinkCallbacks cb;
 				memset(&cb, 0, sizeof(GstAppSinkCallbacks));
-
 				cb.eos         = onEOS;
 				cb.new_preroll = onPreroll;	// disabled b/c preroll sometimes occurs during Close() and crashes
 			#if GST_CHECK_VERSION(1,0,0)
@@ -1064,7 +1045,6 @@ bool gstDecoder::Open()
 			#else
 				cb.new_buffer  = onBuffer;
 			#endif
-
 				gst_app_sink_set_callbacks(mAppSink, &cb, (void*)this, NULL);
 
 				gst_element_set_state(mPipeline, mOptions.dropFrame ? GST_STATE_PLAYING : GST_STATE_PAUSED);
