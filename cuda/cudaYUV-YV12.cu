@@ -110,7 +110,7 @@ static cudaError_t launch420ToRGB(void* srcDev, T* dstDev, size_t width, size_t 
 	const int srcPitch = width * sizeof(uint8_t);
 	const int dstPitch = width * sizeof(T);
 
-	const dim3 blockDim(32,8);
+	const dim3 blockDim(64,8);
 	//const dim3 gridDim((width+(2*blockDim.x-1))/(2*blockDim.x), (height+(blockDim.y-1))/blockDim.y, 1);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height, blockDim.y));
 

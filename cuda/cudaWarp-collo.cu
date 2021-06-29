@@ -328,7 +328,7 @@ inline cudaError_t cudaWarpCollo__(
 		return cudaErrorInvalidValue;
 
 	// launch kernel
-	const dim3 blockDim(32, 8);
+	const dim3 blockDim(64, 8);
 	const dim3 gridDim(iDivUp(collo_prm.oW,blockDim.x), iDivUp(collo_prm.oH,blockDim.y));
 
 	cudaCollo<T, Tmask, T_HiReso, Tpano, S><<<gridDim, blockDim, 0, stream>>>(

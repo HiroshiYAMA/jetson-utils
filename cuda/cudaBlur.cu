@@ -109,7 +109,7 @@ static cudaError_t launchBlur(
 		return cudaErrorInvalidValue;
 
 	// launch kernel
-	const dim3 blockDim(32, 8);
+	const dim3 blockDim(64, 8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	switch (blur_type) {

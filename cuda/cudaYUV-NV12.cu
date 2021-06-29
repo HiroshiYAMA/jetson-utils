@@ -146,7 +146,7 @@ static cudaError_t launchNV12ToRGB( void* srcDev, T* dstDev, size_t width, size_
 	const size_t srcPitch = width * sizeof(uint8_t);
 	const size_t dstPitch = width * sizeof(T);
 	
-	const dim3 blockDim(32,8,1);
+	const dim3 blockDim(64,8,1);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height, blockDim.y), 1);
 
 	NV12ToRGB<T><<<gridDim, blockDim, 0, stream>>>( (uint32_t*)srcDev, srcPitch, dstDev, dstPitch, width, height );

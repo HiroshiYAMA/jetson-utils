@@ -122,7 +122,7 @@ static cudaError_t launchThreshold(T *input, T *output, size_t width, size_t hei
 		return cudaErrorInvalidValue;
 
 	// launch kernel
-	const dim3 blockDim(32, 8);
+	const dim3 blockDim(64, 8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	if (mode == static_cast<int>(BinarizationFlags::THRESH_BINARY_INV)) {

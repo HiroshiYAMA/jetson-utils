@@ -152,7 +152,7 @@ static cudaError_t launchYUYVToRGB( void* input, T* output, size_t width, size_t
 		return cudaErrorInvalidValue;
 
 	const int  halfWidth = width / 2;	// two pixels are output at once
-	const dim3 blockDim(32,8);
+	const dim3 blockDim(64,8);
 	const dim3 gridDim(iDivUp(halfWidth, blockDim.x), iDivUp(height, blockDim.y));
 
 	YUYVToRGBA<T, format><<<gridDim, blockDim, 0, stream>>>((uchar4*)input, output, halfWidth, height);

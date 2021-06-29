@@ -60,7 +60,7 @@ static cudaError_t launchNormalizeRGB( T* input, const float2& input_range,
 	const float multiplier = (output_range.y - output_range.x) / (input_range.y - input_range.x);
 
 	// launch kernel
-	const dim3 blockDim(32,8);
+	const dim3 blockDim(64,8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	gpuNormalize<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, input_range, multiplier, output_range);
@@ -117,7 +117,7 @@ static cudaError_t launchNormalizeGray( T* input, const float2& input_range,
 	const float multiplier = (output_range.y - output_range.x) / (input_range.y - input_range.x);
 
 	// launch kernel
-	const dim3 blockDim(32,8);
+	const dim3 blockDim(64,8);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	gpuNormalizeGray<T><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, input_range, multiplier, output_range);
