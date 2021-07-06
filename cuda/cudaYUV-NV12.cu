@@ -38,7 +38,6 @@ static inline __device__ float clamp( float x )	{ return fminf(fmaxf(x, 0.0f), 2
 
 // YUV2RGB
 template<typename T>
-// static inline __device__ T YUV2RGB(const uint3& yuvi)
 static inline __device__ T YUV2RGB(const uint3& yuvi)
 {
 	const float luma = yuvi.x;
