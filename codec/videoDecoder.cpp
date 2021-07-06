@@ -291,13 +291,13 @@ bool videoDecoder::Capture( void** output, imageFormat format, uint64_t timeout 
 	}
 
 	// capture frame.
-	do { *video_ptr >> vidoe_img; } while (vidoe_img.empty());
+	do { *video_ptr >> video_img; } while (video_img.empty());
 
 	// // allocate ringbuffer for colorspace conversion
 	const size_t yuvBufferSize = imageFormatSize(mFormatYUV, GetWidth(), GetHeight());
 	const size_t rgbBufferSize = imageFormatSize(format, GetWidth(), GetHeight());
 
-	cudaMemcpyAsync(video_buf_NV12, vidoe_img.data, yuvBufferSize, cudaMemcpyHostToDevice, mStream);
+	cudaMemcpyAsync(video_buf_NV12, video_img.data, yuvBufferSize, cudaMemcpyHostToDevice, mStream);
 	if( CUDA_FAILED(cudaConvertColor(video_buf_NV12, mFormatYUV, video_buf_RGBA, format, GetWidth(), GetHeight(), make_float2(0,255), mStream)) )
 	{
 		LogError(LOG_VIDEO_DECODER "videoDecoder::Capture() -- unsupported image format (%s)\n", imageFormatToStr(format));

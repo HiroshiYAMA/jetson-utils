@@ -141,7 +141,7 @@ protected:
 	imageFormat	mFormatYUV;
 
 	std::unique_ptr<cv::VideoCapture> video_ptr;
-	cv::Mat vidoe_img;
+	cv::Mat video_img;
 	uint8_t *video_buf_NV12;
 	uchar4 *video_buf_RGBA;
 };
