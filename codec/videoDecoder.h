@@ -45,6 +45,23 @@ public:
 	 */
 	static videoDecoder* Create( const URI& resource, videoOptions::Codec codec );
 
+	void set_pos(long pos)
+	{
+		long pos_cur(video_ptr->get(cv::CAP_PROP_POS_FRAMES));
+		if (pos == pos_cur) return;
+
+		video_ptr->set(cv::CAP_PROP_POS_FRAMES, double(pos));
+		long frame_cnt_check(video_ptr->get(cv::CAP_PROP_POS_FRAMES));
+		//assert(frame_cnt_check == pos);
+		cv::Mat in_img;
+		if (frame_cnt_check != pos) {
+			while (frame_cnt_check <= pos) {
+				*video_ptr >> in_img;
+				frame_cnt_check = video_ptr->get(cv::CAP_PROP_POS_FRAMES);
+			}
+		}
+	}
+
 	/**
 	 * Destructor
 	 */

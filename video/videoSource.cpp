@@ -55,7 +55,9 @@ videoSource* videoSource::Create( const videoOptions& options )
 
 	if( uri.protocol == "file" )
 	{
-		if( videoDecoder::IsSupportedExtension(uri.extension.c_str()) )
+		if( gstDecoder::IsSupportedExtension(uri.extension.c_str()) )
+			src = gstDecoder::Create(options);
+		else if( videoDecoder::IsSupportedExtension(uri.extension.c_str()) )
 			src = videoDecoder::Create(options);
 		else
 			src = imageLoader::Create(options);

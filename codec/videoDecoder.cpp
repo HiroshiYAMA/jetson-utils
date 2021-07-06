@@ -34,7 +34,7 @@
 
 
 // supported image file extensions
-const char* videoDecoder::SupportedExtensions[] = { "mkv", "mp4", "qt",
+const char* videoDecoder::SupportedExtensions[] = { "mkv", "mp4", "qt", "mxf",
 										"flv", "avi", "h264",
 										"h265", "mov", "webm", NULL };
 
@@ -151,16 +151,21 @@ bool videoDecoder::init()
 	}
 	video_img = cv::Mat(cv::Size(mOptions.width, mOptions.height * 3 / 2), CV_8UC1, video_buf_NV12);
 
-	// build pipeline string
-	if( !buildLaunchStr() )
-	{
-		LogError(LOG_VIDEO_DECODER "videoDecoder -- failed to build pipeline string\n");
-		return false;
-	}
+	const URI& uri = GetResource();
+	if (uri.protocol == "file" && uri.extension == "mxf") {
+		;	// already open. backend is ffmpeg.
+	} else {
+		// build pipeline string
+		if( !buildLaunchStr() )
+		{
+			LogError(LOG_VIDEO_DECODER "videoDecoder -- failed to build pipeline string\n");
+			return false;
+		}
 
-	// (re)open.
-	video_ptr.reset();
-	video_ptr = std::make_unique<cv::VideoCapture>(mLaunchStr, cv::CAP_GSTREAMER);
+		// (re)open.
+		video_ptr.reset();
+		video_ptr = std::make_unique<cv::VideoCapture>(mLaunchStr, cv::CAP_GSTREAMER);
+	}
 
 	return true;
 }
@@ -294,11 +299,6 @@ bool videoDecoder::Capture( void** output, imageFormat format, uint64_t timeout 
 	// capture frame.
 	do { *video_ptr >> video_img; } while (video_img.empty());
 
-	// // allocate ringbuffer for colorspace conversion
-	const size_t yuvBufferSize = imageFormatSize(mFormatYUV, GetWidth(), GetHeight());
-	const size_t rgbBufferSize = imageFormatSize(format, GetWidth(), GetHeight());
-
-	// cudaMemcpyAsync(video_buf_NV12, video_img.data, yuvBufferSize, cudaMemcpyHostToDevice, mStream);
 	if( CUDA_FAILED(cudaConvertColor(video_buf_NV12, mFormatYUV, video_buf_RGBA, format, GetWidth(), GetHeight(), make_float2(0,255), mStream)) )
 	{
 		LogError(LOG_VIDEO_DECODER "videoDecoder::Capture() -- unsupported image format (%s)\n", imageFormatToStr(format));
@@ -323,8 +323,13 @@ bool videoDecoder::Open()
 	{
 		if( isLooping() )
 		{
-			video_ptr.reset();
-			video_ptr = std::make_unique<cv::VideoCapture>(mLaunchStr, cv::CAP_GSTREAMER);
+			const URI& uri = GetResource();
+			if (uri.extension == "mxf") {
+				set_pos(0);
+			} else {
+				video_ptr.reset();
+				video_ptr = std::make_unique<cv::VideoCapture>(mLaunchStr, cv::CAP_GSTREAMER);
+			}
 
 			LogWarning(LOG_VIDEO_DECODER "videoDecoder -- seeking stream to beginning (loop %zu of %i)\n", mLoopCount+1, mOptions.loop);
 
