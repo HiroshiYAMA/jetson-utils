@@ -38,12 +38,13 @@ static inline __device__ float clamp( float x )	{ return fminf(fmaxf(x, 0.0f), 2
 
 // YUV2RGB
 template<typename T>
+// static inline __device__ T YUV2RGB(const uint3& yuvi)
 static inline __device__ T YUV2RGB(const uint3& yuvi)
 {
-	const float luma = float(yuvi.x);
-	const float u    = float(yuvi.y) - 512.0f;
-	const float v    = float(yuvi.z) - 512.0f;
-	const float s    = 1.0f / 1024.0f * 255.0f;	// TODO clamp for uchar output?
+	const float luma = yuvi.x;
+	const float u    = yuvi.y - 128.0f;
+	const float v    = yuvi.z - 128.0f;
+	constexpr float s = 1.0f / 256.0f * 255.0f;	// TODO clamp for uchar output?
 
 #if 1
 	return make_vec<T>(clamp((luma + 1.402f * v) * s),
@@ -66,15 +67,16 @@ __global__ void NV12ToRGB(uint32_t* srcImage, size_t nSourcePitch,
                           uint32_t width,     uint32_t height)
 {
 	int x, y;
-	uint32_t yuv101010Pel[2];
-	uint32_t processingPitch = ((width) + 63) & ~63;
-	uint8_t *srcImageU8     = (uint8_t *)srcImage;
+	int x_even;
+	uint32_t processingPitch;
+	uint8_t *srcImageU8 = (uint8_t *)srcImage;
+	uint3 yuv10;
 
 	processingPitch = nSourcePitch;
 
-	// Pad borders with duplicate pixels, and we multiply by 2 because we process 2 pixels per thread
-	x = blockIdx.x * (blockDim.x << 1) + (threadIdx.x << 1);
+	x = blockIdx.x * blockDim.x + threadIdx.x;
 	y = blockIdx.y *  blockDim.y       +  threadIdx.y;
+	x_even = x & ~1;
 
 	if( x >= width )
 		return; //x = width - 1;
@@ -82,10 +84,7 @@ __global__ void NV12ToRGB(uint32_t* srcImage, size_t nSourcePitch,
 	if( y >= height )
 		return; // y = height - 1;
 
-	// Read 2 Luma components at a time, so we don't waste processing since CbCr are decimated this way.
-	// if we move to texture we could read 4 luminance values
-	yuv101010Pel[0] = (srcImageU8[y * processingPitch + x    ]) << 2;
-	yuv101010Pel[1] = (srcImageU8[y * processingPitch + x + 1]) << 2;
+	yuv10.x = srcImageU8[y * processingPitch + x    ];
 
 	uint32_t chromaOffset    = processingPitch * height;
 	int y_chroma = y >> 1;
@@ -95,42 +94,26 @@ __global__ void NV12ToRGB(uint32_t* srcImage, size_t nSourcePitch,
 		uint32_t chromaCb;
 		uint32_t chromaCr;
 
-		chromaCb = srcImageU8[chromaOffset + y_chroma * processingPitch + x    ];
-		chromaCr = srcImageU8[chromaOffset + y_chroma * processingPitch + x + 1];
+		chromaCb = srcImageU8[chromaOffset + y_chroma * processingPitch + x_even    ];
+		chromaCr = srcImageU8[chromaOffset + y_chroma * processingPitch + x_even + 1];
 
 		if (y_chroma < ((height >> 1) - 1)) // interpolate chroma vertically
 		{
-			chromaCb = (chromaCb + srcImageU8[chromaOffset + (y_chroma + 1) * processingPitch + x    ] + 1) >> 1;
-			chromaCr = (chromaCr + srcImageU8[chromaOffset + (y_chroma + 1) * processingPitch + x + 1] + 1) >> 1;
+			chromaCb = (chromaCb + srcImageU8[chromaOffset + (y_chroma + 1) * processingPitch + x_even    ] + 1) >> 1;
+			chromaCr = (chromaCr + srcImageU8[chromaOffset + (y_chroma + 1) * processingPitch + x_even + 1] + 1) >> 1;
 		}
 
-		yuv101010Pel[0] |= (chromaCb << (COLOR_COMPONENT_BIT_SIZE       + 2));
-		yuv101010Pel[0] |= (chromaCr << ((COLOR_COMPONENT_BIT_SIZE << 1) + 2));
-
-		yuv101010Pel[1] |= (chromaCb << (COLOR_COMPONENT_BIT_SIZE       + 2));
-		yuv101010Pel[1] |= (chromaCr << ((COLOR_COMPONENT_BIT_SIZE << 1) + 2));
+		yuv10.y = chromaCb;
+		yuv10.z = chromaCr;
 	}
 	else
 	{
-		yuv101010Pel[0] |= ((uint32_t)srcImageU8[chromaOffset + y_chroma * processingPitch + x    ] << (COLOR_COMPONENT_BIT_SIZE       + 2));
-		yuv101010Pel[0] |= ((uint32_t)srcImageU8[chromaOffset + y_chroma * processingPitch + x + 1] << ((COLOR_COMPONENT_BIT_SIZE << 1) + 2));
-
-		yuv101010Pel[1] |= ((uint32_t)srcImageU8[chromaOffset + y_chroma * processingPitch + x    ] << (COLOR_COMPONENT_BIT_SIZE       + 2));
-		yuv101010Pel[1] |= ((uint32_t)srcImageU8[chromaOffset + y_chroma * processingPitch + x + 1] << ((COLOR_COMPONENT_BIT_SIZE << 1) + 2));
+		yuv10.y = srcImageU8[chromaOffset + y_chroma * processingPitch + x_even    ];
+		yuv10.z = srcImageU8[chromaOffset + y_chroma * processingPitch + x_even + 1];
 	}
 
-	// this steps performs the color conversion
-	const uint3 yuvi_0 = make_uint3((yuv101010Pel[0] &   COLOR_COMPONENT_MASK),
-	                               ((yuv101010Pel[0] >>  COLOR_COMPONENT_BIT_SIZE)       & COLOR_COMPONENT_MASK),
-					               ((yuv101010Pel[0] >> (COLOR_COMPONENT_BIT_SIZE << 1)) & COLOR_COMPONENT_MASK));
-  
-	const uint3 yuvi_1 = make_uint3((yuv101010Pel[1] &   COLOR_COMPONENT_MASK),
-							       ((yuv101010Pel[1] >>  COLOR_COMPONENT_BIT_SIZE)       & COLOR_COMPONENT_MASK),
-								   ((yuv101010Pel[1] >> (COLOR_COMPONENT_BIT_SIZE << 1)) & COLOR_COMPONENT_MASK));
-								   
 	// YUV to RGB transformation conversion
-	dstImage[y * width + x]     = YUV2RGB<T>(yuvi_0);
-	dstImage[y * width + x + 1] = YUV2RGB<T>(yuvi_1);
+	dstImage[y * width + x]     = YUV2RGB<T>(yuv10);
 }
 
 
