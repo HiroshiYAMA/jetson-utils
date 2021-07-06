@@ -149,6 +149,7 @@ bool videoDecoder::init()
 		LogError(LOG_VIDEO_DECODER "failed to allocate CUDA memory for video_buf_RGBA (%ux%u)\n", mOptions.width, mOptions.height);
 		return false;
 	}
+	video_img = cv::Mat(cv::Size(mOptions.width, mOptions.height * 3 / 2), CV_8UC1, video_buf_NV12);
 
 	// build pipeline string
 	if( !buildLaunchStr() )
@@ -297,7 +298,7 @@ bool videoDecoder::Capture( void** output, imageFormat format, uint64_t timeout 
 	const size_t yuvBufferSize = imageFormatSize(mFormatYUV, GetWidth(), GetHeight());
 	const size_t rgbBufferSize = imageFormatSize(format, GetWidth(), GetHeight());
 
-	cudaMemcpyAsync(video_buf_NV12, video_img.data, yuvBufferSize, cudaMemcpyHostToDevice, mStream);
+	// cudaMemcpyAsync(video_buf_NV12, video_img.data, yuvBufferSize, cudaMemcpyHostToDevice, mStream);
 	if( CUDA_FAILED(cudaConvertColor(video_buf_NV12, mFormatYUV, video_buf_RGBA, format, GetWidth(), GetHeight(), make_float2(0,255), mStream)) )
 	{
 		LogError(LOG_VIDEO_DECODER "videoDecoder::Capture() -- unsupported image format (%s)\n", imageFormatToStr(format));
