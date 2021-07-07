@@ -218,6 +218,8 @@ const char* videoOutput::TypeToStr( uint32_t type )
 		return "glDisplay";
 	else if( type == gstEncoder::Type )
 		return "gstEncoder";
+	else if( type == videoEncoder::Type )
+		return "videoEncoder";
 	else if( type == imageWriter::Type )
 		return "imageWriter";
 
