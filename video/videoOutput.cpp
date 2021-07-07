@@ -80,8 +80,6 @@ videoOutput* videoOutput::Create( const videoOptions& options )
 	
 	if( uri.protocol == "file" )
 	{
-		// if( gstEncoder::IsSupportedExtension(uri.extension.c_str()) )
-		// 	output = gstEncoder::Create(options);
 		if( videoEncoder::IsSupportedExtension(uri.extension.c_str()) )
 			output = videoEncoder::Create(options);
 		else
