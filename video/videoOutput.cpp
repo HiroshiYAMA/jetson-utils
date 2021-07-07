@@ -23,6 +23,7 @@
 #include "videoOutput.h"
 #include "imageWriter.h"
 
+#include "videoEncoder.h"
 #include "glDisplay.h"
 #include "gstEncoder.h"
 
@@ -79,8 +80,10 @@ videoOutput* videoOutput::Create( const videoOptions& options )
 	
 	if( uri.protocol == "file" )
 	{
-		if( gstEncoder::IsSupportedExtension(uri.extension.c_str()) )
-			output = gstEncoder::Create(options);
+		// if( gstEncoder::IsSupportedExtension(uri.extension.c_str()) )
+		// 	output = gstEncoder::Create(options);
+		if( videoEncoder::IsSupportedExtension(uri.extension.c_str()) )
+			output = videoEncoder::Create(options);
 		else
 			output = imageWriter::Create(options);
 	}
