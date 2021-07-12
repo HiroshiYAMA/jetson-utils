@@ -209,12 +209,14 @@ inline bool imageFormatIsBayer( imageFormat format );
 ///@{
 
 // get the IMAGE_RGB* formats from uchar3/uchar4/float3/float4
-template<typename T> inline imageFormat imageFormatFromType();
+template<typename T> inline __host__ __device__ imageFormat imageFormatFromType();
 
-template<> inline imageFormat imageFormatFromType<uchar3>();
-template<> inline imageFormat imageFormatFromType<uchar4>();
-template<> inline imageFormat imageFormatFromType<float3>();
-template<> inline imageFormat imageFormatFromType<float4>();
+template<> inline __host__ __device__ imageFormat imageFormatFromType<uint8_t>();
+template<> inline __host__ __device__ imageFormat imageFormatFromType<uchar3>();
+template<> inline __host__ __device__ imageFormat imageFormatFromType<uchar4>();
+template<> inline __host__ __device__ imageFormat imageFormatFromType<float>();
+template<> inline __host__ __device__ imageFormat imageFormatFromType<float3>();
+template<> inline __host__ __device__ imageFormat imageFormatFromType<float4>();
 
 // templated version of base type / vector type
 template<imageFormat format> struct imageFormatType;
