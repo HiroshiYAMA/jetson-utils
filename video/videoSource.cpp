@@ -25,6 +25,7 @@
 
 #include "gstCamera.h"
 #include "gstDecoder.h"
+#include "videoDecoder.h"
 
 #include "logging.h"
 
@@ -56,6 +57,8 @@ videoSource* videoSource::Create( const videoOptions& options )
 	{
 		if( gstDecoder::IsSupportedExtension(uri.extension.c_str()) )
 			src = gstDecoder::Create(options);
+		else if( videoDecoder::IsSupportedExtension(uri.extension.c_str()) )
+			src = videoDecoder::Create(options);
 		else
 			src = imageLoader::Create(options);
 	}
@@ -154,6 +157,8 @@ const char* videoSource::TypeToStr( uint32_t type )
 		return "gstCamera";
 	else if( type == gstDecoder::Type )
 		return "gstDecoder";
+	else if( type == videoDecoder::Type )
+		return "videoDecoder";
 	else if( type == imageLoader::Type )
 		return "imageLoader";
 
