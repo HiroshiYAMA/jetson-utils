@@ -1,6 +1,9 @@
 
 cmake_minimum_required(VERSION 2.8)
 
+unset(ENABLE_OPENCV CACHE)
+set(ENABLE_OPENCV "NO" CACHE BOOL "If YES, will enable support for OpenCV")
+
 # determine if jetson-utils is being built as a submodule inside another repo,
 # or if it's being build standalone (if the later, we need to do some configuration)
 get_directory_property(hasParent PARENT_DIRECTORY)
@@ -89,8 +92,18 @@ include_directories(/usr/include/gstreamer-1.0 /usr/include/glib-2.0 /usr/includ
 file(GLOB jetsonUtilitySources *.cpp camera/*.cpp codec/*.cpp cuda/*.cu cuda/*.cpp display/*.cpp image/*.cpp input/*.cpp network/*.cpp threads/*.cpp video/*.cpp)
 file(GLOB jetsonUtilityIncludes *.h *.hpp camera/*.h codec/*.h cuda/*.h cuda/*.cuh display/*.h image/*.h image/*.inl input/*.h network/*.h threads/*.h threads/*.inl video/*.h)
 
+if(ENABLE_OPENCV)
+	add_definitions(-DUSE_OPENCV)
+	set(OPENCV_LIBRARY opencv_world)
+else()
+	list(FILTER jetsonUtilitySources EXCLUDE REGEX ".*codec/videoDecoder.cpp$")
+	list(FILTER jetsonUtilitySources EXCLUDE REGEX ".*codec/videoEncoder.cpp$")
+	list(FILTER jetsonUtilityIncludes EXCLUDE REGEX ".*codec/videoDecoder.h$")
+	list(FILTER jetsonUtilityIncludes EXCLUDE REGEX ".*codec/videoEncoder.h$")
+	set(OPENCV_LIBRARY)
+endif()
 cuda_add_library(jetson-utils SHARED ${jetsonUtilitySources})
-target_link_libraries(jetson-utils GL GLU GLEW gstreamer-1.0 gstapp-1.0 gstpbutils-1.0 SDL2 ${CUDA_nppicc_LIBRARY} opencv_world)
+target_link_libraries(jetson-utils GL GLU GLEW gstreamer-1.0 gstapp-1.0 gstpbutils-1.0 SDL2 ${CUDA_nppicc_LIBRARY} ${OPENCV_LIBRARY})
 
 
 # transfer all headers to the include directory 
