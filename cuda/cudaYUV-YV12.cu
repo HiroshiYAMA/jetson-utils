@@ -110,7 +110,11 @@ static cudaError_t launch420ToRGB(void* srcDev, T* dstDev, size_t width, size_t 
 	const int srcPitch = width * sizeof(uint8_t);
 	const int dstPitch = width * sizeof(T);
 
-	const dim3 blockDim(64,8);
+#ifdef JETSON
+	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
 	//const dim3 gridDim((width+(2*blockDim.x-1))/(2*blockDim.x), (height+(blockDim.y-1))/blockDim.y, 1);
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height, blockDim.y));
 
@@ -247,7 +251,11 @@ static cudaError_t launchRGBTo420( T* input, size_t inputPitch, void* output, si
 	if( !input || !inputPitch || !output || !outputPitch || !width || !height )
 		return cudaErrorInvalidValue;
 
+#ifdef JETSON
 	const dim3 block(32, 8);
+#else
+	const dim3 block(64, 8);
+#endif
 	const dim3 grid(iDivUp(width, block.x * 2), iDivUp(height, block.y * 2));
 
 	const int inputAlignedWidth = inputPitch / sizeof(T);

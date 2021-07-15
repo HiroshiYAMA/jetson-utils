@@ -63,7 +63,11 @@ static cudaError_t launchRGBToGray( T_in* srcDev, T_out* dstDev, size_t width, s
 	if( width == 0 || height == 0 )
 		return cudaErrorInvalidValue;
 
-	const dim3 blockDim(64,8,1);
+#ifdef JETSON
+	const dim3 blockDim(32, 8, 1);
+#else
+	const dim3 blockDim(64, 8, 1);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y), 1);
 
 	RGBToGray<T_in, T_out, isBGR><<<gridDim, blockDim, 0, stream>>>( srcDev, dstDev, width, height );
@@ -165,7 +169,11 @@ static cudaError_t launchRGBToGray_Norm( T_in* srcDev, T_out* dstDev, size_t wid
 
 	const float multiplier = 255.0f / (inputRange.y - inputRange.x);
 
-	const dim3 blockDim(64,8,1);
+#ifdef JETSON
+	const dim3 blockDim(32, 8, 1);
+#else
+	const dim3 blockDim(64, 8, 1);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y), 1);
 
 	RGBToGray_Norm<T_in, T_out, isBGR><<<gridDim, blockDim, 0, stream>>>( srcDev, dstDev, width, height, inputRange.x, multiplier );
@@ -222,7 +230,11 @@ cudaError_t launchGrayToRGB( T_in* srcDev, T_out* dstDev, size_t width, size_t h
 	if( width == 0 || height == 0 )
 		return cudaErrorInvalidValue;
 
-	const dim3 blockDim(64,8,1);
+#ifdef JETSON
+	const dim3 blockDim(32, 8, 1);
+#else
+	const dim3 blockDim(64, 8, 1);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y), 1);
 
 	GrayToRGB<T_in, T_out><<<gridDim, blockDim, 0, stream>>>( srcDev, dstDev, width, height );
@@ -306,7 +318,11 @@ static cudaError_t launchGrayToRGB_Norm( T_in* srcDev, T_out* dstDev, size_t wid
 
 	const float multiplier = 255.0f / (inputRange.y - inputRange.x);
 
-	const dim3 blockDim(64,8,1);
+#ifdef JETSON
+	const dim3 blockDim(32, 8, 1);
+#else
+	const dim3 blockDim(64, 8, 1);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y), 1);
 
 	GrayToRGB_Norm<T_in, T_out><<<gridDim, blockDim, 0, stream>>>( srcDev, dstDev, width, height, inputRange.x, multiplier );

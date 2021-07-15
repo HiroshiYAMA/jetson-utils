@@ -23,7 +23,7 @@
 #include "videoOutput.h"
 #include "imageWriter.h"
 
-#ifdef USE_OPENCV
+#if defined(USE_OPENCV) && !defined(JETSON)
 #include "videoEncoder.h"
 #endif
 #include "glDisplay.h"
@@ -82,7 +82,7 @@ videoOutput* videoOutput::Create( const videoOptions& options )
 	
 	if( uri.protocol == "file" )
 	{
-#ifdef USE_OPENCV
+#if defined(USE_OPENCV) && !defined(JETSON)
 		if( videoEncoder::IsSupportedExtension(uri.extension.c_str()) )
 			output = videoEncoder::Create(options);
 #else
@@ -223,7 +223,7 @@ const char* videoOutput::TypeToStr( uint32_t type )
 		return "glDisplay";
 	else if( type == gstEncoder::Type )
 		return "gstEncoder";
-#ifdef USE_OPENCV
+#if defined(USE_OPENCV) && !defined(JETSON)
 	else if( type == videoEncoder::Type )
 		return "videoEncoder";
 #endif

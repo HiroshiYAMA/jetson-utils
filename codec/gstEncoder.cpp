@@ -256,8 +256,11 @@ bool gstEncoder::buildLaunchStr()
 	std::ostringstream ss;
 
 	// setup appsrc input element
-	// ss << "appsrc name=mysource is-live=true do-timestamp=true format=3 ! video/x-raw,colorimetry=bt709 ! ";
+#ifdef JETSON
+	ss << "appsrc name=mysource is-live=true do-timestamp=true format=3 ! video/x-raw,colorimetry=bt709 ! ";
+#else
 	ss << "appsrc name=mysource is-live=true do-timestamp=true format=3 ! ";
+#endif
 
 	// set default bitrate (if needed)
 	if( mOptions.bitRate == 0 )
@@ -269,21 +272,29 @@ bool gstEncoder::buildLaunchStr()
 #if GST_CHECK_VERSION(1,0,0)
 	//ss << mCapsStr << " ! ";
 
+#ifdef JETSON
 	if( mOptions.codec == videoOptions::CODEC_H264 )
-		// ss << "omxh264enc bitrate=" << mOptions.bitRate << " profile=high ! video/x-h264 !  ";	// TODO:  investigate quality-level setting
+		ss << "omxh264enc bitrate=" << mOptions.bitRate << " profile=high ! video/x-h264 !  ";	// TODO:  investigate quality-level setting
+	else if( mOptions.codec == videoOptions::CODEC_H265 )
+		ss << "omxh265enc bitrate=" << mOptions.bitRate << " ! video/x-h265 ! ";
+	else if( mOptions.codec == videoOptions::CODEC_VP8 )
+		ss << "omxvp8enc bitrate=" << mOptions.bitRate << " ! video/x-vp8 ! ";
+	else if( mOptions.codec == videoOptions::CODEC_VP9 )
+		ss << "omxvp9enc bitrate=" << mOptions.bitRate << " ! video/x-vp9 ! ";
+	else if( mOptions.codec == videoOptions::CODEC_MJPEG )
+		ss << "nvjpegenc ! image/jpeg ! ";
+#else
+	if( mOptions.codec == videoOptions::CODEC_H264 )
 		ss << "nvvideoconvert ! nvv4l2h264enc bitrate=" << mOptions.bitRate << " profile=High control-rate=variable_bitrate ! video/x-h264 !  ";
 	else if( mOptions.codec == videoOptions::CODEC_H265 )
-		// ss << "omxh265enc bitrate=" << mOptions.bitRate << " ! video/x-h265 ! ";
 		ss << "nvvideoconvert ! nvv4l2h265enc bitrate=" << mOptions.bitRate << " control-rate=variable_bitrate ! video/x-h265 ! ";
 	else if( mOptions.codec == videoOptions::CODEC_VP8 )
-		// ss << "omxvp8enc bitrate=" << mOptions.bitRate << " ! video/x-vp8 ! ";
 		ss << "vp8enc bitrate=" << mOptions.bitRate << " ! video/x-vp8 ! ";
 	else if( mOptions.codec == videoOptions::CODEC_VP9 )
-		// ss << "omxvp9enc bitrate=" << mOptions.bitRate << " ! video/x-vp9 ! ";
 		ss << "vp9enc bitrate=" << mOptions.bitRate << " ! video/x-vp9 ! ";
 	else if( mOptions.codec == videoOptions::CODEC_MJPEG )
-		// ss << "nvjpegenc ! image/jpeg ! ";
 		ss << "avenc_mjpeg ! image/jpeg ! ";
+#endif
 #else
 	if( mOptions.codec == videoOptions::CODEC_H264 )
 		ss << "nv_omx_h264enc quality-level=2 ! video/x-h264 ! ";

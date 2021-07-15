@@ -16,6 +16,12 @@ else()
 	# standalone project
 	project(jetson-utils)
   
+	execute_process (COMMAND uname -r OUTPUT_VARIABLE KERNEL_RELEASE OUTPUT_STRIP_TRAILING_WHITESPACE)
+	if(KERNEL_RELEASE MATCHES "^.*-tegra$")
+		set(JETSON "YES")
+		add_definitions(-DJETSON)
+	endif()
+
 	# -std=gnu++11
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-write-strings")
   
@@ -44,23 +50,25 @@ else()
 			-gencode arch=compute_72,code=sm_72
 		)
 	endif()
-	if(CUDA_VERSION_MAJOR GREATER 10)
-		message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_75")
+	if(NOT JETSON)
+		if(CUDA_VERSION_MAJOR GREATER 10)
+			message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_75")
 
-		set(
-			CUDA_NVCC_FLAGS
-			${CUDA_NVCC_FLAGS};
-			-gencode arch=compute_75,code=sm_75
-		)
-	endif()
-	if(CUDA_VERSION_MAJOR GREATER 11)
-		message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_86")
+			set(
+				CUDA_NVCC_FLAGS
+				${CUDA_NVCC_FLAGS};
+				-gencode arch=compute_75,code=sm_75
+			)
+		endif()
+		if(CUDA_VERSION_MAJOR GREATER 11)
+			message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_86")
 
-		set(
-			CUDA_NVCC_FLAGS
-			${CUDA_NVCC_FLAGS};
-			-gencode arch=compute_86,code=sm_86
-		)
+			set(
+				CUDA_NVCC_FLAGS
+				${CUDA_NVCC_FLAGS};
+				-gencode arch=compute_86,code=sm_86
+			)
+		endif()
 	endif()
 	
 	# setup project output paths

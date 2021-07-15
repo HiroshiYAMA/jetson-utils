@@ -606,11 +606,16 @@ bool gstDecoder::buildLaunchStr()
 	}
 
 	{
-		// ss << "nvvidconv";
+#ifdef JETSON
+		ss << "nvvidconv";
+#else
 		ss << "nvvideoconvert";
+#endif
 
-		// if( mOptions.flipMethod != videoOptions::FLIP_NONE )
-		// 	ss << " flip-method=" << (int)mOptions.flipMethod;
+#ifdef JETSON
+		if( mOptions.flipMethod != videoOptions::FLIP_NONE )
+			ss << " flip-method=" << (int)mOptions.flipMethod;
+#endif
 
 		ss << " ! video/x-raw";
 
@@ -976,7 +981,7 @@ bool gstDecoder::Open()
 			// seek stream back to the beginning
 			GstEvent *seek_event = NULL;
 
-#if 0	// original code.
+#ifdef JETSON	// original code.
 			const bool seek = gst_element_seek(mPipeline, 1.0, GST_FORMAT_TIME,
 						                    (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT),
 						                    GST_SEEK_TYPE_SET, 0LL,
