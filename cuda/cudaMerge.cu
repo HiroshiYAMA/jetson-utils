@@ -76,7 +76,11 @@ static cudaError_t launchMerge(T **input, T *output, size_t width, size_t height
 		return cudaErrorInvalidValue;
 
 	// launch kernel
+#ifdef JETSON
 	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	gpuMerge<T, CH><<<gridDim, blockDim, 0, stream>>>(input[0], input[1], input[2], (CH == 4) ? input[3] : nullptr, output, width, height);
@@ -96,7 +100,11 @@ static cudaError_t launchMerge(T *input_color, S *input_alpha, R *output, size_t
 		return cudaErrorInvalidValue;
 
 	// launch kernel
+#ifdef JETSON
 	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	gpuMerge<T, S, R><<<gridDim, blockDim, 0, stream>>>(input_color, input_alpha, output, width, height);

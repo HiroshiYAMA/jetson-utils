@@ -205,7 +205,11 @@ static cudaError_t launchErosion(
 		return cudaErrorInvalidValue;
 
 	// launch kernel
+#ifdef JETSON
 	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	switch (morphology_type) {
@@ -246,7 +250,11 @@ static cudaError_t launchDilation(
 		return cudaErrorInvalidValue;
 
 	// launch kernel
+#ifdef JETSON
 	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	switch (morphology_type) {

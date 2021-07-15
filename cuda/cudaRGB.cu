@@ -52,7 +52,11 @@ static cudaError_t launchRGBToBGR( T* srcDev, T* dstDev, size_t width, size_t he
 	if( !srcDev || !dstDev )
 		return cudaErrorInvalidDevicePointer;
 
-	const dim3 blockDim(32,8,1);
+#ifdef JETSON
+	const dim3 blockDim(32, 8, 1);
+#else
+	const dim3 blockDim(64, 8, 1);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y), 1);
 
 	RGBToBGR<T><<<gridDim, blockDim, 0, stream>>>(srcDev, dstDev, width, height);
@@ -111,7 +115,11 @@ static cudaError_t launchRGBToRGB( T_in* srcDev, T_out* dstDev, size_t width, si
 	if( !srcDev || !dstDev )
 		return cudaErrorInvalidDevicePointer;
 
-	const dim3 blockDim(32,8,1);
+#ifdef JETSON
+	const dim3 blockDim(32, 8, 1);
+#else
+	const dim3 blockDim(64, 8, 1);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y), 1);
 
 	RGBToRGB<T_in, T_out, isBGR><<<gridDim, blockDim, 0, stream>>>(srcDev, dstDev, width, height);
@@ -231,7 +239,11 @@ static cudaError_t launchRGBToRGB_Norm( T_in* srcDev, T_out* dstDev, size_t widt
 
 	const float multiplier = 255.0f / (inputRange.y - inputRange.x);
 
-	const dim3 blockDim(32,8,1);
+#ifdef JETSON
+	const dim3 blockDim(32, 8, 1);
+#else
+	const dim3 blockDim(64, 8, 1);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y), 1);
 
 	RGBToRGB_Norm<T_in, T_out, isBGR><<<gridDim, blockDim, 0, stream>>>( srcDev, dstDev, width, height, inputRange, multiplier);

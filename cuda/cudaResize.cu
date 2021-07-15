@@ -124,7 +124,11 @@ static cudaError_t launchResize( T* input, size_t inputWidth, size_t inputHeight
 							     float(inputHeight) / float(outputHeight) );
 
 	// launch kernel
+#ifdef JETSON
 	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
 	const dim3 gridDim(iDivUp(outputWidth,blockDim.x), iDivUp(outputHeight,blockDim.y));
 
 	if ((inputWidth == outputWidth && inputHeight == outputHeight) || mode == static_cast<int>(InterpolationFlags::INTER_NEAREST)) {

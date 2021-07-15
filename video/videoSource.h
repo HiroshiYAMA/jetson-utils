@@ -72,7 +72,7 @@
  * V4L2 cameras, video/images files from disk, directories containing a sequence of images, 
  * and from RTP/RTSP network video streams over UDP/IP.
  *
- * videoSource interfaces are implemented by gstCamera, gstDecoder, and imageLoader.
+ * videoSource interfaces are implemented by gstCamera, gstDecoder, videoDecoder(Only when OpenCV is enabled), and imageLoader.
  * The specific implementation is selected at runtime based on the type of resource URI.
  *
  * videoSource supports the following protocols and resource URI's:
@@ -278,6 +278,7 @@ public:
 	 *    - gstCamera::Type
 	 *    - gstDecoder::Type
 	 *    - imageLoader::Type
+	 *    - videoDecoder::Type (Only when OpenCV is enabled)
 	 */
 	virtual inline uint32_t GetType() const			{ return 0; }
 
@@ -289,7 +290,7 @@ public:
 
 	/**
 	 * Check if a this stream is of a particular type.
-	 * Can be used with gstCamera, gstDecoder, and imageLoader.  For example:  
+	 * Can be used with gstCamera, gstDecoder, videoDecoder(Only when OpenCV is enabled), and imageLoader.  For example:
 	 *
 	 *    if( stream->IsType<gstCamera>() )
 	 *         gstCamera* camera = (gstCamera*)stream;	// safe to cast

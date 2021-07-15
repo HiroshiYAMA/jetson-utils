@@ -78,7 +78,11 @@ static cudaError_t launchSplit(T *input, T **output, size_t width, size_t height
 		return cudaErrorInvalidValue;
 
 	// launch kernel
+#ifdef JETSON
 	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	gpuSplit<T, CH><<<gridDim, blockDim, 0, stream>>>(input, output[0], output[1], output[2], (CH == 4) ? output[3] : nullptr, width, height);
@@ -102,7 +106,11 @@ static cudaError_t launchSplit(T *input, S *output_color, R *output_alpha, size_
 		return cudaErrorInvalidValue;
 
 	// launch kernel
+#ifdef JETSON
 	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	gpuSplit<T, S, R><<<gridDim, blockDim, 0, stream>>>(input, output_color, output_alpha, width, height);
