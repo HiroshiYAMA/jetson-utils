@@ -28,6 +28,8 @@
 #include "cudaVector.h"
 #include "imageFormat.h"
 
+#include "cudaAdjColor.cuh"
+
 #define FUNC_CUDA_ADJCOLOR_HEADER(T, S, M) \
 cudaError_t cudaAdjColor( T* input,  S* output, size_t width, size_t height, \
 						  float sat, float gain, float contrast, \
