@@ -24,6 +24,8 @@
 #include "cudaVector.h"
 
 
+#define rescale(v) (clamp((v - input_range.x) * scaling_factor + output_range.x, output_range.x, output_range.y))
+
 // gpuNormalize
 template <typename T>
 __global__ void gpuNormalize( T* input, T* output, int width, int height, 
@@ -36,8 +38,6 @@ __global__ void gpuNormalize( T* input, T* output, int width, int height,
 		return;
 
 	const T px = input[ y * width + x ];
-
-	#define rescale(v) (clamp((v - input_range.x) * scaling_factor + output_range.x, output_range.x, output_range.y))
 
 	output[y*width+x] = make_vec<T>(rescale(px.x),
 							  rescale(px.y),

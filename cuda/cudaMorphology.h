@@ -46,6 +46,14 @@ cudaError_t cudaErosion( \
 cudaError_t cudaDilation( \
     T* input, S* tmp_buf, S* output, \
     size_t width, size_t height, int morphology_type, float max_value = M, cudaStream_t stream = NULL );
+#define FUNC_CUDA_EROSION_NORMALIZE_HEADER(T, S, M) \
+cudaError_t cudaErosionNormalize( \
+    T* input, S* tmp_buf, S* output, \
+    size_t width, size_t height, int morphology_type, const float2 &range_in, const float2 &range_out, float max_value = M, cudaStream_t stream = NULL );
+#define FUNC_CUDA_DILATION_NORMALIZE_HEADER(T, S, M) \
+cudaError_t cudaDilationNormalize( \
+    T* input, S* tmp_buf, S* output, \
+    size_t width, size_t height, int morphology_type, const float2 &range_in, const float2 &range_out, float max_value = M, cudaStream_t stream = NULL );
 
 /**
  * Erosion a uint8 grayscale image on the GPU.
@@ -53,6 +61,8 @@ cudaError_t cudaDilation( \
  */
 FUNC_CUDA_EROSION_HEADER(uint8_t, uint8_t, 255.0f);
 FUNC_CUDA_EROSION_HEADER(float, uint8_t, 255.0f);
+FUNC_CUDA_EROSION_NORMALIZE_HEADER(uint8_t, uint8_t, 255.0f);
+FUNC_CUDA_EROSION_NORMALIZE_HEADER(float, uint8_t, 255.0f);
 
 /**
  * Erosion a floating-point grayscale image on the GPU.
@@ -60,6 +70,8 @@ FUNC_CUDA_EROSION_HEADER(float, uint8_t, 255.0f);
  */
 FUNC_CUDA_EROSION_HEADER(uint8_t, float, FLT_MAX);
 FUNC_CUDA_EROSION_HEADER(float, float, FLT_MAX);
+FUNC_CUDA_EROSION_NORMALIZE_HEADER(uint8_t, float, FLT_MAX);
+FUNC_CUDA_EROSION_NORMALIZE_HEADER(float, float, FLT_MAX);
 
 /**
  * Dilation a uint8 grayscale image on the GPU.
@@ -67,6 +79,8 @@ FUNC_CUDA_EROSION_HEADER(float, float, FLT_MAX);
  */
 FUNC_CUDA_DILATION_HEADER(uint8_t, uint8_t, 255.0f);
 FUNC_CUDA_DILATION_HEADER(float, uint8_t, 255.0f);
+FUNC_CUDA_DILATION_NORMALIZE_HEADER(uint8_t, uint8_t, 255.0f);
+FUNC_CUDA_DILATION_NORMALIZE_HEADER(float, uint8_t, 255.0f);
 
 /**
  * Dilation a floating-point grayscale image on the GPU.
@@ -74,9 +88,13 @@ FUNC_CUDA_DILATION_HEADER(float, uint8_t, 255.0f);
  */
 FUNC_CUDA_DILATION_HEADER(uint8_t, float, FLT_MAX);
 FUNC_CUDA_DILATION_HEADER(float, float, FLT_MAX);
+FUNC_CUDA_DILATION_NORMALIZE_HEADER(uint8_t, float, FLT_MAX);
+FUNC_CUDA_DILATION_NORMALIZE_HEADER(float, float, FLT_MAX);
 
 #undef FUNC_CUDA_EROSION_HEADER
 #undef FUNC_CUDA_DILATION_HEADER
+#undef FUNC_CUDA_EROSION_NORMALIZE_HEADER
+#undef FUNC_CUDA_DILATION_NORMALIZE_HEADER
 
 /**
  * Erosion an image on the GPU (supports grayscale, RGB/BGR, RGBA/BGRA)
@@ -85,6 +103,9 @@ FUNC_CUDA_DILATION_HEADER(float, float, FLT_MAX);
 cudaError_t cudaErosion(
     void* input,  void* tmp_buf, void* output,
     size_t width, size_t height, imageFormat format, int morphology_type, cudaStream_t stream = NULL );
+cudaError_t cudaErosionNormalize(
+    void* input,  void* tmp_buf, void* output,
+    size_t width, size_t height, imageFormat format, int morphology_type, const float2 &range_in, const float2 &range_out, cudaStream_t stream = NULL );
 
 /**
  * Dilation an image on the GPU (supports grayscale, RGB/BGR, RGBA/BGRA)
@@ -93,5 +114,8 @@ cudaError_t cudaErosion(
 cudaError_t cudaDilation(
     void* input,  void* tmp_buf, void* output,
     size_t width, size_t height, imageFormat format, int morphology_type, cudaStream_t stream = NULL );
+cudaError_t cudaDilationNormalize(
+    void* input,  void* tmp_buf, void* output,
+    size_t width, size_t height, imageFormat format, int morphology_type, const float2 &range_in, const float2 &range_out, cudaStream_t stream = NULL );
 
 #endif
