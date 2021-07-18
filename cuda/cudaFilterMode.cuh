@@ -552,11 +552,11 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int 
 	 const float px =
 	 	(filter == FILTER_POINT || filter == FILTER_AREA)
 		 ? (x * scale.x)
-		 : ((x + 0.5f) * scale.x - 0.5f);
+		 : ::max(((x + 0.5f) * scale.x - 0.5f), 0.0f);
 	 const float py =
 	 	(filter == FILTER_POINT || filter == FILTER_AREA)
 		 ? (y * scale.y)
-		 : ((y + 0.5f) * scale.y - 0.5f);
+		 : ::max(((y + 0.5f) * scale.y - 0.5f), 0.0f);
 
 	 if ( filter == FILTER_AREA ) {
 		 if (scale.x > 1.0f && scale.y > 1.0f) {
