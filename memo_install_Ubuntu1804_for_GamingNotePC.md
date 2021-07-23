@@ -284,34 +284,64 @@ sudo apt-get install ./deepstream-5.1_5.1.0-1_amd64.deb
 ---
 # jetson-inference ビルド & Go
 x86_64系でビルド出来るようにしたブランチが GitHubにある。
+現在、Jetson用のブランチと統合されている。
 ブランチ名は、
-- jetson-inference: Br_collo_for_x64
-- jetson-utils(./utils): 20210616_for_x64
+- jetson-inference: Br_collo
+- jetson-utils(./utils): master
 
-ONNXファイルは、[ここ](https://drive.google.com/drive/folders/1x8zIfqA6NZu9Sr_TzrURc3qADCGbaj6i?usp=sharing)にある。
+ONNXファイルは、
+[ここ](https://drive.google.com/drive/folders/1x8zIfqA6NZu9Sr_TzrURc3qADCGbaj6i?usp=sharing)
+と
+[ここ(推奨)](https://drive.google.com/drive/folders/1-_LG7KkBWLa5THeC4e3QsotW7-l1_cn_?usp=sharing)
+にある。
 
-一応実行出来るが、
-- MP4等の動画ファイルの ~~input/~~ outputの挙動が変。  
-~~EOS(end of stream)に達した時の動作が変でループ再生出来ないとか、~~ 動画保存が出来なかったりとか。  
-**ちょっと強引な方法でループ再生出来るように修正済み。**
-- ~~segnetを終了しようとすると、必ず Segmentation faultで落ちる。。。~~  
-**修正済み。**
-- ~~ONNX → TensorRT変換出来るが、結果のマスクの出来が何となく怪しい気がするし、
-実行中、時々 CUDAエラーが tensorNet.h(line 685)で発生する。  
-試したのは、resnet50 の Fullのみ。~~  
-**マスクの出来は問題なさそう。**
-**CUDAエラー修正済み。**
+MP4等の動画ファイルの入出力に関して、
+- 入力はループ再生するために seek を使うと GStreamer のパイプラインが停止しちゃうので、
+ちょっと強引な方法(GStreamer のパイプラインを作り直す)で対応。
+そのため、先頭に戻る時に少しの間だけ映像の更新が止まる。
+- 出力は GStreamer 直接ではうまく動作しないので、OpenCV を使って対応。
+OpenCV 経由なら GStreamer のパイプラインを使用可能。ハードウェアエンコード OK。
+- MXF ファイル入力は、OpenCV(バックエンド:FFMpeg)にて対応。
+- Jetson 環境に比べて、GStreamer, OpenCV とのフレームバッファの受け渡しが遅い。特に動画保存。
 
-という状態なので、今の所、**UVC入力で動画(マスク等)保存無し**、なら何とか動作する。
-世の中そんなに甘く無い。
+という状態なので、
+- 動画(マスク等)保存はリアルタイム動作をあまり期待できない。
+- 2UVC入力、が最も安定して動作する。
+- UVC + 背景動画ファイル、はハイスペックな PC が望ましい。
 
 ### ちなみに処理速度は、
-RTX 2070 Super with MAX-Q で、50msec(resnet50 1920x1080 Sc050 ThFULL)。
-- GPUアーキは、Turing世代で、CUDAコアは 2560個、Tensorコアは320個。
-- resnet50 1920x1080 Sc025 FastFULL なら、33.33...msec。  
-2UVCなら、マスク痩せを１段階かけても 33.33...msec。
+RTX 2070 Super with MAX-Q
+- GPUあーきは Turing世代
+- CUDAコアは 2560個
+- Tensorコアは320個
 
-RTX 2070 の1.5倍くらいのスペックがあれば、安心。  
+の時、
+Nsight Systems で計測して、
+
+#### 2UVC入力で、
+| model | speed |
+| --- | --- |
+| low (resnet50 1920x1080 Sc015 FULL) | 28msecくらい |
+| mid (resnet50 1920x1080 Sc025 FULL) | 31msecくらい |
+| high (resnet50 1920x1080 Sc050 FULL) | 40msecくらい |
+
+#### UVC + 4K30p(H.264, 29.97fps)で、
+| model | speed |
+| --- | --- |
+| low (resnet50 1920x1080 Sc015 FULL) | 33.36msecくらい(*1) |
+| mid (resnet50 1920x1080 Sc025 FULL) | 34.85msecくらい |
+| high (resnet50 1920x1080 Sc050 FULL) | 46.90msecくらい |
+
+#### UVC + 4K24p(H.264, 23.98fps)で、
+| model | speed |
+| --- | --- |
+| low (resnet50 1920x1080 Sc015 FULL) | 41.70msecくらい(*1) |
+| mid (resnet50 1920x1080 Sc025 FULL) | 41.70msecくらい(*1) |
+| high (resnet50 1920x1080 Sc050 FULL) | 44.90msecくらい |
+
+(*1) GStreamer での動画ファイル入力時、フレームレートで同期待ちの時間が含まれているため、計測時間は必ずフレームレート以上になる。フレームレートと同じ処理時間なら問題無し。
+
+RTX 2070 の1.5倍くらいのスペックがあれば、high でも 30p の可能性あり。  
 **最低ラインは、RTX 3060以上かな。出来れば、3080以上。**
 
 ## x86_64系のブランチをゲット
@@ -321,10 +351,10 @@ git clone git@github.com:flow-dev/jetson-inference-team.git
 cd jetson-inference-team
 git submodule update --init
 
-git checkout Br_collo_for_x64
+git checkout Br_collo
 
 pushd utils
-git checkout 20210616_for_x64
+git checkout master
 popd
 ```
 
