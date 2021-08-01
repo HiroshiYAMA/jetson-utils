@@ -311,7 +311,7 @@ OpenCV 経由なら GStreamer のパイプラインを使用可能。ハード�
 
 ### ちなみに処理速度は、
 RTX 2070 Super with MAX-Q
-- GPUあーきは Turing世代
+- GPUアーキは Turing世代
 - CUDAコアは 2560個
 - Tensorコアは320個
 
@@ -319,11 +319,14 @@ RTX 2070 Super with MAX-Q
 Nsight Systems で計測して、
 
 #### 2UVC入力で、
-| model | speed |
-| --- | --- |
-| low (resnet50 1920x1080 Sc015 FULL) | 28msecくらい |
-| mid (resnet50 1920x1080 Sc025 FULL) | 31msecくらい |
-| high (resnet50 1920x1080 Sc050 FULL) | 40msecくらい |
+| model | speed(pha only) | speed(fgr + pha) |
+| --- | --- | --- |
+| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい |
+| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい |
+| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい |
+| ***TorchScript だと、*** |
+| mobilenetv2 1920x1080 Sc025 sampling) | 24msecくらい | 23msecくらい |
+| resnet50 1920x1080 Sc025 sampling) | 28msecくらい | 26msecくらい |
 
 #### UVC + 4K30p(H.264, 29.97fps)で、
 | model | speed |
