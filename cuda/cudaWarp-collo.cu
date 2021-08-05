@@ -307,8 +307,8 @@ __global__ void cudaCollo(
 	output[uv_out.y * oW + uv_out.x] = pix_out;
 	//
 	if (collo_prm.camera_work) {
-		output_fg[uv_out.y * oW + uv_out.x] = cast_vec<S>(pix_fg);
-		output_bg[uv_out.y * oW + uv_out.x] = cast_vec<S>(pix_bg);
+		output_fg[uv_out.y * oW + uv_out.x] = cast_vec<S>(make_float4(pix_fg, 255.0f));
+		output_bg[uv_out.y * oW + uv_out.x] = cast_vec<S>(make_float4(pix_bg, 255.0f));
 		output_mask[uv_out.y * oW + uv_out.x] = cast_vec<S>(pix_mask);
 	}
 }
