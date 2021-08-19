@@ -126,6 +126,12 @@ public:
 	bool dropFrame;
 
 	/**
+	 * Number of milliseconds of video to buffer for incoming RTSP streams (the default is 2000 ms).
+	 * This option can be set from the command line using `--input-rtsp-latency=N`
+	 */
+	int rtspLatency;
+
+	/**
 	 * Device interface types.
 	 */
 	enum DeviceType
@@ -230,7 +236,7 @@ public:
 	/**
 	 * @internal Parse the video resource URI and options.
 	 */
-	bool Parse( const char* URI, const int argc, char** argv, IoType ioType);
+	bool Parse( const char* URI, const int argc, char** argv, IoType ioType, const char* extraFlag=NULL);
 
 	/**
 	 * @internal Parse the video resource URI and options.

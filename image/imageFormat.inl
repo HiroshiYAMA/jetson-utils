@@ -242,5 +242,17 @@ template<> inline __host__ __device__ imageFormat imageFormatFromType<float3>()	
 template<> inline __host__ __device__ imageFormat imageFormatFromType<float4>()	{ return IMAGE_RGBA32F; }
 
 
+// imageFormatErrorMsg
+inline void imageFormatErrorMsg( const char* prefix, const char* function, imageFormat format )
+{
+	LogError("%s%s -- unsupported image format (%s)\n", prefix, function, imageFormatToStr(format));
+	LogError("%s      supported formats are:\n", prefix);
+	LogError("%s          * rgb8\n", prefix);		
+	LogError("%s          * rgba8\n", prefix);		
+	LogError("%s          * rgb32f\n", prefix);		
+	LogError("%s          * rgba32f\n", prefix);
+}
+
+
 #endif
 

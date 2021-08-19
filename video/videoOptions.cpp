@@ -35,6 +35,7 @@ videoOptions::videoOptions()
 	bitRate     = 0;
 	numBuffers  = 4;
 	loop        = 0;
+	rtspLatency = 2000;
 	zeroCopy    = true;
 	ioType      = INPUT;
 	deviceType  = DEVICE_DEFAULT;
@@ -73,15 +74,18 @@ void videoOptions::Print( const char* prefix ) const
 	LogInfo("  -- fullscreen: %s\n", fullScreen ? "true" : "false");
 	LogInfo("  -- fov:        %f\n", fov);
 	LogInfo("  -- dropFrame:  %s\n", dropFrame ? "true" : "false");
+	LogInfo("  -- rtspLatency %i\n", rtspLatency);
 	
 	LogInfo("------------------------------------------------\n");
 }
 
 
 // Parse
-bool videoOptions::Parse( const char* URI, const int argc, char** argv, videoOptions::IoType type )
+bool videoOptions::Parse( const char* URI, const int argc, char** argv, videoOptions::IoType type, const char* extraFlag )
 {
-	return Parse(URI, argc, argv, type);
+	commandLine cmdLine(argc, argv, extraFlag);
+
+	return Parse(URI, cmdLine, type);
 }
 
 
@@ -216,6 +220,9 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 		}
 	}
 
+	// RTSP latency
+	rtspLatency = cmdLine.GetUnsignedInt("input-rtsp-latency", rtspLatency);
+	
 	return true;
 }
 
