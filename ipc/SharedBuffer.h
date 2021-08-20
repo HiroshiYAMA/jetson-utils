@@ -87,14 +87,6 @@ public:
 	    friend std::ostream &operator<<(std::ostream &ostr, const st_IMAGE_INFO_HEADER &header);
     };
 
-    // type -> SharedBuffer::em_IMAGE_INFO_DATA_TYPE.
-    template<typename T> struct __data_type_assert_false : std::false_type { };
-    template<typename T> static em_IMAGE_INFO_DATA_TYPE imageInfoDataTypeFromType()
-    {
-        static_assert(__data_type_assert_false<T>::value, "invalid data type - supported types are int{8|16|32|64}, uint{8|16|32|64}, float, double.");
-        return em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_8;
-    }
-
     // SharedBuffer::em_IMAGE_INFO_DATA_TYPE -> type.
     template<em_IMAGE_INFO_DATA_TYPE T> struct imageInfoDataType { typedef uint8_t Type; };
 
@@ -684,4 +676,26 @@ template<> struct SharedBuffer::CVTpeyType<CV_64F> { typedef double Type; };
 #ifdef __CUDACC__
 template<> struct SharedBuffer::CVTpeyType<CV_16F> { typedef half Type; };
 #endif
+#endif
+
+// type -> SharedBuffer::em_IMAGE_INFO_DATA_TYPE.
+template<typename T> struct __data_type_assert_false : std::false_type { };
+template<typename T> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType()
+{
+    static_assert(__data_type_assert_false<T>::value, "invalid data type - supported types are int{8|16|32|64}, uint{8|16|32|64}, float, double.");
+    return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_8;
+}
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<uint8_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_8; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<uint16_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_16; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<uint32_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_32; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<uint64_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_64; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<int8_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::INT_TYPE_8; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<int16_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::INT_TYPE_16; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<int32_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::INT_TYPE_32; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<int64_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::INT_TYPE_64; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<float>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::FLOAT_TYPE_BINARY32; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<double>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::FLOAT_TYPE_BINARY64; }
+#ifdef __CUDACC__
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<nv_bfloat16>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::FLOAT_TYPE_BFLOAT16; }
+template<> inline SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer_imageInfoDataTypeFromType<half>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::FLOAT_TYPE_BINARY16; }
 #endif

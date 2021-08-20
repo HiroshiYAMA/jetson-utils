@@ -32,22 +32,6 @@ st_SharedBuffer DefaultSharedBuffer = {
     .img_info = nullptr,
 };
 
-// type -> SharedBuffer::em_IMAGE_INFO_DATA_TYPE.
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<uint8_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_8; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<uint16_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_16; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<uint32_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_32; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<uint64_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::UINT_TYPE_64; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<int8_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::INT_TYPE_8; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<int16_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::INT_TYPE_16; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<int32_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::INT_TYPE_32; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<int64_t>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::INT_TYPE_64; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<float>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::FLOAT_TYPE_BINARY32; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<double>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::FLOAT_TYPE_BINARY64; }
-#ifdef __CUDACC__
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<nv_bfloat16>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::FLOAT_TYPE_BFLOAT16; }
-template<> SharedBuffer::em_IMAGE_INFO_DATA_TYPE SharedBuffer::imageInfoDataTypeFromType<half>() { return SharedBuffer::em_IMAGE_INFO_DATA_TYPE::FLOAT_TYPE_BINARY16; }
-#endif
-
 std::ostream &operator<<(std::ostream &ostr, const SharedBuffer::st_IMAGE_INFO_HEADER &header)
 {
     ostr << "st_IMAGE_INFO_HEADER:" << std::endl;
