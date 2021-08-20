@@ -144,6 +144,10 @@ bool URI::Parse( const char* uri )
 	{
 		extension = fileExtension(location);
 	}
+	else if( protocol == "sb" )
+	{
+		;
+	}
 	else
 	{		
 		// search for ip/port format

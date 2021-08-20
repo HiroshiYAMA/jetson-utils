@@ -311,6 +311,7 @@ const char* videoOptions::DeviceTypeToStr( videoOptions::DeviceType type )
 		case DEVICE_CSI:		return "csi";
 		case DEVICE_IP:		return "ip";
 		case DEVICE_FILE:		return "file";
+		case DEVICE_SHAREDBUFFER:	return "sb";
 		case DEVICE_DISPLAY:	return "display";
 	}
 	return nullptr;

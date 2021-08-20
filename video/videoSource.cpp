@@ -28,6 +28,7 @@
 #ifdef USE_OPENCV
 #include "videoDecoder.h"
 #endif
+#include "sharedBufferReceive.h"
 
 #include "logging.h"
 
@@ -73,6 +74,10 @@ videoSource* videoSource::Create( const videoOptions& options )
 	else if( uri.protocol == "csi" || uri.protocol == "v4l2" )
 	{
 		src = gstCamera::Create(options);
+	}
+	else if( uri.protocol == "sb" )
+	{
+		src = sharedBufferReceive::Create(options);
 	}
 	else
 	{
@@ -167,6 +172,8 @@ const char* videoSource::TypeToStr( uint32_t type )
 #endif
 	else if( type == imageLoader::Type )
 		return "imageLoader";
+	else if( type == sharedBufferReceive::Type )
+		return "sharedBufferReceive";
 
 	return "(unknown)";
 }

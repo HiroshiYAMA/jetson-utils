@@ -1002,12 +1002,15 @@ bool gstDecoder::Open()
 #else	// workaround code.
 			// close pipeline.
 			{
-				gst_element_set_state(mPipeline, GST_STATE_NULL);
+				const GstStateChangeReturn result = gst_element_set_state(mPipeline, GST_STATE_NULL);
+				if( result != GST_STATE_CHANGE_SUCCESS )
+					LogError(LOG_GSTREAMER "gstDecoder -- failed to stop pipeline (error %u)\n", result);
+
 				usleep(250*1000);
 				checkMsgBus();
-				if ( mAppSink != NULL )  gst_object_unref(mAppSink);  mAppSink = NULL;
-				if ( mBus != NULL )      gst_object_unref(mBus);      mBus = NULL;
-				if ( mPipeline != NULL ) gst_object_unref(mPipeline); mPipeline = NULL;
+				if ( mAppSink != NULL )  { gst_object_unref(mAppSink);  mAppSink = NULL; }
+				if ( mBus != NULL )      { gst_object_unref(mBus);      mBus = NULL; }
+				if ( mPipeline != NULL ) { gst_object_unref(mPipeline); mPipeline = NULL; }
 			}
 
 			// re-open pipeline.
@@ -1020,6 +1023,7 @@ bool gstDecoder::Open()
 					LogError(LOG_GSTREAMER "gstDecoder +++++++++++++++++ failed to create pipeline\n");
 					LogError(LOG_GSTREAMER "   (%s)\n", err->message);
 					g_error_free(err);
+					return false;
 				}
 
 				GstPipeline* pipeline = GST_PIPELINE(mPipeline);
