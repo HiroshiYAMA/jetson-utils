@@ -130,17 +130,6 @@ bool sharedBufferReceive::init()
 	mOptions.height = header.height;
     mBufSizeReceive = header.line_offset * header.height;
 
-	if( !cudaAllocMapped((void **)&sb_buf_receive, mBufSizeReceive) )
-	{
-		LogError(LOG_SHARED_BUFFER_RECEIVE "failed to allocate CUDA memory for sb_buf_receive (%ux%u)\n", mOptions.width, mOptions.height);
-		return false;
-	}
-	if( !cudaAllocMapped(&sb_buf_out, make_int2(mOptions.width, mOptions.height)) )
-	{
-		LogError(LOG_SHARED_BUFFER_RECEIVE "failed to allocate CUDA memory for sb_buf_out (%ux%u)\n", mOptions.width, mOptions.height);
-		return false;
-	}
-
 	return true;
 }
 
@@ -194,14 +183,32 @@ bool sharedBufferReceive::Capture( void** output, imageFormat format, uint64_t t
 
 	if (sb.img_info == nullptr) return false;
 
+	auto w = mOptions.width;
+	auto h = mOptions.height;
+
+	if (sb_buf_receive == nullptr) {
+		if( !cudaAllocMapped(&sb_buf_receive, mBufSizeReceive) )
+		{
+			LogError(LOG_SHARED_BUFFER_RECEIVE "failed to allocate CUDA memory for sb_buf_receive (%ux%u)\n", w, h);
+			return false;
+		}
+	}
+	if (sb_buf_out == nullptr) {
+		if( !cudaAllocMapped(&sb_buf_out, imageFormatSize(format, w, h)) )
+		{
+			LogError(LOG_SHARED_BUFFER_RECEIVE "failed to allocate CUDA memory for sb_buf_out (%ux%u)\n", w, h);
+			return false;
+		}
+	}
+
 	// capture frame.
-	if (!sb.img_info->ReceiveBuf(sb_buf_receive, mBufSizeReceive)) {
+	if (!sb.img_info->ReceiveBuf(static_cast<uint8_t *>(sb_buf_receive), mBufSizeReceive)) {
 		LogError(LOG_SHARED_BUFFER_RECEIVE "sharedBufferReceive::Capture() -- couldn't receive\n");
 		return false;
 	}
 
 	// ***32F: input range is normalized [0, 1].
-	if( CUDA_FAILED(cudaConvertColor(sb_buf_receive, mFormatSharedBuffer, sb_buf_out, format, GetWidth(), GetHeight(), make_float2(0,1), mStream)) )
+	if( CUDA_FAILED(cudaConvertColor(sb_buf_receive, mFormatSharedBuffer, sb_buf_out, format, w, h, make_float2(0,1), mStream)) )
 	{
 		LogError(LOG_SHARED_BUFFER_RECEIVE "sharedBufferReceive::Capture() -- unsupported image format (%s)\n", imageFormatToStr(format));
 		LogError(LOG_SHARED_BUFFER_RECEIVE "                         supported formats are:\n");

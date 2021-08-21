@@ -22,8 +22,6 @@
 
 #pragma once
 
-#include <variant>
-
 #include "SharedBuffer.h"
 #include "videoSource.h"
 
@@ -32,7 +30,6 @@
 
 
 
-// template<typename T_out>
 class sharedBufferReceive : public videoSource
 {
 public:
@@ -112,7 +109,6 @@ protected:
 
 	st_SharedBuffer sb;
 
-	uint8_t *sb_buf_receive;
-	// T_out *sb_buf_out;
-	uchar4 *sb_buf_out;
+	void *sb_buf_receive;
+	void *sb_buf_out;
 };
