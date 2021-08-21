@@ -49,8 +49,8 @@ sharedBufferReceive::sharedBufferReceive( const videoOptions& options ) : videoS
 	mFormatSharedBuffer = IMAGE_GRAY8;
 	mBufSizeReceive = 0;
 
-	uint8_t *sb_buf_receive = nullptr;
-	uchar4 *sb_buf_out = nullptr;
+	sb_buf_receive = nullptr;
+	sb_buf_out = nullptr;
 
 	mOptions.deviceType = videoOptions::DEVICE_SHAREDBUFFER;
 }
