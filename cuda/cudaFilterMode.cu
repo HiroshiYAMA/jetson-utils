@@ -35,6 +35,14 @@ cudaFilterMode cudaFilterModeFromStr( const char* str, cudaFilterMode default_va
 		return FILTER_LINEAR;
 	else if( strcasecmp(str, "point") == 0 || strcasecmp(str, "nearest") == 0 )
 		return FILTER_POINT;
+	else if( strcasecmp(str, "cubic") == 0)
+		return FILTER_CUBIC;
+	else if( strcasecmp(str, "area") == 0)
+		return FILTER_AREA;
+	else if( strcasecmp(str, "lanczos4") == 0)
+		return FILTER_LANCZOS4;
+	else if( strcasecmp(str, "spline36") == 0)
+		return FILTER_SPLINE36;
 
 	return default_value;
 }
@@ -45,10 +53,14 @@ const char* cudaFilterModeToStr( cudaFilterMode filter )
 {
 	if( filter == FILTER_LINEAR )
 		return "linear";
+	else if( filter == FILTER_CUBIC )
+		return "cubic";
+	else if( filter == FILTER_AREA )
+		return "area";
+	else if( filter == FILTER_LANCZOS4 )
+		return "lanczos4";
+	else if( filter == FILTER_SPLINE36 )
+		return "spline36";
 
 	return "point";
 }
-
-
-
-

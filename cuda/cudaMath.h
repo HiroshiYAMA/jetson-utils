@@ -81,6 +81,39 @@ inline float rsqrtf(float x)
 // constructors
 ////////////////////////////////////////////////////////////////////////////////
 
+inline __host__ __device__ uchar2 make_uchar2(uchar s)
+{
+    return make_uchar2(s, s);
+}
+inline __host__ __device__ uchar2 make_uchar2(float2 a)
+{
+    return make_uchar2(uchar(a.x), uchar(a.y));
+}
+inline __host__ __device__ uchar2 make_uchar2(float3 a)
+{
+    return make_uchar2(uchar(a.x), uchar(a.y));
+}
+inline __host__ __device__ uchar2 make_uchar2(float4 a)
+{
+    return make_uchar2(uchar(a.x), uchar(a.y));
+}
+inline __host__ __device__ uchar2 make_uchar2(int2 a)
+{
+    return make_uchar2(a.x, a.y);
+}
+inline __host__ __device__ uchar2 make_uchar2(uint2 a)
+{
+    return make_uchar2(a.x, a.y);
+}
+inline __host__ __device__ uchar2 make_uchar2(uchar3 a)
+{
+    return make_uchar2(a.x, a.y);
+}
+inline __host__ __device__ uchar2 make_uchar2(uchar4 a)
+{
+    return make_uchar2(a.x, a.y);
+}
+
 inline __host__ __device__ float2 make_float2(float s)
 {
     return make_float2(s, s);
@@ -89,11 +122,27 @@ inline __host__ __device__ float2 make_float2(float3 a)
 {
     return make_float2(a.x, a.y);
 }
+inline __host__ __device__ float2 make_float2(float4 a)
+{
+    return make_float2(a.x, a.y);
+}
 inline __host__ __device__ float2 make_float2(int2 a)
 {
     return make_float2(float(a.x), float(a.y));
 }
 inline __host__ __device__ float2 make_float2(uint2 a)
+{
+    return make_float2(float(a.x), float(a.y));
+}
+inline __host__ __device__ float2 make_float2(uchar2 a)
+{
+    return make_float2(float(a.x), float(a.y));
+}
+inline __host__ __device__ float2 make_float2(uchar3 a)
+{
+    return make_float2(float(a.x), float(a.y));
+}
+inline __host__ __device__ float2 make_float2(uchar4 a)
 {
     return make_float2(float(a.x), float(a.y));
 }
@@ -131,6 +180,10 @@ inline __host__ __device__ uint2 make_uint2(int2 a)
 inline __host__ __device__ float3 make_float3(uchar s)
 {
     return make_float3(s, s, s);
+}
+inline __host__ __device__ float3 make_float3(uchar2 a)
+{
+    return make_float3(float(a.x), float(a.y), 0.0f);
 }
 inline __host__ __device__ float3 make_float3(float s)
 {
@@ -215,6 +268,10 @@ inline __host__ __device__ uchar3 make_uchar3(uchar s)
 {
     return make_uchar3(s, s, s);
 }
+inline __host__ __device__ uchar3 make_uchar3(uchar2 a)
+{
+    return make_uchar3(a.x, a.y, 0);
+}
 inline __host__ __device__ uchar3 make_uchar3(uint s)
 {
     return make_uchar3(s, s, s);
@@ -243,6 +300,14 @@ inline __host__ __device__ uchar3 make_uchar3(int3 a)
 {
     return make_uchar3(uchar(a.x), uchar(a.y), uchar(a.z));
 }
+inline __host__ __device__ uchar3 make_uchar3(float s)
+{
+    return make_uchar3(s, s, s);
+}
+inline __host__ __device__ uchar3 make_uchar3(float2 a)
+{
+    return make_uchar3(a.x, a.y, 0);
+}
 inline __host__ __device__ uchar3 make_uchar3(float3 a)
 {
     return make_uchar3(a.x, a.y, a.z);
@@ -256,9 +321,21 @@ inline __host__ __device__ float4 make_float4(uchar s)
 {
     return make_float4(s, s, s, s);
 }
+inline __host__ __device__ float4 make_float4(uchar2 a)
+{
+    return make_float4(float(a.x), float(a.y), 0.0f, 0.0f);
+}
 inline __host__ __device__ float4 make_float4(float s)
 {
     return make_float4(s, s, s, s);
+}
+inline __host__ __device__ float4 make_float4(float2 a)
+{
+    return make_float4(a.x, a.y, 0.0f, 0.0f);
+}
+inline __host__ __device__ float4 make_float4(float2 a, float s)
+{
+    return make_float4(a.x, a.y, s, s);
 }
 inline __host__ __device__ float4 make_float4(float3 a)
 {
@@ -332,6 +409,10 @@ inline __host__ __device__ uchar4 make_uchar4(uchar s)
 {
     return make_uchar4(s, s, s, s);
 }
+inline __host__ __device__ uchar4 make_uchar4(uchar2 a)
+{
+    return make_uchar4(a.x, a.y, 0, 0);
+}
 inline __host__ __device__ uchar4 make_uchar4(uint s)
 {
     return make_uchar4(s, s, s, s);
@@ -355,6 +436,14 @@ inline __host__ __device__ uchar4 make_uchar4(uint3 a, uint w)
 inline __host__ __device__ uchar4 make_uchar4(int4 a)
 {
     return make_uchar4(uchar(a.x), uchar(a.y), uchar(a.z), uchar(a.w));
+}
+inline __host__ __device__ uchar4 make_uchar4(float s)
+{
+    return make_uchar4(s, s, s, s);
+}
+inline __host__ __device__ uchar4 make_uchar4(float2 a)
+{
+    return make_uchar4(a.x, a.y, 0, 0);
 }
 inline __host__ __device__ uchar4 make_uchar4(float3 a)
 {
@@ -1049,13 +1138,38 @@ inline __host__ __device__ void operator*=(uint3 &a, uint b)
     a.y *= b;
     a.z *= b;
 }
-inline __host__ __device__ uchar3 operator*(uchar3 a, float b)
+
+inline __host__ __device__ uchar3 operator*(uchar3 a, uchar3 b)
+{
+    return make_uchar3(a.x * b.x, a.y * b.y, a.z * b.z);
+}
+inline __host__ __device__ void operator*=(uchar3 &a, uchar3 b)
+{
+    a.x *= b.x;
+    a.y *= b.y;
+    a.z *= b.z;
+}
+inline __host__ __device__ uchar3 operator*(uchar3 a, uchar b)
 {
     return make_uchar3(a.x * b, a.y * b, a.z * b);
 }
-inline __host__ __device__ uchar3 operator*(float b, uchar3 a)
+inline __host__ __device__ uchar3 operator*(uchar b, uchar3 a)
 {
     return make_uchar3(b * a.x, b * a.y, b * a.z);
+}
+inline __host__ __device__ void operator*=(uchar3 &a, uchar b)
+{
+    a.x *= b;
+    a.y *= b;
+    a.z *= b;
+}
+inline __host__ __device__ float3 operator*(uchar3 a, float b)
+{
+    return make_float3(a.x * b, a.y * b, a.z * b);
+}
+inline __host__ __device__ float3 operator*(float b, uchar3 a)
+{
+    return make_float3(b * a.x, b * a.y, b * a.z);
 }
 inline __host__ __device__ void operator*=(uchar3 &a, float b)
 {
@@ -1171,6 +1285,21 @@ inline __host__ __device__ void operator*=(uchar4 &a, uchar b)
     a.z *= b;
     a.w *= b;
 }
+inline __host__ __device__ float4 operator*(uchar4 a, float b)
+{
+    return make_float4(a.x * b, a.y * b, a.z * b,  a.w * b);
+}
+inline __host__ __device__ float4 operator*(float b, uchar4 a)
+{
+    return make_float4(b * a.x, b * a.y, b * a.z, b * a.w);
+}
+inline __host__ __device__ void operator*=(uchar4 &a, float b)
+{
+    a.x *= b;
+    a.y *= b;
+    a.z *= b;
+    a.w *= b;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // divide
@@ -1224,6 +1353,35 @@ inline __host__ __device__ float3 operator/(float b, float3 a)
     return make_float3(b / a.x, b / a.y, b / a.z);
 }
 
+inline __host__ __device__ uchar3 operator/(uchar3 a, uchar b)
+{
+    return make_uchar3(a.x / b, a.y / b, a.z / b);
+}
+inline __host__ __device__ uchar3 operator/(uchar b, uchar3 a)
+{
+    return make_uchar3(b / a.x, b / a.y, b / a.z);
+}
+inline __host__ __device__ void operator/=(uchar3 &a, uchar b)
+{
+    a.x /= b;
+    a.y /= b;
+    a.z /= b;
+}
+inline __host__ __device__ float3 operator/(uchar3 a, float b)
+{
+    return make_float3(a.x / b, a.y / b, a.z / b);
+}
+inline __host__ __device__ float3 operator/(float b, uchar3 a)
+{
+    return make_float3(b / a.x, b / a.y, b / a.z);
+}
+inline __host__ __device__ void operator/=(uchar3 &a, float b)
+{
+    a.x /= b;
+    a.y /= b;
+    a.z /= b;
+}
+
 inline __host__ __device__ float4 operator/(float4 a, float4 b)
 {
     return make_float4(a.x / b.x, a.y / b.y, a.z / b.z,  a.w / b.w);
@@ -1249,6 +1407,37 @@ inline __host__ __device__ void operator/=(float4 &a, float b)
 inline __host__ __device__ float4 operator/(float b, float4 a)
 {
     return make_float4(b / a.x, b / a.y, b / a.z, b / a.w);
+}
+
+inline __host__ __device__ uchar4 operator/(uchar4 a, uchar b)
+{
+    return make_uchar4(a.x / b, a.y / b, a.z / b, a.w / b);
+}
+inline __host__ __device__ uchar4 operator/(uchar b, uchar4 a)
+{
+    return make_uchar4(b / a.x, b / a.y, b / a.z, b / a.w);
+}
+inline __host__ __device__ void operator/=(uchar4 &a, uchar b)
+{
+    a.x /= b;
+    a.y /= b;
+    a.z /= b;
+    a.w /= b;
+}
+inline __host__ __device__ float4 operator/(uchar4 a, float b)
+{
+    return make_float4(a.x / b, a.y / b, a.z / b, a.w / b);
+}
+inline __host__ __device__ float4 operator/(float b, uchar4 a)
+{
+    return make_float4(b / a.x, b / a.y, b / a.z, b / a.w);
+}
+inline __host__ __device__ void operator/=(uchar4 &a, float b)
+{
+    a.x /= b;
+    a.y /= b;
+    a.z /= b;
+    a.w /= b;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1376,6 +1565,10 @@ inline __device__ __host__ uint clamp(uint f, uint a, uint b)
 {
     return max(a, min(f, b));
 }
+inline __device__ __host__ uchar clamp(uchar f, uchar a, uchar b)
+{
+    return max(a, min(f, b));
+}
 
 inline __device__ __host__ float2 clamp(float2 v, float a, float b)
 {
@@ -1450,6 +1643,31 @@ inline __device__ __host__ uint4 clamp(uint4 v, uint a, uint b)
 inline __device__ __host__ uint4 clamp(uint4 v, uint4 a, uint4 b)
 {
     return make_uint4(clamp(v.x, a.x, b.x), clamp(v.y, a.y, b.y), clamp(v.z, a.z, b.z), clamp(v.w, a.w, b.w));
+}
+
+inline __device__ __host__ uchar2 clamp(uchar2 v, uchar a, uchar b)
+{
+    return make_uchar2(clamp(v.x, a, b), clamp(v.y, a, b));
+}
+inline __device__ __host__ uchar2 clamp(uchar2 v, uchar2 a, uchar2 b)
+{
+    return make_uchar2(clamp(v.x, a.x, b.x), clamp(v.y, a.y, b.y));
+}
+inline __device__ __host__ uchar3 clamp(uchar3 v, uchar a, uchar b)
+{
+    return make_uchar3(clamp(v.x, a, b), clamp(v.y, a, b), clamp(v.z, a, b));
+}
+inline __device__ __host__ uchar3 clamp(uchar3 v, uchar3 a, uchar3 b)
+{
+    return make_uchar3(clamp(v.x, a.x, b.x), clamp(v.y, a.y, b.y), clamp(v.z, a.z, b.z));
+}
+inline __device__ __host__ uchar4 clamp(uchar4 v, uchar a, uchar b)
+{
+    return make_uchar4(clamp(v.x, a, b), clamp(v.y, a, b), clamp(v.z, a, b), clamp(v.w, a, b));
+}
+inline __device__ __host__ uchar4 clamp(uchar4 v, uchar4 a, uchar4 b)
+{
+    return make_uchar4(clamp(v.x, a.x, b.x), clamp(v.y, a.y, b.y), clamp(v.z, a.z, b.z), clamp(v.w, a.w, b.w));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
