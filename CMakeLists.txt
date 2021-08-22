@@ -13,8 +13,8 @@ else()
 	# standalone project
 	project(jetson-utils)
   
-	# -std=gnu++11
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wno-write-strings")	
+	# -std=gnu++14
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-write-strings")	
   
 	# setup CUDA
 	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cuda")
@@ -39,6 +39,7 @@ else()
 			CUDA_NVCC_FLAGS
 			${CUDA_NVCC_FLAGS}; 
 			-gencode arch=compute_72,code=sm_72
+			-Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
 		)
 	endif()
 	
