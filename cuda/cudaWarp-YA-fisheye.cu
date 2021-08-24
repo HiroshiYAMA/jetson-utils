@@ -25,7 +25,15 @@
 
 
 // XY(output) -> 3D position w/ rotation.
+#ifdef USE_GLM
 inline __device__ float3 conv_2Dto3D_rotated(float cx, float cy, float fov, glm::quat q_view)
+#else
+#ifdef USE_QUATERNION_TO_ROTATE
+inline __device__ float3 conv_2Dto3D_rotated(float cx, float cy, float fov, float4 q_view)
+#else
+inline __device__ float3 conv_2Dto3D_rotated(float cx, float cy, float fov, st_YA_FISHEYE_rotation rot)
+#endif
+#endif
 {
 	// 2D -> 3D.
 	// right-handed system. x: right(->), y: down(|v), z: far(X).
@@ -36,6 +44,7 @@ inline __device__ float3 conv_2Dto3D_rotated(float cx, float cy, float fov, glm:
 	};
 
 	// pan, tilt, roll.
+#ifdef USE_GLM
 	glm::vec3 p_org(po.x, po.y, po.z);
 	glm::vec3 p_rot_tmp = q_view * p_org;
 	float3 p_rot = {
@@ -43,6 +52,21 @@ inline __device__ float3 conv_2Dto3D_rotated(float cx, float cy, float fov, glm:
 		p_rot_tmp.y,
 		p_rot_tmp.z,
 	};
+#else
+#ifdef USE_QUATERNION_TO_ROTATE
+	float4 p_org = make_float4(po, 1.0f);
+	float3 p_rot = cast_vec<float3>(rot_quat(p_org, q_view));
+#else
+	float3 p_rot =
+		rotZ_f(
+			rotY_f(
+				rotX_f(
+					rotZ_f(po, rot.roll),
+				rot.x),
+			rot.y),
+		rot.z);
+#endif
+#endif
 
 	// normalized sphere. r = 1.0.
 	float3 p_sph = normalize(p_rot);
@@ -144,7 +168,11 @@ __global__ void cudaYAFisheye( T* input, S* output, st_YA_FISHEYE_param YA_fishe
 	const float cy = __fmaf_rn(__fdividef(uv_out.y, oH_f), 2.0f, -1.0f);
 
 	// XY(output) -> 3D position w/ rotation.
+	#ifdef USE_QUATERNION_TO_ROTATE
 	float3 p_sph = conv_2Dto3D_rotated(cx, cy, fov, YA_fisheye_prm.quat_view);
+	#else
+	float3 p_sph = conv_2Dto3D_rotated(cx, cy, fov, YA_fisheye_prm.rot);
+	#endif
 
 	float u;
 	float v;

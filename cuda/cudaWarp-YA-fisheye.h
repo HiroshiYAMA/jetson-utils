@@ -25,10 +25,13 @@
 
 
 #include "cudaUtility.h"
+#include "cudaVector.h"
 
 #include <math.h>
 
+#ifdef USE_GLM
 #include "GLM.h"
+#endif
 
 // dgrees <--> radians.
 template<typename T> constexpr inline __host__ __device__ T RAD(T d) { return static_cast<T>(d * M_PI / 180.0); }
@@ -92,6 +95,37 @@ template<typename T> inline __device__ T rotZ_f(T p, float th)
 
 	p_rot.x = __cosf(th) * p.x - __sinf(th) * p.y;
 	p_rot.y = __sinf(th) * p.x + __cosf(th) * p.y;
+
+	return p_rot;
+}
+
+// multiply for quaternion.
+inline __host__ __device__ float4 quat_multi(const float4 &q1, const float4 &q2)
+{
+	float3 q1_vec = cast_vec<float3>(q1);
+	float3 q2_vec = cast_vec<float3>(q2);
+
+	float q_w = q1.w * q2.w - dot(q1_vec, q2_vec);
+	float3 q_vec = cross(q1_vec, q2_vec);
+	q_vec = q_vec + q1.w * q2_vec + q2.w * q1_vec;
+
+	float4 q = make_float4(q_vec, q_w);
+
+	return q;
+}
+
+// rotation with quaternion.
+inline __host__ __device__ float4 rot_quat(const float4 &p, const float4 &q)
+{
+	float4 p_rot;
+	float4 q_conj = q * -1.0f;
+
+	q_conj.w = q.w;
+
+	p_rot = quat_multi(q, p);
+	p_rot = quat_multi(p_rot, q_conj);
+
+	p_rot.w = 1.0f;
 
 	return p_rot;
 }
@@ -194,8 +228,12 @@ struct st_YA_FISHEYE_param {
 	em_YA_FISHEYE_lens_spec lens_type;
 
 	// rotaion.
-	// st_YA_FISHEYE_rotation rot;
+#ifndef USE_GLM
+	st_YA_FISHEYE_rotation rot;
+	float4 quat_view;
+#else
 	glm::quat quat_view;
+#endif
 
 	// pixel sampling filter.
 	int filter_mode;
