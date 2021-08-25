@@ -107,8 +107,8 @@ inline __device__ bool is_over_edge(float u, float v, float w, float h)
 	bool over_edge = (
 		( u < 0.0f )
 		|| ( v < 0.0f )
-		|| ( u > w - 1.0f )
-		|| ( v > h - 1.0f )
+		|| ( u >= w )
+		|| ( v >= h )
 	);
 
 	return over_edge;
@@ -165,8 +165,8 @@ __global__ void cudaCollo(
 	// convert to cartesian coordinates
 	// const float cx = ((uv_out.x / oW_f) - 0.5f) * 2.0f * collo_prm.oAspect;
 	// const float cy = ((uv_out.y / oH_f) - 0.5f) * 2.0f;
-	const float cx = __fmaf_rn(__fdividef(uv_out.x, oW_f), 2.0f, -1.0f) * collo_prm.oAspect;
-	const float cy = __fmaf_rn(__fdividef(uv_out.y, oH_f), 2.0f, -1.0f);
+	const float cx = __fmaf_rn(__fdividef(uv_out.x, oW_f) + (0.5f / oW_f), 2.0f, -1.0f) * collo_prm.oAspect;
+	const float cy = __fmaf_rn(__fdividef(uv_out.y, oH_f) + (0.5f / oH_f), 2.0f, -1.0f);
 
 	// XY(output) -> 3D position w/ rotation.
 	float3 p_sph = conv_2Dto3D_rotated(cx, cy, fov, collo_prm.quat_view);
@@ -242,20 +242,20 @@ __global__ void cudaCollo(
 		decltype(*input + 0) pix;
 		switch (filter) {
 		case FILTER_LINEAR:	// Bi-linear. 3x3 filter.
-			pix = cudaFilterPixel<FILTER_LINEAR>(input, u, v, iW, iH, oW, oH, scale, max_value);
+			pix = cudaFilterPixel<FILTER_LINEAR, false>(input, u, v, iW, iH, oW, oH, scale, max_value);
 			break;
 		case FILTER_CUBIC:	// Bi-cubic. 5x5 filter.
-			pix = cudaFilterPixel<FILTER_CUBIC>(input, u, v, iW, iH, oW, oH, scale, max_value);
+			pix = cudaFilterPixel<FILTER_CUBIC, false>(input, u, v, iW, iH, oW, oH, scale, max_value);
 			break;
 		case FILTER_SPLINE36:	// Spline36. 7x7 filter.
-			pix = cudaFilterPixel<FILTER_SPLINE36>(input, u, v, iW, iH, oW, oH, scale, max_value);
+			pix = cudaFilterPixel<FILTER_SPLINE36, false>(input, u, v, iW, iH, oW, oH, scale, max_value);
 			break;
 		case FILTER_LANCZOS4:	// slowest. Lanczos4. 9x9 filter.
-			pix = cudaFilterPixel<FILTER_LANCZOS4>(input, u, v, iW, iH, oW, oH, scale, max_value);
+			pix = cudaFilterPixel<FILTER_LANCZOS4, false>(input, u, v, iW, iH, oW, oH, scale, max_value);
 			break;
 		case FILTER_POINT:	// fastest. nearest.
 		default:
-			pix = cudaFilterPixel<FILTER_POINT>(input, u, v, iW, iH, oW, oH, scale, max_value);
+			pix = cudaFilterPixel<FILTER_POINT, false>(input, u, v, iW, iH, oW, oH, scale, max_value);
 		}
 		return pix;
 	};
