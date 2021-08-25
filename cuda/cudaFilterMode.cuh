@@ -543,18 +543,18 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int 
  * @returns the filtered pixel from the input image
  * @ingroup cudaFilter
  */ 
- template<cudaFilterMode filter, cudaDataFormat format=FORMAT_HWC, typename T>
+ template<cudaFilterMode filter, bool sampling_shift=true, cudaDataFormat format=FORMAT_HWC, typename T>
  __device__ inline T cudaFilterPixel( T* input, float x, float y,
 								int input_width, int input_height,
 								int output_width, int output_height,
 								float2 scale, float max_value = 255.0f )
  {
 	 const float px =
-	 	(filter == FILTER_POINT || filter == FILTER_AREA)
+		(filter == FILTER_POINT || filter == FILTER_AREA || sampling_shift == false)
 		 ? (x * scale.x)
 		 : ::max(((x + 0.5f) * scale.x - 0.5f), 0.0f);
 	 const float py =
-	 	(filter == FILTER_POINT || filter == FILTER_AREA)
+		(filter == FILTER_POINT || filter == FILTER_AREA || sampling_shift == false)
 		 ? (y * scale.y)
 		 : ::max(((y + 0.5f) * scale.y - 0.5f), 0.0f);
 
@@ -568,7 +568,7 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int 
 		 return cudaFilterPixel<filter, format>(input, px, py, input_width, input_height, max_value);
 	 }
  }
- template<cudaFilterMode filter, cudaDataFormat format=FORMAT_HWC, typename T>
+ template<cudaFilterMode filter, bool sampling_shift=true, cudaDataFormat format=FORMAT_HWC, typename T>
 __device__ inline T cudaFilterPixel( T* input, float x, float y,
 						       int input_width, int input_height,
 						       int output_width, int output_height,
@@ -579,7 +579,7 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y,
 		__fdividef(float(input_height), float(output_height)),
 	};
 
-	return cudaFilterPixel<filter, format>(input, x, y, input_width, input_height, output_width, output_height, scale, max_value);
+	return cudaFilterPixel<filter, sampling_shift, format>(input, x, y, input_width, input_height, output_width, output_height, scale, max_value);
 }
 
 
