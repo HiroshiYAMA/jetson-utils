@@ -42,25 +42,18 @@ else()
 	)
 
 	if(CUDA_VERSION_MAJOR GREATER 9)
-		message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_72")
+		message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_72, SM_75")
 
 		set(
 			CUDA_NVCC_FLAGS
 			${CUDA_NVCC_FLAGS}; 
 			-gencode arch=compute_72,code=sm_72
+			-gencode arch=compute_75,code=sm_75
+			-Xcudafe --diag_suppress=esa_on_defaulted_function_ignored
 		)
 	endif()
 	if(NOT JETSON)
 		if(CUDA_VERSION_MAJOR GREATER 10)
-			message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_75")
-
-			set(
-				CUDA_NVCC_FLAGS
-				${CUDA_NVCC_FLAGS};
-				-gencode arch=compute_75,code=sm_75
-			)
-		endif()
-		if(CUDA_VERSION_MAJOR GREATER 11)
 			message("-- CUDA ${CUDA_VERSION_MAJOR} detected, enabling SM_86")
 
 			set(
