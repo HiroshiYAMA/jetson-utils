@@ -319,14 +319,17 @@ RTX 2070 Super with MAX-Q
 Nsight Systems で計測して、
 
 #### 2UVC入力で、
-| model | speed(pha only) | speed(fgr + pha) |
-| --- | --- | --- |
-| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい |
-| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい |
-| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい |
+| model | speed(pha only) | speed(fgr + pha) | 3080(pha only) | 3080(fgr + pha) |
+| --- | --- | --- | --- | --- |
+| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5msec | 30msec |
+| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26msec | 31.5msec |
+| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35msec | 40.5msec |
 | ***TorchScript だと、*** |
-| mobilenetv2 1920x1080 Sc025 sampling) | 24msecくらい | 23msecくらい |
-| resnet50 1920x1080 Sc025 sampling) | 28msecくらい | 26msecくらい |
+| mobilenetv2 1920x1080 Sc025 sampling) | 24msecくらい | 23msecくらい | 21msec | 22msec |
+| resnet50 1920x1080 Sc025 sampling) | 28msecくらい | 26msecくらい | 25msec | 26msec |
+| resnet50 1920x1080 Sc040 sampling80000) | | | | 36msec |
+| resnet50 1920x1080 Sc045 sampling80000) | | | | 41msec |
+| resnet50 1920x1080 Sc050 sampling80000) | | | | 43.5msec |
 
 #### UVC + 4K30p(H.264, 29.97fps)で、
 | model | speed |
@@ -346,6 +349,7 @@ Nsight Systems で計測して、
 
 RTX 2070 の1.5倍くらいのスペックがあれば、high でも 30p の可能性あり。  
 **最低ラインは、RTX 3060以上かな。出来れば、3080以上。**
+と言いたいところだが、 RTX 3080 Laptop は、RTX 2070 Super with MAX-Q の約 1.1倍だった。
 
 ## x86_64系のブランチをゲット
 ```bash
