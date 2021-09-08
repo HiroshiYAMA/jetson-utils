@@ -321,15 +321,36 @@ Nsight Systems で計測して、
 #### 2UVC入力で、
 | model | speed(pha only) | speed(fgr + pha) | 3080(pha only) | 3080(fgr + pha) |
 | --- | --- | --- | --- | --- |
+| ***ONNX -> TensorRT だと、*** |
 | low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5msec | 30msec |
 | mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26msec | 31.5msec |
 | high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35msec | 40.5msec |
+|| **KaijinMatte20K_FHD_UHD** |
+| **FP16** |
+| (mobilenetv2 1920x1080 Sc025 FULL) | | | | 30msec |
+| (mobilenetv2 1920x1080 Sc040 FULL) | | | | 33msec |
+| (mobilenetv2 1920x1080 Sc050 FULL) | | | | 36msec |
+| (resnet50 1920x1080 Sc025 FULL) | | | | 31msec |
+| (resnet50 1920x1080 Sc040 FULL) | | | | 36msec |
+| (resnet50 1920x1080 Sc050 FULL) | | | | 40msec |
 | ***TorchScript だと、*** |
-| mobilenetv2 1920x1080 Sc025 sampling) | 24msecくらい | 23msecくらい | 21msec | 22msec |
-| resnet50 1920x1080 Sc025 sampling) | 28msecくらい | 26msecくらい | 25msec | 26msec |
-| resnet50 1920x1080 Sc040 sampling80000) | | | | 36msec |
-| resnet50 1920x1080 Sc045 sampling80000) | | | | 41msec |
-| resnet50 1920x1080 Sc050 sampling80000) | | | | 43.5msec |
+| mobilenetv2 1920x1080 Sc025 sampling | 24msecくらい | 23msecくらい | 21msec | 22msec |
+| resnet50 1920x1080 Sc025 sampling | 28msecくらい | 26msecくらい | 25msec | 26msec |
+|| **KaijinMatte20K_FHD_UHD** |
+| **FP16** |
+| mobilenetv2 1920x1080 Sc025 sampling80000 | | | | 23msec |
+| mobilenetv2 1920x1080 Sc040 sampling80000 | | | | 27msec |
+| mobilenetv2 1920x1080 Sc050 sampling80000 | | | | 30.5msec |
+| resnet50 1920x1080 Sc025 sampling80000 | | | | 28msec |
+| resnet50 1920x1080 Sc040 sampling80000 | | | | 39msec |
+| resnet50 1920x1080 Sc050 sampling80000 | | | | 47msec |
+| **FP32** |
+| mobilenetv2 1920x1080 Sc025 sampling80000 | | | | 24.5msec |
+| mobilenetv2 1920x1080 Sc040 sampling80000 | | | | 32msec |
+| mobilenetv2 1920x1080 Sc050 sampling80000 | | | | 37.5msec |
+| resnet50 1920x1080 Sc025 sampling80000 | | | | 38msec |
+| resnet50 1920x1080 Sc040 sampling80000 | | | | 58msec |
+| resnet50 1920x1080 Sc050 sampling80000 | | | | 77msec |
 
 #### UVC + 4K30p(H.264, 29.97fps)で、
 | model | speed |
