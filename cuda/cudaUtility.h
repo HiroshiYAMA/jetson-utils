@@ -115,6 +115,8 @@ inline cudaError_t cudaCheckError(cudaError_t retval, const char* txt, const cha
  */
 #define CUDA_FREE_HOST(x)	if(x != NULL) { cudaFreeHost(x); x = NULL; }
 
+#define CUDA_FREE_MAPPED(x, f)	if(x != NULL) { f ? cudaFreeHost(x) : cudaFree(x); x = NULL; }
+
 /**
  * Check for non-NULL pointer before deleting it, and then set the pointer to NULL.
  * @ingroup util

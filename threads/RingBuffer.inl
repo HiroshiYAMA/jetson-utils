@@ -87,7 +87,7 @@ inline bool RingBuffer::Alloc( uint32_t numBuffers, size_t size, uint32_t flags 
 		}
 		else
 		{
-			mBuffers[n] = malloc(size);
+			// mBuffers[n] = malloc(size);
 			
 			if( CUDA_FAILED(cudaMalloc(&mBuffers[n], size)) )
 			{

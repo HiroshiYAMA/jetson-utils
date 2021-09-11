@@ -72,7 +72,7 @@ inline bool cudaAllocMapped( void** cpuPtr, void** gpuPtr, size_t size )
  * @returns `true` if the allocation succeeded, `false` otherwise.
  * @ingroup cudaMemory
  */
-inline bool cudaAllocMapped( void** ptr, size_t size )
+inline bool cudaAllocMapped( void** ptr, size_t size, bool pinned = true )
 {
 	void* cpuPtr = NULL;
 	void* gpuPtr = NULL;
@@ -80,13 +80,18 @@ inline bool cudaAllocMapped( void** ptr, size_t size )
 	if( !ptr || size == 0 )
 		return false;
 
-	if( !cudaAllocMapped(&cpuPtr, &gpuPtr, size) )
-		return false;
+	if (pinned) {
+		if( !cudaAllocMapped(&cpuPtr, &gpuPtr, size) )
+			return false;
 
-	if( cpuPtr != gpuPtr )
-	{
-		LogError(LOG_CUDA "cudaAllocMapped() - addresses of CPU and GPU pointers don't match\n");
-		return false;
+		if( cpuPtr != gpuPtr )
+		{
+			LogError(LOG_CUDA "cudaAllocMapped() - addresses of CPU and GPU pointers don't match\n");
+			return false;
+		}
+	} else {
+		if (CUDA_FAILED(cudaMalloc(&gpuPtr, size)))
+			return false;
 	}
 
 	*ptr = gpuPtr;
@@ -108,9 +113,9 @@ inline bool cudaAllocMapped( void** ptr, size_t size )
  * @returns `true` if the allocation succeeded, `false` otherwise.
  * @ingroup cudaMemory
  */
-inline bool cudaAllocMapped( void** ptr, size_t width, size_t height, imageFormat format )
+inline bool cudaAllocMapped( void** ptr, size_t width, size_t height, imageFormat format, bool pinned = true )
 {
-	return cudaAllocMapped(ptr, imageFormatSize(format, width, height));
+	return cudaAllocMapped(ptr, imageFormatSize(format, width, height), pinned);
 }
 
 
@@ -128,9 +133,9 @@ inline bool cudaAllocMapped( void** ptr, size_t width, size_t height, imageForma
  * @returns `true` if the allocation succeeded, `false` otherwise.
  * @ingroup cudaMemory
  */
-inline bool cudaAllocMapped( void** ptr, const int2& dims, imageFormat format )
+inline bool cudaAllocMapped( void** ptr, const int2& dims, imageFormat format, bool pinned = true )
 {
-	return cudaAllocMapped(ptr, imageFormatSize(format, dims.x, dims.y));
+	return cudaAllocMapped(ptr, imageFormatSize(format, dims.x, dims.y), pinned);
 }
 
 
@@ -148,9 +153,9 @@ inline bool cudaAllocMapped( void** ptr, const int2& dims, imageFormat format )
  * @returns `true` if the allocation succeeded, `false` otherwise.
  * @ingroup cudaMemory
  */
-template<typename T> inline bool cudaAllocMapped( T** ptr, size_t width, size_t height )
+template<typename T> inline bool cudaAllocMapped( T** ptr, size_t width, size_t height, bool pinned = true )
 {
-	return cudaAllocMapped((void**)ptr, width * height * sizeof(T));
+	return cudaAllocMapped((void**)ptr, width * height * sizeof(T), pinned);
 }
 
 
@@ -167,9 +172,9 @@ template<typename T> inline bool cudaAllocMapped( T** ptr, size_t width, size_t 
  * @returns `true` if the allocation succeeded, `false` otherwise.
  * @ingroup cudaMemory
  */
-template<typename T> inline bool cudaAllocMapped( T** ptr, const int2& dims )
+template<typename T> inline bool cudaAllocMapped( T** ptr, const int2& dims, bool pinned = true )
 {
-	return cudaAllocMapped((void**)ptr, dims.x * dims.y * sizeof(T));
+	return cudaAllocMapped((void**)ptr, dims.x * dims.y * sizeof(T), pinned);
 }
 
 
