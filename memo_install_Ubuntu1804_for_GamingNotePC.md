@@ -310,26 +310,53 @@ OpenCV 経由なら GStreamer のパイプラインを使用可能。ハード�
 - UVC + 背景動画ファイル、はハイスペックな PC が望ましい。
 
 ### ちなみに処理速度は、
-RTX 2070 Super with MAX-Q
-- GPUアーキは Turing世代
-- CUDAコアは 2560個
-- Tensorコアは320個
+| Name | GPU arch | CUDA cores | Tensor cores |
+| --- | --- | --- | --- |
+| RTX 2070 Super with MAX-Q | Turing | 2560 | 320 |
+| RTX 3080 Laptop | Ampere | 6144 | 192 |
+| Jetson Xavier NX | Volta | 384 | 48 |
 
 の時、
 Nsight Systems で計測して、
 
 #### 2UVC入力で、
-| model | speed(pha only) | speed(fgr + pha) | 3080(pha only) | 3080(fgr + pha) |
+***ONNX -> TensorRT だと、***
+| model | speed (pha only) | speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) | Xavier NX (pha only) | Xavier NX (fgr + pha) |
+| --- | --- | --- | --- | --- | --- | --- |
+| low (mobilenetv2 1920x1080 Sc025 Th100) | - | - | - | - | - | 33.6msec以内 |
+| mid (resnet50 1920x1080 Sc025 Th100) | - | - | - | - | - | 50msec |
+| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5msec | 30msec | - | - |
+| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26msec | 31.5msec | - | - |
+| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35msec | 40.5msec | - | - |
+| **KaijinMatte20K_FHD_UHD** |
+| **FP16** |
+| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | 30(23)msec | - | 106msec |
+| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | 33(26)msec | - | 133msec |
+| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | 36(29)msec | - | 152msec |
+| (resnet50 1920x1080 Sc025 FULL) | - | - | - | 31(23)msec | - | 124msec |
+| (resnet50 1920x1080 Sc040 FULL) | - | - | - | 36(28)msec | - | 177msec |
+| (resnet50 1920x1080 Sc050 FULL) | - | - | - | 40(34)msec | - | 217msec |
+
+***TorchScript だと、***
+| model | speed (pha only) | speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
 | --- | --- | --- | --- | --- |
-| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5msec | 30msec |
-| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26msec | 31.5msec |
-| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35msec | 40.5msec |
-| ***TorchScript だと、*** |
-| mobilenetv2 1920x1080 Sc025 sampling) | 24msecくらい | 23msecくらい | 21msec | 22msec |
-| resnet50 1920x1080 Sc025 sampling) | 28msecくらい | 26msecくらい | 25msec | 26msec |
-| resnet50 1920x1080 Sc040 sampling80000) | | | | 36msec |
-| resnet50 1920x1080 Sc045 sampling80000) | | | | 41msec |
-| resnet50 1920x1080 Sc050 sampling80000) | | | | 43.5msec |
+| mobilenetv2 1920x1080 Sc025 sampling | 24msecくらい | 23msecくらい | 21msec | 22msec |
+| resnet50 1920x1080 Sc025 sampling | 28msecくらい | 26msecくらい | 25msec | 26msec |
+| **KaijinMatte20K_FHD_UHD** |
+| **FP16** |
+| mobilenetv2 1920x1080 Sc025 sampling80000 | - | - | - | 23(15)msec |
+| mobilenetv2 1920x1080 Sc040 sampling80000 | - | - | - | 27(16)msec |
+| mobilenetv2 1920x1080 Sc050 sampling80000 | - | - | - | 30.5(19)msec |
+| resnet50 1920x1080 Sc025 sampling80000 | - | - | - | 28(17)msec |
+| resnet50 1920x1080 Sc040 sampling80000 | - | - | - | 39(28)msec |
+| resnet50 1920x1080 Sc050 sampling80000 | - | - | - | 47(40)msec |
+| **FP32** |
+| mobilenetv2 1920x1080 Sc025 sampling80000 | - | - | - | 24.5(16)msec |
+| mobilenetv2 1920x1080 Sc040 sampling80000 | - | - | - | 32(21)msec |
+| mobilenetv2 1920x1080 Sc050 sampling80000 | - | - | - | 37.5(31)msec |
+| resnet50 1920x1080 Sc025 sampling80000 | - | - | - | 38(29)msec |
+| resnet50 1920x1080 Sc040 sampling80000 | - | - | - | 58(53)msec |
+| resnet50 1920x1080 Sc050 sampling80000 | - | - | - | 77(72)msec |
 
 #### UVC + 4K30p(H.264, 29.97fps)で、
 | model | speed |
@@ -346,6 +373,10 @@ Nsight Systems で計測して、
 | high (resnet50 1920x1080 Sc050 FULL) | 44.90msecくらい |
 
 (*1) GStreamer での動画ファイル入力時、フレームレートで同期待ちの時間が含まれているため、計測時間は必ずフレームレート以上になる。フレームレートと同じ処理時間なら問題無し。
+
+処理速度の数値: カッコ内の値は、CUDA pinned memoryの代わりにデバイスメモリを使った時のもの。
+dGPU(discrete GPU)では効果がある。
+Jetson Xavier NX の場合、元々 CPU と GPU とで同じメモリを共有しているため処理速度はほぼ変わらない。
 
 RTX 2070 の1.5倍くらいのスペックがあれば、high でも 30p の可能性あり。  
 **最低ラインは、RTX 3060以上かな。出来れば、3080以上。**
