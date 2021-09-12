@@ -77,23 +77,13 @@ inline bool RingBuffer::Alloc( uint32_t numBuffers, size_t size, uint32_t flags 
 	
 	for( uint32_t n=0; n < numBuffers; n++ )
 	{
-		if( flags & ZeroCopy )
+		bool pinned = (flags & ZeroCopy);
+		std::string str = pinned ? "zero-copy" : "CUDA" ;
+
+		if( !cudaAllocMapped(&mBuffers[n], size, pinned) )
 		{
-			if( !cudaAllocMapped(&mBuffers[n], size) )
-			{
-				LogError("RingBuffer -- failed to allocate zero-copy buffer of %zu bytes\n", size);
-				return false;
-			}
-		}
-		else
-		{
-			// mBuffers[n] = malloc(size);
-			
-			if( CUDA_FAILED(cudaMalloc(&mBuffers[n], size)) )
-			{
-				LogError("RingBuffer -- failed to allocate CUDA buffer of %zu bytes\n", size);
-				return false;
-			}
+			LogError("RingBuffer -- failed to allocate %s buffer of %zu bytes\n", str.c_str(), size);
+			return false;
 		}
 	}
 		

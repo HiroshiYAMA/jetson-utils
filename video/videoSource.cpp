@@ -54,6 +54,11 @@ videoSource* videoSource::Create( const videoOptions& options )
 {
 	videoSource* src = NULL;
 	const URI& uri = options.resource;
+#ifdef JETSON
+	constexpr auto cuda_pinned_flag = true;
+#else
+	constexpr auto cuda_pinned_flag = false;
+#endif
 
 	if( uri.protocol == "file" )
 	{
@@ -68,11 +73,15 @@ videoSource* videoSource::Create( const videoOptions& options )
 	}
 	else if( uri.protocol == "rtp" || uri.protocol == "rtsp" )
 	{
-		src = gstDecoder::Create(options);
+		auto opt = options;
+		opt.zeroCopy = cuda_pinned_flag;
+		src = gstDecoder::Create(opt);
 	}
 	else if( uri.protocol == "csi" || uri.protocol == "v4l2" )
 	{
-		src = gstCamera::Create(options);
+		auto opt = options;
+		opt.zeroCopy = cuda_pinned_flag;
+		src = gstCamera::Create(opt);
 	}
 	else
 	{

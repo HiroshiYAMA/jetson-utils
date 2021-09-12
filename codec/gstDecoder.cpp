@@ -104,10 +104,6 @@ gstDecoder::gstDecoder( const videoOptions& options ) : videoSource(options)
 	mFrameCount = 0;
 	mFormatYUV  = IMAGE_UNKNOWN;
 
-#ifndef JETSON
-	mOptions.zeroCopy = false;
-#endif
-
 	mBufferRGB.SetThreaded(false);
 }
 
