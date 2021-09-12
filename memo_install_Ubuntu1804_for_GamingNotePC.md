@@ -325,9 +325,9 @@ Nsight Systems で計測して、
 | --- | --- | --- | --- | --- | --- | --- |
 | low (mobilenetv2 1920x1080 Sc025 Th100) | - | - | - | - | - | 33.6msec以内 |
 | mid (resnet50 1920x1080 Sc025 Th100) | - | - | - | - | - | 50msec |
-| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5msec | 30msec | - | - |
-| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26msec | 31.5msec | - | - |
-| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35msec | 40.5msec | - | - |
+| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5(17)msec | 30msec | - | - |
+| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26(19)msec | 31.5msec | - | - |
+| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35(28)msec | 40.5msec | - | - |
 | **KaijinMatte20K_FHD_UHD** |
 | **FP16** |
 | (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | 30(23)msec | - | 106msec |
