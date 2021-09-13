@@ -286,7 +286,7 @@ sudo apt-get install ./deepstream-5.1_5.1.0-1_amd64.deb
 x86_64系でビルド出来るようにしたブランチが GitHubにある。
 現在、Jetson用のブランチと統合されている。
 ブランチ名は、
-- jetson-inference: Br_collo
+- jetson-inference: bgmv2(本流) 又は、Br_collo
 - jetson-utils(./utils): master
 
 ONNXファイルは、
@@ -321,7 +321,7 @@ Nsight Systems で計測して、
 
 #### 2UVC入力で、
 ***ONNX -> TensorRT だと、***
-| model | speed (pha only) | speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) | Xavier NX (pha only) | Xavier NX (fgr + pha) |
+| model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) | Xavier NX (pha only) | Xavier NX (fgr + pha) |
 | --- | --- | --- | --- | --- | --- | --- |
 | low (mobilenetv2 1920x1080 Sc025 Th100) | - | - | - | - | - | 33.6msec以内 |
 | mid (resnet50 1920x1080 Sc025 Th100) | - | - | - | - | - | 50msec |
@@ -338,7 +338,7 @@ Nsight Systems で計測して、
 | (resnet50 1920x1080 Sc050 FULL) | - | - | - | 40(34)msec | - | 217msec |
 
 ***TorchScript だと、***
-| model | speed (pha only) | speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
+| model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
 | --- | --- | --- | --- | --- |
 | mobilenetv2 1920x1080 Sc025 sampling | 24msecくらい | 23msecくらい | 21msec | 22msec |
 | resnet50 1920x1080 Sc025 sampling | 28msecくらい | 26msecくらい | 25msec | 26msec |
@@ -359,14 +359,22 @@ Nsight Systems で計測して、
 | resnet50 1920x1080 Sc050 sampling80000 | - | - | - | 77(72)msec |
 
 #### UVC + 4K30p(H.264, 29.97fps)で、
-| model | speed |
-| --- | --- |
-| low (resnet50 1920x1080 Sc015 FULL) | 33.36msecくらい(*1) |
-| mid (resnet50 1920x1080 Sc025 FULL) | 34.85msecくらい |
-| high (resnet50 1920x1080 Sc050 FULL) | 46.90msecくらい |
+| model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
+| --- | --- | --- | --- | --- |
+| low (resnet50 1920x1080 Sc015 FULL) | 33.36msecくらい(*1) | - | -(24)msec | - |
+| mid (resnet50 1920x1080 Sc025 FULL) | 34.85msecくらい | - | -(26)msec | - |
+| high (resnet50 1920x1080 Sc050 FULL) | 46.90msecくらい | - | -(36.5)msec | - |
+| **KaijinMatte20K_FHD_UHD** |
+| **FP16** |
+| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | -(31)msec |
+| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | -(34.5)msec |
+| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | -(37)msec |
+| (resnet50 1920x1080 Sc025 FULL) | - | - | - | -(32)msec |
+| (resnet50 1920x1080 Sc040 FULL) | - | - | - | -(37)msec |
+| (resnet50 1920x1080 Sc050 FULL) | - | - | - | -(42)msec |
 
 #### UVC + 4K24p(H.264, 23.98fps)で、
-| model | speed |
+| model | 2070 speed (pha only) |
 | --- | --- |
 | low (resnet50 1920x1080 Sc015 FULL) | 41.70msecくらい(*1) |
 | mid (resnet50 1920x1080 Sc025 FULL) | 41.70msecくらい(*1) |
@@ -389,6 +397,8 @@ git clone git@github.com:flow-dev/jetson-inference-team.git
 cd jetson-inference-team
 git submodule update --init
 
+git checkout bgmv2
+又は、
 git checkout Br_collo
 
 pushd utils
