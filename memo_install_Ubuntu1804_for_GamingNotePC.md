@@ -28,7 +28,7 @@ Windowsとのデュアルブートするなら、Fast bootも disableにする�
 GRUBメニューで試用Ubuntu(Try Ubuntu)にカーソルを合わせてから、おもむろに 'e'キーを押す。
 そうすると、起動オプションを変更出来る。
 
-### 起動オプションの変更
+### 起動オプションの変更(**もし、変更しなくても Ubuntu が起動するなら変更しない**)
 何行目かに **quiet splash** があるので、
 これを **nomodeset acpi=off** に変更する。
 Ctrl + 'x'キーで変更完了。
@@ -40,7 +40,7 @@ Ctrl + 'x'キーで変更完了。
 
 ただし、最後に再起動する前に起動オプションを変更する。
 
-### 起動オプションの変更
+### 起動オプションの変更(**もし、変更しなくても Ubuntu が起動したなら変更しなくて良い**)
 /mntに chrootした状態で、
 ```
 /etc/default/grub
@@ -56,6 +56,8 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
 GRUB_CMDLINE_LINUX_DEFAULT="nomodeset"
 # 又は、上記設定で上手く起動出来なければ、acpi=offを付ける
 GRUB_CMDLINE_LINUX_DEFAULT="nomodeset acpi=off"
+# nomodeset を付けると起動しない PC もあるので、その場合は、空っぽで OK
+GRUB_CMDLINE_LINUX_DEFAULT=""
 ```
 に変更する。
 その後、
@@ -110,6 +112,8 @@ vi /etc/default/grub
 GRUB_CMDLINE_LINUX_DEFAULT="nomodeset"
 # 又は、上記設定で上手く起動出来なければ、acpi=offを付ける
 GRUB_CMDLINE_LINUX_DEFAULT="nomodeset acpi=off"
+# nomodeset を付けると起動しない PC もあるので、その場合は、空っぽで OK
+GRUB_CMDLINE_LINUX_DEFAULT=""
 ```
 
 ```bash
@@ -122,7 +126,7 @@ exit    # chrootを抜ける
 - スライドパッドが使えない
 - 大抵の内蔵無線LAN(Wi-Fi)デバイスが使えない
 
-ので、Ubuntuのアップデートと NVIDIAのデバイスドライバのインストールをする。
+ことが多いので、Ubuntuのアップデートと NVIDIAのデバイスドライバのインストールをする。
 
 ## Ubuntuのアップデート
 これすると、大抵の内蔵無線LANデバイスが使えるようになる。
@@ -136,6 +140,7 @@ sudo apt upgrade
 sudo reboot
 ```
 再起動後、無事に大抵の内蔵無線LANデバイスが使えるようになっている。
+それでも内蔵無線LANデバイスが使えない場合は、Linuxカーネルのバージョンアップ([Mainline](http://baker-street.jugem.jp/?eid=450)) & メーカー提供のデバイスドライバのインストールをやってみる。
 
 ## NVIDIAのデバイスドライバのインストール
 巷にいろいろな方法が紹介されているが、Ubuntuアップデート後は Ubuntuに既にインストールされているアプリ ***ソフトウェアとアップデート(Software & Update)*** を使えば OK。
@@ -143,7 +148,35 @@ sudo reboot
 ***ソフトウェアとアップデート(Software & Update)*** を起動して、**追加のドライバー** タブを選択すると、しばらく検索した後、いくつかの NVIDIAのデバイスドライバーが表示される。
 その一覧の中からバージョン 460.32以上のものを選択して、**変更の適用** ボタンを押す。
 
+**ただし、バージョン 470.63.~ 以上は使わないこと。**
+GPU のクロック制御(電源管理 PowerMizer)が不調になる場合がある。
+
+なので、デバイスドライバのインストール後、うっかり `sudo apt upgrade` でやってしまわないように `apt-mark` で `hold` しておくのが良い。
+```bash
+sudo apt-mark hold *-460
+# 又は
+sudo apt-mark hold *-470
+```
+
 再起動後、無事にスライドパッドが使えるようになっていて、画面の解像度もより高解像度に出来るようになっている。
+
+**この方法でダメな場合は、** [ここ](https://zenn.dev/190ikp/articles/how_to_install_nvidia_drivers)のやり方でインストールしてみる。
+インストール後、Tensor7.2.3のインストールに悪さするので、途中で作成した cuda.list を削除する。
+```bash
+sudo rm /etc/apt/sources.list.d/cuda.list
+```
+
+### NVIDIA GPU のクロック制御(電源管理 PowerMizer)は大丈夫？
+たまにまともに動作しない PC がいる。
+- クロックが上がらない。常に最少電力モード
+- 一旦電源プラグが抜けると、その後クロックが上がらなくなる
+
+そんな時は、
+***/etc/modprobe.d/nvidia-user-registry.conf*** っていうファイルに
+下記のように書く。その後、PC 再起動。
+```
+options nvidia NVreg_RegistryDwords="PowerMizerEnable=0x1;PerfLevelSrc=0x3333;PowerMizerDefault=0x2;PowerMizerDefaultAC=0x2"
+```
 
 ## **ここまでの作業、お疲れ様でした。これで大抵のノートPCで普通に Ubuntu18.04が使えるようになります。**
 
@@ -178,10 +211,17 @@ sudo apt install \
     libjansson4
 ```
 
-## Install NVIDIA driver 460.32
+## Install NVIDIA driver 460.32 ~ 470.52
 これは既にインストール済みなのでスキップ。
 
 ## CUDA 11.1.1のインストール
+### インストールする前に確認
+***ソフトウェアとアップデート(Software & Update)*** を使ってうまく NVIDIA のデバイスドライバがインストール出来なかった場合は、
+きっと[ここ](https://zenn.dev/190ikp/articles/how_to_install_nvidia_drivers)のやり方でインストールしたと思うので、
+その場合、引き続きその Web ページに従って、cuda-toolkit-\<version\> パッケージをインストールれば OK。
+下記のインストール手順はスキップして、TensorRT のインストールへ Go!!
+
+### インストール手順
 [ここ](https://developer.nvidia.com/cuda-11.1.1-download-archive?target_os=Linux&target_arch=x86_64&target_distro=Ubuntu&target_version=1804&target_type=deblocal)の通りにする。
 
 下記を選択する。
@@ -207,7 +247,7 @@ sudo apt-get -y install cuda
 ```
 
 インストール後、NVIDIAのデバイスドライバーがバージョン 455.32に下がっちゃうので、
-再度、 ***ソフトウェアとアップデート(Software & Update)*** の **追加のドライバー** タブにて、バージョン 460.32以上のものをインストールする。
+再度、 ***ソフトウェアとアップデート(Software & Update)*** の **追加のドライバー** タブにて、バージョン 460.32 ~ 470.52のものをインストールする。
 
 ## TensorRT 7.2.3のインストール
 [ここ](https://docs.nvidia.com/deeplearning/tensorrt/archives/tensorrt-723/install-guide/index.html#installing-debian)の通りにする。
