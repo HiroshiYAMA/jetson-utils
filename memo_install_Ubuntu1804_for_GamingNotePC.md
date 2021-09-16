@@ -28,7 +28,7 @@ Windowsとのデュアルブートするなら、Fast bootも disableにする�
 GRUBメニューで試用Ubuntu(Try Ubuntu)にカーソルを合わせてから、おもむろに 'e'キーを押す。
 そうすると、起動オプションを変更出来る。
 
-### 起動オプションの変更
+### 起動オプションの変更(**もし、変更しなくても Ubuntu が起動するなら変更しない**)
 何行目かに **quiet splash** があるので、
 これを **nomodeset acpi=off** に変更する。
 Ctrl + 'x'キーで変更完了。
@@ -40,7 +40,7 @@ Ctrl + 'x'キーで変更完了。
 
 ただし、最後に再起動する前に起動オプションを変更する。
 
-### 起動オプションの変更
+### 起動オプションの変更(**もし、変更しなくても Ubuntu が起動したなら変更しなくて良い**)
 /mntに chrootした状態で、
 ```
 /etc/default/grub
@@ -56,6 +56,8 @@ GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
 GRUB_CMDLINE_LINUX_DEFAULT="nomodeset"
 # 又は、上記設定で上手く起動出来なければ、acpi=offを付ける
 GRUB_CMDLINE_LINUX_DEFAULT="nomodeset acpi=off"
+# nomodeset を付けると起動しない PC もあるので、その場合は、空っぽで OK
+GRUB_CMDLINE_LINUX_DEFAULT=""
 ```
 に変更する。
 その後、
@@ -110,6 +112,8 @@ vi /etc/default/grub
 GRUB_CMDLINE_LINUX_DEFAULT="nomodeset"
 # 又は、上記設定で上手く起動出来なければ、acpi=offを付ける
 GRUB_CMDLINE_LINUX_DEFAULT="nomodeset acpi=off"
+# nomodeset を付けると起動しない PC もあるので、その場合は、空っぽで OK
+GRUB_CMDLINE_LINUX_DEFAULT=""
 ```
 
 ```bash
@@ -122,7 +126,7 @@ exit    # chrootを抜ける
 - スライドパッドが使えない
 - 大抵の内蔵無線LAN(Wi-Fi)デバイスが使えない
 
-ので、Ubuntuのアップデートと NVIDIAのデバイスドライバのインストールをする。
+ことが多いので、Ubuntuのアップデートと NVIDIAのデバイスドライバのインストールをする。
 
 ## Ubuntuのアップデート
 これすると、大抵の内蔵無線LANデバイスが使えるようになる。
@@ -136,6 +140,7 @@ sudo apt upgrade
 sudo reboot
 ```
 再起動後、無事に大抵の内蔵無線LANデバイスが使えるようになっている。
+それでも内蔵無線LANデバイスが使えない場合は、Linuxカーネルのバージョンアップ([Mainline](http://baker-street.jugem.jp/?eid=450)) & メーカー提供のデバイスドライバのインストールをやってみる。
 
 ## NVIDIAのデバイスドライバのインストール
 巷にいろいろな方法が紹介されているが、Ubuntuアップデート後は Ubuntuに既にインストールされているアプリ ***ソフトウェアとアップデート(Software & Update)*** を使えば OK。
@@ -143,7 +148,35 @@ sudo reboot
 ***ソフトウェアとアップデート(Software & Update)*** を起動して、**追加のドライバー** タブを選択すると、しばらく検索した後、いくつかの NVIDIAのデバイスドライバーが表示される。
 その一覧の中からバージョン 460.32以上のものを選択して、**変更の適用** ボタンを押す。
 
+**ただし、バージョン 470.63.~ 以上は使わないこと。**
+GPU のクロック制御(電源管理 PowerMizer)が不調になる場合がある。
+
+なので、デバイスドライバのインストール後、うっかり `sudo apt upgrade` でやってしまわないように `apt-mark` で `hold` しておくのが良い。
+```bash
+sudo apt-mark hold *-460
+# 又は
+sudo apt-mark hold *-470
+```
+
 再起動後、無事にスライドパッドが使えるようになっていて、画面の解像度もより高解像度に出来るようになっている。
+
+**この方法でダメな場合は、** [ここ](https://zenn.dev/190ikp/articles/how_to_install_nvidia_drivers)のやり方でインストールしてみる。
+インストール後、Tensor7.2.3のインストールに悪さするので、途中で作成した cuda.list を削除する。
+```bash
+sudo rm /etc/apt/sources.list.d/cuda.list
+```
+
+### NVIDIA GPU のクロック制御(電源管理 PowerMizer)は大丈夫？
+たまにまともに動作しない PC がいる。
+- クロックが上がらない。常に最少電力モード
+- 一旦電源プラグが抜けると、その後クロックが上がらなくなる
+
+そんな時は、
+***/etc/modprobe.d/nvidia-user-registry.conf*** っていうファイルに
+下記のように書く。その後、PC 再起動。
+```
+options nvidia NVreg_RegistryDwords="PowerMizerEnable=0x1;PerfLevelSrc=0x3333;PowerMizerDefault=0x2;PowerMizerDefaultAC=0x2"
+```
 
 ## **ここまでの作業、お疲れ様でした。これで大抵のノートPCで普通に Ubuntu18.04が使えるようになります。**
 
@@ -178,10 +211,17 @@ sudo apt install \
     libjansson4
 ```
 
-## Install NVIDIA driver 460.32
+## Install NVIDIA driver 460.32 ~ 470.52
 これは既にインストール済みなのでスキップ。
 
 ## CUDA 11.1.1のインストール
+### インストールする前に確認
+***ソフトウェアとアップデート(Software & Update)*** を使ってうまく NVIDIA のデバイスドライバがインストール出来なかった場合は、
+きっと[ここ](https://zenn.dev/190ikp/articles/how_to_install_nvidia_drivers)のやり方でインストールしたと思うので、
+その場合、引き続きその Web ページに従って、cuda-toolkit-\<version\> パッケージをインストールれば OK。
+下記のインストール手順はスキップして、TensorRT のインストールへ Go!!
+
+### インストール手順
 [ここ](https://developer.nvidia.com/cuda-11.1.1-download-archive?target_os=Linux&target_arch=x86_64&target_distro=Ubuntu&target_version=1804&target_type=deblocal)の通りにする。
 
 下記を選択する。
@@ -207,7 +247,7 @@ sudo apt-get -y install cuda
 ```
 
 インストール後、NVIDIAのデバイスドライバーがバージョン 455.32に下がっちゃうので、
-再度、 ***ソフトウェアとアップデート(Software & Update)*** の **追加のドライバー** タブにて、バージョン 460.32以上のものをインストールする。
+再度、 ***ソフトウェアとアップデート(Software & Update)*** の **追加のドライバー** タブにて、バージョン 460.32 ~ 470.52のものをインストールする。
 
 ## TensorRT 7.2.3のインストール
 [ここ](https://docs.nvidia.com/deeplearning/tensorrt/archives/tensorrt-723/install-guide/index.html#installing-debian)の通りにする。
@@ -286,7 +326,7 @@ sudo apt-get install ./deepstream-5.1_5.1.0-1_amd64.deb
 x86_64系でビルド出来るようにしたブランチが GitHubにある。
 現在、Jetson用のブランチと統合されている。
 ブランチ名は、
-- jetson-inference: Br_collo
+- jetson-inference: bgmv2(本流) 又は、Br_collo
 - jetson-utils(./utils): master
 
 ONNXファイルは、
@@ -321,24 +361,24 @@ Nsight Systems で計測して、
 
 #### 2UVC入力で、
 ***ONNX -> TensorRT だと、***
-| model | speed (pha only) | speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) | Xavier NX (pha only) | Xavier NX (fgr + pha) |
+| model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) | Xavier NX (pha only) | Xavier NX (fgr + pha) |
 | --- | --- | --- | --- | --- | --- | --- |
 | low (mobilenetv2 1920x1080 Sc025 Th100) | - | - | - | - | - | 33.6msec以内 |
 | mid (resnet50 1920x1080 Sc025 Th100) | - | - | - | - | - | 50msec |
-| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5msec | 30msec | - | - |
-| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26msec | 31.5msec | - | - |
-| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35msec | 40.5msec | - | - |
+| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5(9.5)msec | 30msec | - | - |
+| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26(11.5)msec | 31.5msec | - | - |
+| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35(17)msec | 40.5msec | - | - |
 | **KaijinMatte20K_FHD_UHD** |
 | **FP16** |
-| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | 30(23)msec | - | 106msec |
-| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | 33(26)msec | - | 133msec |
-| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | 36(29)msec | - | 152msec |
-| (resnet50 1920x1080 Sc025 FULL) | - | - | - | 31(23)msec | - | 124msec |
-| (resnet50 1920x1080 Sc040 FULL) | - | - | - | 36(28)msec | - | 177msec |
-| (resnet50 1920x1080 Sc050 FULL) | - | - | - | 40(34)msec | - | 217msec |
+| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | 30(10.5)msec | - | 106msec |
+| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | 33(11.5)msec | - | 133msec |
+| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | 36(13)msec | - | 152msec |
+| (resnet50 1920x1080 Sc025 FULL) | - | - | - | 31(11.5)msec | - | 124msec |
+| (resnet50 1920x1080 Sc040 FULL) | - | - | - | 36(13.5)msec | - | 177msec |
+| (resnet50 1920x1080 Sc050 FULL) | - | - | - | 40(18)msec | - | 217msec |
 
 ***TorchScript だと、***
-| model | speed (pha only) | speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
+| model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
 | --- | --- | --- | --- | --- |
 | mobilenetv2 1920x1080 Sc025 sampling | 24msecくらい | 23msecくらい | 21msec | 22msec |
 | resnet50 1920x1080 Sc025 sampling | 28msecくらい | 26msecくらい | 25msec | 26msec |
@@ -359,14 +399,22 @@ Nsight Systems で計測して、
 | resnet50 1920x1080 Sc050 sampling80000 | - | - | - | 77(72)msec |
 
 #### UVC + 4K30p(H.264, 29.97fps)で、
-| model | speed |
-| --- | --- |
-| low (resnet50 1920x1080 Sc015 FULL) | 33.36msecくらい(*1) |
-| mid (resnet50 1920x1080 Sc025 FULL) | 34.85msecくらい |
-| high (resnet50 1920x1080 Sc050 FULL) | 46.90msecくらい |
+| model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
+| --- | --- | --- | --- | --- |
+| low (resnet50 1920x1080 Sc015 FULL) | 33.36msecくらい(*1) | - | -(12.5)msec | - |
+| mid (resnet50 1920x1080 Sc025 FULL) | 34.85msecくらい | - | -(13)msec | - |
+| high (resnet50 1920x1080 Sc050 FULL) | 46.90msecくらい | - | -(21)msec | - |
+| **KaijinMatte20K_FHD_UHD** |
+| **FP16** |
+| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | -(12)msec |
+| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | -(14)msec |
+| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | -(16)msec |
+| (resnet50 1920x1080 Sc025 FULL) | - | - | - | -(13.5)msec |
+| (resnet50 1920x1080 Sc040 FULL) | - | - | - | -(17.5)msec |
+| (resnet50 1920x1080 Sc050 FULL) | - | - | - | -(21)msec |
 
 #### UVC + 4K24p(H.264, 23.98fps)で、
-| model | speed |
+| model | 2070 speed (pha only) |
 | --- | --- |
 | low (resnet50 1920x1080 Sc015 FULL) | 41.70msecくらい(*1) |
 | mid (resnet50 1920x1080 Sc025 FULL) | 41.70msecくらい(*1) |
@@ -389,6 +437,8 @@ git clone git@github.com:flow-dev/jetson-inference-team.git
 cd jetson-inference-team
 git submodule update --init
 
+git checkout bgmv2
+又は、
 git checkout Br_collo
 
 pushd utils
