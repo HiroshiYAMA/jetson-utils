@@ -365,17 +365,17 @@ Nsight Systems で計測して、
 | --- | --- | --- | --- | --- | --- | --- |
 | low (mobilenetv2 1920x1080 Sc025 Th100) | - | - | - | - | - | 33.6msec以内 |
 | mid (resnet50 1920x1080 Sc025 Th100) | - | - | - | - | - | 50msec |
-| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5(17)msec | 30msec | - | - |
-| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26(19)msec | 31.5msec | - | - |
-| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35(28)msec | 40.5msec | - | - |
+| low (resnet50 1920x1080 Sc015 FULL) | 26msecくらい | 31msecくらい | 24.5(9.5)msec | 30msec | - | - |
+| mid (resnet50 1920x1080 Sc025 FULL) | 29msecくらい | 34msecくらい | 26(11.5)msec | 31.5msec | - | - |
+| high (resnet50 1920x1080 Sc050 FULL) | 39msecくらい | 45msecくらい | 35(17)msec | 40.5msec | - | - |
 | **KaijinMatte20K_FHD_UHD** |
 | **FP16** |
-| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | 30(23)msec | - | 106msec |
-| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | 33(26)msec | - | 133msec |
-| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | 36(29)msec | - | 152msec |
-| (resnet50 1920x1080 Sc025 FULL) | - | - | - | 31(23)msec | - | 124msec |
-| (resnet50 1920x1080 Sc040 FULL) | - | - | - | 36(28)msec | - | 177msec |
-| (resnet50 1920x1080 Sc050 FULL) | - | - | - | 40(34)msec | - | 217msec |
+| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | 30(10.5)msec | - | 106msec |
+| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | 33(11.5)msec | - | 133msec |
+| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | 36(13)msec | - | 152msec |
+| (resnet50 1920x1080 Sc025 FULL) | - | - | - | 31(11.5)msec | - | 124msec |
+| (resnet50 1920x1080 Sc040 FULL) | - | - | - | 36(13.5)msec | - | 177msec |
+| (resnet50 1920x1080 Sc050 FULL) | - | - | - | 40(18)msec | - | 217msec |
 
 ***TorchScript だと、***
 | model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
@@ -401,17 +401,17 @@ Nsight Systems で計測して、
 #### UVC + 4K30p(H.264, 29.97fps)で、
 | model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
 | --- | --- | --- | --- | --- |
-| low (resnet50 1920x1080 Sc015 FULL) | 33.36msecくらい(*1) | - | -(24)msec | - |
-| mid (resnet50 1920x1080 Sc025 FULL) | 34.85msecくらい | - | -(26)msec | - |
-| high (resnet50 1920x1080 Sc050 FULL) | 46.90msecくらい | - | -(36.5)msec | - |
+| low (resnet50 1920x1080 Sc015 FULL) | 33.36msecくらい(*1) | - | -(12.5)msec | - |
+| mid (resnet50 1920x1080 Sc025 FULL) | 34.85msecくらい | - | -(13)msec | - |
+| high (resnet50 1920x1080 Sc050 FULL) | 46.90msecくらい | - | -(21)msec | - |
 | **KaijinMatte20K_FHD_UHD** |
 | **FP16** |
-| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | -(31)msec |
-| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | -(34.5)msec |
-| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | -(37)msec |
-| (resnet50 1920x1080 Sc025 FULL) | - | - | - | -(32)msec |
-| (resnet50 1920x1080 Sc040 FULL) | - | - | - | -(37)msec |
-| (resnet50 1920x1080 Sc050 FULL) | - | - | - | -(42)msec |
+| (mobilenetv2 1920x1080 Sc025 FULL) | - | - | - | -(12)msec |
+| (mobilenetv2 1920x1080 Sc040 FULL) | - | - | - | -(14)msec |
+| (mobilenetv2 1920x1080 Sc050 FULL) | - | - | - | -(16)msec |
+| (resnet50 1920x1080 Sc025 FULL) | - | - | - | -(13.5)msec |
+| (resnet50 1920x1080 Sc040 FULL) | - | - | - | -(17.5)msec |
+| (resnet50 1920x1080 Sc050 FULL) | - | - | - | -(21)msec |
 
 #### UVC + 4K24p(H.264, 23.98fps)で、
 | model | 2070 speed (pha only) |

@@ -62,8 +62,11 @@ videoSource* videoSource::Create( const videoOptions& options )
 
 	if( uri.protocol == "file" )
 	{
-		if( gstDecoder::IsSupportedExtension(uri.extension.c_str()) )
-			src = gstDecoder::Create(options);
+		if( gstDecoder::IsSupportedExtension(uri.extension.c_str()) ) {
+			auto opt = options;
+			opt.zeroCopy = cuda_pinned_flag;
+			src = gstDecoder::Create(opt);
+		}
 #ifdef USE_OPENCV
 		else if( videoDecoder::IsSupportedExtension(uri.extension.c_str()) )
 			src = videoDecoder::Create(options);
