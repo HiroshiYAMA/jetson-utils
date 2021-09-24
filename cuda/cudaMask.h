@@ -39,4 +39,10 @@ cudaError_t cudaMask(void *input, void *mask, void *output, size_t width, size_t
 cudaError_t cudaMask(void *input, void *mask, void *output, size_t width, size_t height,
     imageFormat format, imageFormat format_mask, float bg_color[3], cudaStream_t stream = NULL);
 
+// fg + bg w/ mask.
+cudaError_t cudaMask(void *input_fg, void *input_bg, void *mask, void *output, size_t width, size_t height,
+    imageFormat format, imageFormat format_mask, float2 range, cudaStream_t stream = NULL);
+cudaError_t cudaMask(void *input_fg, void *input_bg, void *mask, void *output, size_t width, size_t height,
+    imageFormat format, imageFormat format_mask, cudaStream_t stream = NULL);
+
 #endif
