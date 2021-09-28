@@ -53,7 +53,7 @@ __device__ inline T cudaReadPixel( T* input, int x, int y, int width, int height
 	return input[y * width + x];
 }
 
-template<> __device__ inline 
+template<> __device__ inline
 float2 cudaReadPixel<FORMAT_CHW>( float2* input, int x, int y, int width, int height )
 {
 	float* ptr = (float*)input;
@@ -61,7 +61,7 @@ float2 cudaReadPixel<FORMAT_CHW>( float2* input, int x, int y, int width, int he
 	return make_float2(ptr[offset], ptr[width * height + offset]);
 }
 
-template<> __device__ inline 
+template<> __device__ inline
 float3 cudaReadPixel<FORMAT_CHW>( float3* input, int x, int y, int width, int height )
 {
 	float* ptr = (float*)input;
@@ -70,7 +70,7 @@ float3 cudaReadPixel<FORMAT_CHW>( float3* input, int x, int y, int width, int he
 	return make_float3(ptr[offset], ptr[pixels + offset], ptr[pixels * 2 + offset]);
 }
 
-template<> __device__ inline 
+template<> __device__ inline
 float4 cudaReadPixel<FORMAT_CHW>( float4* input, int x, int y, int width, int height )
 {
 	float* ptr = (float*)input;
@@ -81,6 +81,30 @@ float4 cudaReadPixel<FORMAT_CHW>( float4* input, int x, int y, int width, int he
 
 ///@}
 
+//// /* # Read Coef Table. */
+#include "cudaFilterMode_coef_cubic.h"
+#include "cudaFilterMode_coef_lanczos4.h"
+#include "cudaFilterMode_coef_spline36.h"
+static __device__ inline float read_coef_f(float d, const float *ary, size_t ary_max, float tap)
+{
+	float d_abs = fabsf(d);
+
+	float idx_f = d_abs / tap * ary_max;
+#if 1
+	int idx = __float2int_rd(idx_f + 0.5f);
+	float w = ary[idx];
+#else
+	int idx = __float2int_rd(idx_f);
+	int idx2 = idx + 1;
+
+	float w1 = ary[idx];
+	float w2 = ary[idx2];
+	float t = idx_f - idx;
+	float w = w1 * (1.0f - t) + w2 * t;
+#endif
+
+	return w;
+}
 
 
 // linear.
@@ -137,7 +161,7 @@ static __device__ inline T calc_cubic_coef(T d, T a)
 }
 static __device__ inline float calc_cubic_coef_f(float d, float a)
 {
-	float d_abs = abs(d);
+	float d_abs = fabsf(d);
 
 	float w1 = __fmaf_rn(__fmaf_rn(a + 2.0f, d_abs, -a - 3.0f), d_abs * d_abs, 1.0f);
 	float w2 = __fmaf_rn(__fmaf_rn(__fmaf_rn(d_abs, 1.0f, -5.0f), d_abs, 8.0f), d_abs, -4.0f) * a;
@@ -158,19 +182,20 @@ __device__ inline T cudaFilterPixel_cubic( T* input, float x, float y, int width
 	const float xd = x - xc;
 	const float yd = y - yc;
 
-	constexpr float a = -0.75f;	// CPU ver. = -0.75, GPU ver. = -0.5
+	// constexpr float a = -0.75f;	// CPU ver. = -0.75, GPU ver. = -0.5
+	constexpr auto ary_max = sizeof(filter_coef_cubic) / sizeof(filter_coef_cubic[0]) - 1 - 1;
 	const float wx[4] = {
-		calc_cubic_coef_f(-1.0f - xd, a),
-		calc_cubic_coef_f(0.0f - xd, a),
-		calc_cubic_coef_f(1.0f - xd, a),
-		calc_cubic_coef_f(2.0f - xd, a),
+		read_coef_f(-1.0f - xd, filter_coef_cubic, ary_max, 2.0f),
+		read_coef_f(0.0f - xd, filter_coef_cubic, ary_max, 2.0f),
+		read_coef_f(1.0f - xd, filter_coef_cubic, ary_max, 2.0f),
+		read_coef_f(2.0f - xd, filter_coef_cubic, ary_max, 2.0f),
 	};
 	const float wx_sum = wx[0] + wx[1] + wx[2] + wx[3];
 
 	float4 pix_sum = {};
 	float w_sum = 0.0f;
 	for (int i = y_btm; i <= y_top; i++) {
-		const float wy = calc_cubic_coef_f(i - yd - yc, a);
+		const float wy = read_coef_f(i - yd - yc, filter_coef_cubic, ary_max, 2.0f);
 
 		const int pos_x[4] = {
 			::max(x_btm, 0),
@@ -309,7 +334,7 @@ static __device__ inline T calc_lanczos_coef(T d, T n)
 }
 static __device__ inline float calc_lanczos_coef_f(float d, float n)
 {
-	float d_abs = abs(d);
+	float d_abs = fabsf(d);
 
 	float pi_d = (float)M_PI * d_abs;
 	float cos_k1 = __cosf(pi_d * 0.25f);
@@ -336,22 +361,23 @@ __device__ inline T cudaFilterPixel_lanczos4( T* input, float x, float y, int wi
 	const float xd = x - xc;
 	const float yd = y - yc;
 
+	constexpr auto ary_max = sizeof(filter_coef_lanczos4) / sizeof(filter_coef_lanczos4[0]) - 1 - 1;
 	const float wx[8] = {
-		calc_lanczos_coef_f(-3.0f - xd, tap),
-		calc_lanczos_coef_f(-2.0f - xd, tap),
-		calc_lanczos_coef_f(-1.0f - xd, tap),
-		calc_lanczos_coef_f(0.0f - xd, tap),
-		calc_lanczos_coef_f(1.0f - xd, tap),
-		calc_lanczos_coef_f(2.0f - xd, tap),
-		calc_lanczos_coef_f(3.0f - xd, tap),
-		calc_lanczos_coef_f(4.0f - xd, tap),
+		read_coef_f(-3.0f - xd, filter_coef_lanczos4, ary_max, tap),
+		read_coef_f(-2.0f - xd, filter_coef_lanczos4, ary_max, tap),
+		read_coef_f(-1.0f - xd, filter_coef_lanczos4, ary_max, tap),
+		read_coef_f(0.0f - xd, filter_coef_lanczos4, ary_max, tap),
+		read_coef_f(1.0f - xd, filter_coef_lanczos4, ary_max, tap),
+		read_coef_f(2.0f - xd, filter_coef_lanczos4, ary_max, tap),
+		read_coef_f(3.0f - xd, filter_coef_lanczos4, ary_max, tap),
+		read_coef_f(4.0f - xd, filter_coef_lanczos4, ary_max, tap),
 	};
 	const float wx_sum = wx[0] + wx[1] + wx[2] + wx[3] + wx[4] + wx[5] + wx[6] + wx[7];
 
 	float4 pix_sum = {};
 	float w_sum = 0.0f;
 	for (int i = y_btm; i <= y_top; i++) {
-		const float wy = calc_lanczos_coef_f(i - yd - yc, tap);
+		const float wy = read_coef_f(i - yd - yc, filter_coef_lanczos4, ary_max, tap);
 
 		const int pos_x[8] = {
 			::max(x_btm, 0),
@@ -411,7 +437,7 @@ static __device__ inline T calc_spline36_coef(T d)
 }
 static __device__ inline float calc_spline36_coef_f(float d)
 {
-	float d_abs = abs(d);
+	float d_abs = fabsf(d);
 
 	float w = (d_abs > 3.0f) ? 0.0f
 		: (d_abs > 2.0f) ? __fdividef(__fmaf_rn(__fmaf_rn(__fmaf_rn(19.0f, d_abs, -159.0f), d_abs, 434.0f), d_abs, -384.0f), 209.0f)
@@ -432,20 +458,21 @@ __device__ inline T cudaFilterPixel_spline36( T* input, float x, float y, int wi
 	const float xd = x - xc;
 	const float yd = y - yc;
 
+	constexpr auto ary_max = sizeof(filter_coef_spline36) / sizeof(filter_coef_spline36[0]) - 1 - 1;
 	const float wx[6] = {
-		calc_spline36_coef_f(-2.0f - xd),
-		calc_spline36_coef_f(-1.0f - xd),
-		calc_spline36_coef_f(0.0f - xd),
-		calc_spline36_coef_f(1.0f - xd),
-		calc_spline36_coef_f(2.0f - xd),
-		calc_spline36_coef_f(3.0f - xd),
+		read_coef_f(-2.0f - xd, filter_coef_spline36, ary_max, 3.0f),
+		read_coef_f(-1.0f - xd, filter_coef_spline36, ary_max, 3.0f),
+		read_coef_f(0.0f - xd, filter_coef_spline36, ary_max, 3.0f),
+		read_coef_f(1.0f - xd, filter_coef_spline36, ary_max, 3.0f),
+		read_coef_f(2.0f - xd, filter_coef_spline36, ary_max, 3.0f),
+		read_coef_f(3.0f - xd, filter_coef_spline36, ary_max, 3.0f),
 	};
 	const float wx_sum = wx[0] + wx[1] + wx[2] + wx[3] + wx[4] + wx[5];
 
 	float4 pix_sum = {};
 	float w_sum = 0.0f;
 	for (int i = y_btm; i <= y_top; i++) {
-		const float wy = calc_spline36_coef_f(i - yd - yc);
+		const float wy = read_coef_f(i - yd - yc, filter_coef_spline36, ary_max, 3.0f);
 
 		const int pos_x[6] = {
 			::max(x_btm, 0),
@@ -498,7 +525,7 @@ __device__ inline T cudaFilterPixel_spline36( T* input, float x, float y, int wi
  *
  * @returns the filtered pixel from the input image
  * @ingroup cudaFilter
- */ 
+ */
 template<cudaFilterMode filter, cudaDataFormat format=FORMAT_HWC, typename T>
 __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int height, float max_value = 255.0f )
 {
@@ -542,7 +569,7 @@ __device__ inline T cudaFilterPixel( T* input, float x, float y, int width, int 
  *
  * @returns the filtered pixel from the input image
  * @ingroup cudaFilter
- */ 
+ */
  template<cudaFilterMode filter, bool sampling_shift=true, cudaDataFormat format=FORMAT_HWC, typename T>
  __device__ inline T cudaFilterPixel( T* input, float x, float y,
 								int input_width, int input_height,
