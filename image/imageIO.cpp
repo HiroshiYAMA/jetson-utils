@@ -134,7 +134,7 @@ static StbBuffer loadImageIO( const char* filename, int* width, int* height, int
 
 
 // loadImage
-bool loadImage( const char* filename, void** output, int* width, int* height, imageFormat format )
+bool loadImage( const char* filename, void** output, int* width, int* height, imageFormat format, bool pinned, cudaStream_t stream )
 {
 	// validate parameters
 	if( !filename || !output || !width || !height )
@@ -169,7 +169,7 @@ bool loadImage( const char* filename, void** output, int* width, int* height, im
 	// allocate CUDA buffer for the image
 	const size_t imgSize = imageFormatSize(format, imgWidth, imgHeight);
 
-	if( !cudaAllocMapped((void**)output, imgSize) )
+	if( !cudaAllocMapped((void**)output, imgSize, pinned) )
 	{
 		LogError(LOG_IMAGE "loadImage() -- failed to allocate %zu bytes for image '%s'\n", imgSize, filename);
 		return false;
@@ -183,26 +183,26 @@ bool loadImage( const char* filename, void** output, int* width, int* height, im
 
 		void* inputImgGPU = NULL;
 
-		if( !cudaAllocMapped(&inputImgGPU, inputImageSize) )
+		if( !cudaAllocMapped(&inputImgGPU, inputImageSize, pinned) )
 		{
 			LogError(LOG_IMAGE "loadImage() -- failed to allocate %zu bytes for image '%s'\n", inputImageSize, filename);
 			return false;
 		}
 
-		memcpy(inputImgGPU, img.get(), imageFormatSize(inputFormat, imgWidth, imgHeight));
+		cudaMemcpyAsync(inputImgGPU, img.get(), imageFormatSize(inputFormat, imgWidth, imgHeight), cudaMemcpyHostToDevice, stream);
 
-		if( CUDA_FAILED(cudaConvertColor(inputImgGPU, inputFormat, *output, format, imgWidth, imgHeight)) )
+		if( CUDA_FAILED(cudaConvertColor(inputImgGPU, inputFormat, *output, format, imgWidth, imgHeight, float2{0.0f, 255.0f}, stream)) )
 		{
 			printf(LOG_IMAGE "loadImage() -- failed to convert image from %s to %s ('%s')\n", imageFormatToStr(inputFormat), imageFormatToStr(format), filename);
 			return false;
 		}
 
-		CUDA(cudaFreeHost(inputImgGPU));
+		CUDA_FREE_MAPPED(inputImgGPU, pinned);
 	}
 	else
 	{
 		// uint8 output can be straight copied to GPU memory
-		memcpy(*output, img.get(), imgSize);
+		cudaMemcpyAsync(*output, img.get(), imgSize, cudaMemcpyHostToDevice, stream);
 	}
 
 	*width  = imgWidth;
@@ -213,15 +213,15 @@ bool loadImage( const char* filename, void** output, int* width, int* height, im
 
 
 // loadImageRGBA
-bool loadImageRGBA( const char* filename, float4** output, int* width, int* height )
+bool loadImageRGBA( const char* filename, float4** output, int* width, int* height, bool pinned, cudaStream_t stream )
 {
-	return loadImage(filename, (void**)output, width, height, IMAGE_RGBA32F);
+	return loadImage(filename, (void**)output, width, height, IMAGE_RGBA32F, pinned, stream);
 }
 
 // loadImageRGBA
-bool loadImageRGBA( const char* filename, float4** cpu, float4** gpu, int* width, int* height )
+bool loadImageRGBA( const char* filename, float4** cpu, float4** gpu, int* width, int* height, bool pinned, cudaStream_t stream )
 {
-	const bool result = loadImageRGBA(filename, gpu, width, height);
+	const bool result = loadImageRGBA(filename, gpu, width, height, pinned, stream);
 
 	if( !result )
 		return false;

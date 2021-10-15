@@ -144,7 +144,7 @@ bool videoDecoder::init()
 		LogError(LOG_VIDEO_DECODER "failed to allocate CUDA memory for video_buf_NV12 (%ux%u)\n", mOptions.width, mOptions.height * 3 / 2);
 		return false;
 	}
-	if( !cudaAllocMapped(&video_buf_RGBA, make_int2(mOptions.width, mOptions.height)) )
+	if( !cudaAllocMapped(&video_buf_RGBA, make_int2(mOptions.width, mOptions.height), mOptions.zeroCopy) )
 	{
 		LogError(LOG_VIDEO_DECODER "failed to allocate CUDA memory for video_buf_RGBA (%ux%u)\n", mOptions.width, mOptions.height);
 		return false;

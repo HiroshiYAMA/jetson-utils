@@ -194,7 +194,7 @@ bool sharedBufferReceive::Capture( void** output, imageFormat format, uint64_t t
 		}
 	}
 	if (sb_buf_out == nullptr) {
-		if( !cudaAllocMapped(&sb_buf_out, imageFormatSize(format, w, h)) )
+		if( !cudaAllocMapped(&sb_buf_out, imageFormatSize(format, w, h), mOptions.zeroCopy) )
 		{
 			LogError(LOG_SHARED_BUFFER_RECEIVE "failed to allocate CUDA memory for sb_buf_out (%ux%u)\n", w, h);
 			return false;
@@ -251,7 +251,7 @@ void sharedBufferReceive::Close()
 
 	sb.img_info.reset();
 	CUDA_FREE_HOST(sb_buf_receive);
-	CUDA_FREE_HOST(sb_buf_out);
+	CUDA_FREE_MAPPED(sb_buf_out, mOptions.zeroCopy);
 	mStreaming = false;
 	LogInfo(LOG_SHARED_BUFFER_RECEIVE "sharedBufferReceive -- pipeline stopped\n");
 }

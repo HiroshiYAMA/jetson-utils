@@ -101,8 +101,9 @@ imageLoader::~imageLoader()
 {
 	const size_t numBuffers = mBuffers.size();
 
-	for( size_t n=0; n < numBuffers; n++ )
-		CUDA(cudaFreeHost(mBuffers[n]));
+	for( size_t n=0; n < numBuffers; n++ ) {
+		CUDA_FREE_MAPPED(mBuffers[n], mOptions.zeroCopy);
+	}
 
 	mBuffers.clear();
 }
@@ -149,7 +150,7 @@ bool imageLoader::Capture( void** output, imageFormat format, uint64_t timeout )
 	// reclaim old buffers
 	if( mBuffers.size() >= mOptions.numBuffers )
 	{
-		CUDA(cudaFreeHost(mBuffers[0]));
+		CUDA_FREE_MAPPED(mBuffers[0], mOptions.zeroCopy);
 		mBuffers.erase(mBuffers.begin());
 	}
 
@@ -176,7 +177,7 @@ bool imageLoader::Capture( void** output, imageFormat format, uint64_t timeout )
 	int imgWidth  = 0;
 	int imgHeight = 0;
 
-	if( !loadImage(mFiles[currFile].c_str(), &imgPtr, &imgWidth, &imgHeight, format) )
+	if( !loadImage(mFiles[currFile].c_str(), &imgPtr, &imgWidth, &imgHeight, format, mOptions.zeroCopy) )
 	{
 		LogError(LOG_IMAGE "imageLoader -- failed to load '%s'\n", mFiles[currFile].c_str());
 		return Capture(output, format, timeout);

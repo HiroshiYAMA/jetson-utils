@@ -57,7 +57,7 @@
  *                       Otherwise if the value of height is 0, the image will be loaded with it's dimensions from the file on disk.
  * @ingroup image
  */
-template<typename T> bool loadImage( const char* filename, T** ptr, int* width, int* height )		{ return loadImage(filename, (void**)ptr, width, height, imageFormatFromType<T>()); }
+template<typename T> bool loadImage( const char* filename, T** ptr, int* width, int* height, bool pinned = true, cudaStream_t stream = NULL )		{ return loadImage(filename, (void**)ptr, width, height, imageFormatFromType<T>(), pinned, stream); }
 	
 /**
  * Load a color image from disk into CUDA memory, in uchar3/uchar4/float3/float4 formats with pixel values 0-255.
@@ -88,7 +88,7 @@ template<typename T> bool loadImage( const char* filename, T** ptr, int* width, 
  *                       Otherwise if the value of height is 0, the image will be loaded with it's dimensions from the file on disk.
  * @ingroup image
  */
-bool loadImage( const char* filename, void** output, int* width, int* height, imageFormat format );
+bool loadImage( const char* filename, void** output, int* width, int* height, imageFormat format, bool pinned = true, cudaStream_t stream = NULL );
 
 /**
  * Load a color image from disk into CUDA memory with alpha, in float4 RGBA format with pixel values 0-255.
@@ -97,7 +97,7 @@ bool loadImage( const char* filename, void** output, int* width, int* height, im
  *             it is recommended to use loadImage() instead, which supports multiple image formats.
  * @ingroup image
  */
-bool loadImageRGBA( const char* filename, float4** ptr, int* width, int* height );
+bool loadImageRGBA( const char* filename, float4** ptr, int* width, int* height, bool pinned = true, cudaStream_t stream = NULL );
 
 /**
  * Load a color image from disk into CUDA memory with alpha, in float4 RGBA format with pixel values 0-255.
@@ -107,7 +107,7 @@ bool loadImageRGBA( const char* filename, float4** ptr, int* width, int* height 
  *             it is recommended to use loadImage() instead, which supports multiple image formats.
  * @ingroup image
  */
-bool loadImageRGBA( const char* filename, float4** cpu, float4** gpu, int* width, int* height );
+bool loadImageRGBA( const char* filename, float4** cpu, float4** gpu, int* width, int* height, bool pinned = true, cudaStream_t stream = NULL );
 
 
 /**

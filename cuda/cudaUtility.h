@@ -107,15 +107,15 @@ inline cudaError_t cudaCheckError(cudaError_t retval, const char* txt, const cha
  * Check for non-NULL pointer before freeing it, and then set the pointer to NULL.
  * @ingroup cudaError
  */
-#define CUDA_FREE(x) 		if(x != NULL) { cudaFree(x); x = NULL; }
+#define CUDA_FREE(x) 		if(x != NULL) { CUDA(cudaFree(x)); x = NULL; }
 
 /**
  * Check for non-NULL pointer before freeing it, and then set the pointer to NULL.
  * @ingroup cudaError
  */
-#define CUDA_FREE_HOST(x)	if(x != NULL) { cudaFreeHost(x); x = NULL; }
+#define CUDA_FREE_HOST(x)	if(x != NULL) { CUDA(cudaFreeHost(x)); x = NULL; }
 
-#define CUDA_FREE_MAPPED(x, f)	if(x != NULL) { f ? cudaFreeHost(x) : cudaFree(x); x = NULL; }
+#define CUDA_FREE_MAPPED(x, f)	if(x != NULL) { f ? CUDA(cudaFreeHost(x)) : CUDA(cudaFree(x)); x = NULL; }
 
 /**
  * Check for non-NULL pointer before deleting it, and then set the pointer to NULL.

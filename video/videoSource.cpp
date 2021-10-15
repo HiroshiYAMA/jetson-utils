@@ -61,35 +61,31 @@ videoSource* videoSource::Create( const videoOptions& options )
 	constexpr auto cuda_pinned_flag = false;
 #endif
 
+	auto opt = options;
+	opt.zeroCopy = cuda_pinned_flag;
 	if( uri.protocol == "file" )
 	{
 		if( gstDecoder::IsSupportedExtension(uri.extension.c_str()) ) {
-			auto opt = options;
-			opt.zeroCopy = cuda_pinned_flag;
 			src = gstDecoder::Create(opt);
 		}
 #ifdef USE_OPENCV
 		else if( videoDecoder::IsSupportedExtension(uri.extension.c_str()) )
-			src = videoDecoder::Create(options);
+			src = videoDecoder::Create(opt);
 #endif
 		else
-			src = imageLoader::Create(options);
+			src = imageLoader::Create(opt);
 	}
 	else if( uri.protocol == "rtp" || uri.protocol == "rtsp" )
 	{
-		auto opt = options;
-		opt.zeroCopy = cuda_pinned_flag;
 		src = gstDecoder::Create(opt);
 	}
 	else if( uri.protocol == "csi" || uri.protocol == "v4l2" )
 	{
-		auto opt = options;
-		opt.zeroCopy = cuda_pinned_flag;
 		src = gstCamera::Create(opt);
 	}
 	else if( uri.protocol == "sb" )
 	{
-		src = sharedBufferReceive::Create(options);
+		src = sharedBufferReceive::Create(opt);
 	}
 	else
 	{
