@@ -1458,7 +1458,7 @@ PyObject* PyCUDA_Mask( PyObject* self, PyObject* args, PyObject* kwds )
 
 	// run the CUDA function
 	if( CUDA_FAILED(cudaMask(input->base.ptr, mask->base.ptr, output->base.ptr, output->width, output->height,
-		input->format, mask->format, bg_color)) )
+		input->format, mask->format, bg_color, 0.0f)) )
 	{
 		PyErr_SetString(PyExc_Exception, LOG_PY_UTILS "cudaMask() failed");
 		return NULL;
