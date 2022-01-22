@@ -148,6 +148,10 @@ bool URI::Parse( const char* uri )
 	{
 		;
 	}
+	else if( protocol == "ndi" )
+	{
+		;
+	}
 	else
 	{		
 		// search for ip/port format

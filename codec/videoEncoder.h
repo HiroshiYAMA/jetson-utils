@@ -112,11 +112,11 @@ protected:
 
 	bool encodeBGR();
 
-	std::string  mCapsStr;
+	// std::string  mCapsStr;
 	std::string  mLaunchStr;
-	std::string  mOutputPath;
-	std::string  mOutputIP;
-	uint16_t     mOutputPort;
+	// std::string  mOutputPath;
+	// std::string  mOutputIP;
+	// uint16_t     mOutputPort;
 
 	cv::VideoWriter rec;
 	cv::Mat rec_img;

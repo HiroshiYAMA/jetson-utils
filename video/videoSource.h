@@ -254,12 +254,18 @@ public:
 	 * Return the height of the stream, in pixels.
 	 */
 	inline uint32_t GetHeight() const				{ return mOptions.height; }
-	inline void SetHeight(uint32_t val)				{ mOptions.width = val; }
+	inline void SetHeight(uint32_t val)				{ mOptions.height = val; }
 	
 	/**
 	 * Return the framerate, in Hz or FPS.
 	 */
-	inline uint32_t GetFrameRate() const			{ return mOptions.frameRate; }
+	inline float GetFrameRate() const				{ return mOptions.GetFrameRate(); }
+	inline int GetFrameRateNum() const				{ return mOptions.GetFrameRateNum(); }
+	inline int GetFrameRateDenom() const			{ return mOptions.GetFrameRateDenom(); }
+	inline void SetFrameRate(float rate)			{ mOptions.SetFrameRate(rate); }
+	inline void SetFrameRate(int num, int denom) 	{ SetFrameRateNum(num); SetFrameRateDenom(denom); }
+	inline void SetFrameRateNum(int num)			{ mOptions.SetFrameRateNum(num); }
+	inline void SetFrameRateDenom(int denom)		{ mOptions.SetFrameRateDenom(denom); }
 
 	/**
 	 * Return the resource URI of the stream.

@@ -89,9 +89,12 @@ include_directories(${PROJECT_INCLUDE_DIR}/jetson-utils)
 execute_process (COMMAND uname -m OUTPUT_VARIABLE CPU_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
 include_directories(/usr/include/gstreamer-1.0 /usr/include/glib-2.0 /usr/include/libxml2 /usr/lib/${CPU_ARCH}-linux-gnu/gstreamer-1.0/include /usr/lib/${CPU_ARCH}-linux-gnu/glib-2.0/include/)
 
+# NDI SDK.
+include_directories(/usr/local/include/NDI)
+
 # build library
-file(GLOB jetsonUtilitySources *.cpp camera/*.cpp codec/*.cpp cuda/*.cu cuda/*.cpp display/*.cpp image/*.cpp input/*.cpp network/*.cpp threads/*.cpp video/*.cpp ipc/*.cpp)
-file(GLOB jetsonUtilityIncludes *.h *.hpp camera/*.h codec/*.h cuda/*.h cuda/*.cuh display/*.h image/*.h image/*.inl input/*.h network/*.h threads/*.h threads/*.inl video/*.h ipc/*.h)
+file(GLOB jetsonUtilitySources *.cpp camera/*.cpp codec/*.cpp cuda/*.cu cuda/*.cpp display/*.cpp image/*.cpp input/*.cpp network/*.cpp threads/*.cpp video/*.cpp ipc/*.cpp NDI/*.cpp)
+file(GLOB jetsonUtilityIncludes *.h *.hpp camera/*.h codec/*.h cuda/*.h cuda/*.cuh display/*.h image/*.h image/*.inl input/*.h network/*.h threads/*.h threads/*.inl video/*.h ipc/*.h NDI/*.h)
 
 if(ENABLE_OPENCV)
 	add_definitions(-DUSE_OPENCV)
@@ -104,7 +107,7 @@ else()
 	set(OPENCV_LIBRARY)
 endif()
 cuda_add_library(jetson-utils SHARED ${jetsonUtilitySources})
-target_link_libraries(jetson-utils GL GLU GLEW gstreamer-1.0 gstapp-1.0 gstpbutils-1.0 SDL2 ${CUDA_nppicc_LIBRARY} ${OPENCV_LIBRARY} rt PocoFoundation pthread)
+target_link_libraries(jetson-utils GL GLU GLEW gstreamer-1.0 gstapp-1.0 gstpbutils-1.0 SDL2 ${CUDA_nppicc_LIBRARY} ${OPENCV_LIBRARY} rt PocoFoundation pthread ndi)
 
 
 # transfer all headers to the include directory 
