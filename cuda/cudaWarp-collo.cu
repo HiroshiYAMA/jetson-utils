@@ -304,7 +304,7 @@ __global__ void cudaCollo(
 		: collo_prm.alpha_blend ? pix_mask * num255_inv : 1.0f;
 	// S pix_out = cast_vec<S>(make_float4((pix_fg * a) + (pix_bg * (1.0f - a)), 255.0f));
 	S pix_out = cast_vec<S>(collo_prm.overlay_panorama
-		? make_float4((pix_fg * a) + (pix_bg * (1.0f - a)), 255.0f)
+		? make_float4((pix_fg * a) + (pix_bg * (1.0f - a)), a * 255.0f)
 		: make_float4(a > collo_prm.bg_color_th ? pix_fg : pix_bg, a * 255.0f)
 	);
 
