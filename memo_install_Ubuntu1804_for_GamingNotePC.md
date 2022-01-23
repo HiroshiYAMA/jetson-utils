@@ -403,8 +403,8 @@ Nsight Systems で計測して、
 | --- | --- |
 | mobilenetv3 1920x1080 Sc025 | (16)msec |
 | mobilenetv3 1920x1080 Sc050 | (22)msec |
-| resnet50 1920x1080 Sc025 | (17)msed |
-| resnet50 1920x1080 Sc050 | (34.4)msed |
+| resnet50 1920x1080 Sc025 | (17)msec |
+| resnet50 1920x1080 Sc050 | (34.4)msec |
 
 #### UVC + 4K30p(H.264, 29.97fps)で、
 | model | 2070 speed (pha only) | 2070 speed (fgr + pha) | 3080 (pha only) | 3080 (fgr + pha) |
