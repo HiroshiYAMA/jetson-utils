@@ -349,7 +349,7 @@ OpenCV 経由なら GStreamer のパイプラインを使用可能。ハード�
 - 2UVC入力、が最も安定して動作する。
 - UVC + 背景動画ファイル、はハイスペックな PC が望ましい。
 
-ちなみに処理速度は、[ここ](../examples/segnet/Benchmark_segnet.md)を参照。
+ちなみに処理速度は、[ここ](https://github.com/flow-dev/jetson-inference-team/blob/Br_collo/examples/segnet/Benchmark_segnet.md)を参照。
 
 ## x86_64系のブランチをゲット
 ```bash
