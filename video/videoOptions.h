@@ -144,6 +144,7 @@ public:
 		DEVICE_IP,			/**< IP-based network stream (e.g. RTP/RTSP) */
 		DEVICE_FILE,			/**< Disk-based stream from a file or directory of files */
 		DEVICE_SHAREDBUFFER,	// POSIX Shared Buffer.
+		DEVICE_NDI,	// NDI.
 		DEVICE_DISPLAY			/**< OpenGL output stream rendered to an attached display */
 	};
 
@@ -295,6 +296,31 @@ public:
 	 * Parse a Codec enum from a string.
 	 */
 	static Codec CodecFromStr( const char* str );
+
+	/**
+	 * Return the framerate, in Hz or FPS.
+	 */
+	inline float GetFrameRate() const		{ return frameRate; }
+	inline int GetFrameRateNum() const		{ return frameRateNum; }
+	inline int GetFrameRateDenom() const	{ return frameRateDenom; }
+	inline void SetFrameRate(float rate)
+	{
+		frameRate = rate;
+		frameRateDenom = 10'000;
+		frameRateNum = int(rate * frameRateDenom + 0.5f);
+	}
+	inline void SetFrameRate(int num, int denom) { SetFrameRateNum(num); SetFrameRateDenom(denom); }
+	inline void SetFrameRateNum(int num)
+	{
+		frameRateNum = num;
+		frameRate = float(num) / frameRateDenom;
+	}
+	inline void SetFrameRateDenom(int denom)
+	{
+		if (denom <= 0) denom = 1;
+		frameRateDenom = denom;
+		frameRate = float(frameRateNum) / denom;
+	}
 };
 
 

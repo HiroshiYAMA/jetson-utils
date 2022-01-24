@@ -251,6 +251,7 @@ struct st_COLLO_param {
 
 	// mask. background color.
 	float4 bg_color;
+	float bg_color_th;	// [0 ... 1].
 
 	// output image with camera work.
 	bool camera_work;

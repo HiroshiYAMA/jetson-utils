@@ -29,6 +29,8 @@
 #include "glDisplay.h"
 #include "gstEncoder.h"
 
+#include "NDI_Send.h"
+
 #include "logging.h"
 
 
@@ -95,6 +97,10 @@ videoOutput* videoOutput::Create( const videoOptions& options )
 	else if( uri.protocol == "rtp" || uri.protocol == "rtmp" )
 	{
 		output = gstEncoder::Create(options);
+	}
+	else if( uri.protocol == "ndi" )
+	{
+		output = ndiSend::Create(options);
 	}
 	else if( uri.protocol == "display" )
 	{
@@ -229,6 +235,8 @@ const char* videoOutput::TypeToStr( uint32_t type )
 #endif
 	else if( type == imageWriter::Type )
 		return "imageWriter";
+	else if( type == ndiSend::Type )
+		return "ndiSend";
 
 	LogWarning(LOG_VIDEO "unknown videoOutput type - %u\n", type);
 	return "(unknown)";

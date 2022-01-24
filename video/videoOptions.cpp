@@ -144,8 +144,8 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 		frameRate = cmdLine.GetFloat("framerate");
 
 	if (frameRate != 0) {
-		frameRateDenom = 100;
-		frameRateNum = int(frameRate * frameRateDenom);
+		frameRateDenom = 10'000;
+		frameRateNum = int(frameRate * frameRateDenom + 0.5f);
 	}
 
 	// flip-method
@@ -319,6 +319,7 @@ const char* videoOptions::DeviceTypeToStr( videoOptions::DeviceType type )
 		case DEVICE_IP:		return "ip";
 		case DEVICE_FILE:		return "file";
 		case DEVICE_SHAREDBUFFER:	return "sb";
+		case DEVICE_NDI:	return "ndi";
 		case DEVICE_DISPLAY:	return "display";
 	}
 	return nullptr;
