@@ -22,6 +22,7 @@
 
 #include "cudaNormalize.h"
 #include "cudaVector.h"
+#include "float.h"
 
 
 #define rescale(v) (clamp((v - input_range.x) * scaling_factor + output_range.x, output_range.x, output_range.y))
@@ -102,7 +103,7 @@ __global__ void gpuNormalizeGray( T* input, T* output, int width, int height,
 	if( x >= width || y >= height )
 		return;
 
-	const T px = rescale(input[ y * width + x ]);
+	const T px = (fabs(input_range.y - input_range.x) <= FLT_EPSILON) ? T(0) : rescale(input[ y * width + x ]);
 	output[y*width+x] = px;
 }
 
