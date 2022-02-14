@@ -145,6 +145,47 @@ __global__ void YUYVToRGBA( uchar4* src, T* dst, int halfWidth, int height )
 								  px1.x, px1.y, px1.z, 255);
 } 
 
+// GRAY32F to PA16.
+// src: [0, 1].
+// dst: [0, 65535].
+__global__ void GRAY32FToPA16( float2* src, uint16_t* dst, int halfWidth, int height )
+{
+	const int x = blockIdx.x * blockDim.x + threadIdx.x;
+	const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if( x >= halfWidth || y >= height )
+		return;
+
+	const float2 macroPx = src[y * halfWidth + x];
+
+	constexpr auto YH = 235.0f;	// limited range.
+	constexpr auto YL = 16.0f;	// limited range.
+	// constexpr auto YH = 255.0f;	// full range.
+	// constexpr auto YL = 0.0f;	// full range.
+	constexpr auto YMAX = 255.0f;
+	constexpr auto YD = (YH - YL) / YMAX;
+	constexpr auto YB = YL / YMAX;
+
+	constexpr auto dst_scale = 65535.0f;
+	constexpr auto uv_center = (dst_scale + 1.0f) / 2.0f;
+
+	float y0, y1;
+	float u = uv_center, v = uv_center;
+	float alpha = dst_scale;
+
+	y0 = macroPx.x * YD + YB;
+	y1 = macroPx.y * YD + YB;
+	y0 *= dst_scale;
+	y1 *= dst_scale;
+
+	dst[(y * halfWidth + x) * 2 + 0] = static_cast<uint16_t>(y0);
+	dst[(y * halfWidth + x) * 2 + 1] = static_cast<uint16_t>(y1);
+	dst[((y + height) * halfWidth + x) * 2 + 0] = static_cast<uint16_t>(u);
+	dst[((y + height) * halfWidth + x) * 2 + 1] = static_cast<uint16_t>(v);
+	dst[((y + height * 2) * halfWidth + x) * 2 + 0] = static_cast<uint16_t>(alpha);
+	dst[((y + height * 2) * halfWidth + x) * 2 + 1] = static_cast<uint16_t>(alpha);
+}
+
 template<typename T, imageFormat format>
 static cudaError_t launchYUYVToRGB( void* input, T* output, size_t width, size_t height, cudaStream_t stream)
 {
@@ -164,6 +205,23 @@ static cudaError_t launchYUYVToRGB( void* input, T* output, size_t width, size_t
 	return CUDA(cudaGetLastError());
 }
 
+static cudaError_t launchGRAY32FToPA16( float* input, uint16_t* output, size_t width, size_t height, cudaStream_t stream)
+{
+	if( !input || !output || !width || !height )
+		return cudaErrorInvalidValue;
+
+	const int  halfWidth = width / 2;	// two pixels are output at once
+#ifdef JETSON
+	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
+	const dim3 gridDim(iDivUp(halfWidth, blockDim.x), iDivUp(height, blockDim.y));
+
+	GRAY32FToPA16<<<gridDim, blockDim, 0, stream>>>((float2*)input, output, halfWidth, height);
+
+	return CUDA(cudaGetLastError());
+}
 
 // cudaYUYVToRGB (uchar3)
 cudaError_t cudaYUYVToRGB( void* input, uchar3* output, size_t width, size_t height, cudaStream_t stream )
@@ -241,3 +299,10 @@ cudaError_t cudaYVYUToRGBA( void* input, float4* output, size_t width, size_t he
 	return launchYUYVToRGB<float8, IMAGE_YVYU>(input, (float8*)output, width, height, stream);
 }
 
+//-----------------------------------------------------------------------------------
+
+// GRAY to YUV+A PA16 4:2:2:4.
+cudaError_t cudaGRAY32FToPA16( float* input, uint16_t* output, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchGRAY32FToPA16(input, output, width, height, stream);
+}

@@ -65,6 +65,7 @@ enum imageFormat
 	IMAGE_YUY2=IMAGE_YUYV,			/**< Duplicate of YUYV     (`'yuy2'`) */
 	IMAGE_YVYU,					/**< YUV YVYU 4:2:2 packed (`'yvyu'`) */
 	IMAGE_UYVY,					/**< YUV UYVY 4:2:2 packed (`'uyvy'`) */
+	IMAGE_PA16,					/**< YUV+A PA16 4:2:2:4 planar (`'pa16'`) */
 	IMAGE_I420,					/**< YUV I420 4:2:0 planar (`'i420'`) */
 	IMAGE_YV12,					/**< YUV YV12 4:2:0 planar (`'yv12'`) */
 	IMAGE_NV12,					/**< YUV NV12 4:2:0 planar (`'nv12'`) */
@@ -174,7 +175,7 @@ inline bool imageFormatIsBGR( imageFormat format );
  * Check if an image format is one of the YUV formats.
  *
  * @returns true if the imageFormat is a YUV format 
- *               (IMAGE_YUYV, IMAGE_YVYU, IMAGE_UYVY, IMAGE_I420, IMAGE_YV12, IMAGE_NV12)
+ *               (IMAGE_YUYV, IMAGE_YVYU, IMAGE_UYVY, IMAGE_PA16, IMAGE_I420, IMAGE_YV12, IMAGE_NV12)
  *               otherwise, returns false.
  * @ingroup imageFormat
  */

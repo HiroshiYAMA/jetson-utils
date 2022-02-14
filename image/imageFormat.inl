@@ -46,6 +46,7 @@ inline const char* imageFormatToStr( imageFormat format )
 		case IMAGE_UYVY:	 	return "uyvy";
 		case IMAGE_YUYV:	 	return "yuyv";
 		case IMAGE_YVYU:		return "yvyu";
+		case IMAGE_PA16:	 	return "pa16";
 		case IMAGE_BAYER_BGGR:	return "bayer-bggr";
 		case IMAGE_BAYER_GBRG:	return "bayer-gbrg";
 		case IMAGE_BAYER_GRBG:	return "bayer-grbg";
@@ -173,6 +174,7 @@ inline size_t imageFormatChannels( imageFormat format )
 		case IMAGE_UYVY:
 		case IMAGE_YUYV:		
 		case IMAGE_YVYU:		return 3;
+		case IMAGE_PA16:		return 4;
 		case IMAGE_BAYER_BGGR:
 		case IMAGE_BAYER_GBRG:
 		case IMAGE_BAYER_GRBG:
@@ -204,6 +206,7 @@ inline size_t imageFormatDepth( imageFormat format )
 		case IMAGE_UYVY:
 		case IMAGE_YUYV:		
 		case IMAGE_YVYU:		return 16;
+		case IMAGE_PA16:		return sizeof(uint16_t) * 3 * 8;
 		case IMAGE_BAYER_BGGR:
 		case IMAGE_BAYER_GBRG:
 		case IMAGE_BAYER_GRBG:
@@ -240,6 +243,7 @@ template<> inline __host__ __device__ imageFormat imageFormatFromType<uchar4>()	
 template<> inline __host__ __device__ imageFormat imageFormatFromType<float>()	{ return IMAGE_GRAY32F; }
 template<> inline __host__ __device__ imageFormat imageFormatFromType<float3>()	{ return IMAGE_RGB32F; }
 template<> inline __host__ __device__ imageFormat imageFormatFromType<float4>()	{ return IMAGE_RGBA32F; }
+template<> inline __host__ __device__ imageFormat imageFormatFromType<uint16_t>()	{ return IMAGE_PA16; }
 
 
 // imageFormatErrorMsg
