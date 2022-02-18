@@ -22,6 +22,7 @@
 
 #include "cudaYUV.h"
 #include "imageFormat.h"
+#include "cudaYUV_internal.h"
 
 
 //-----------------------------------------------------------------------------------
@@ -148,7 +149,7 @@ __global__ void YUYVToRGBA( uchar4* src, T* dst, int halfWidth, int height )
 // GRAY32F to PA16.
 // src: [0, 1].
 // dst: [0, 65535].
-__global__ void GRAY32FToPA16( float2* src, uint16_t* dst, int halfWidth, int height )
+__global__ void GRAY32FToPA16( float2* src, uint16_t* dst, int halfWidth, int height, float in_max, float out_max )
 {
 	const int x = blockIdx.x * blockDim.x + threadIdx.x;
 	const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -158,25 +159,17 @@ __global__ void GRAY32FToPA16( float2* src, uint16_t* dst, int halfWidth, int he
 
 	const float2 macroPx = src[y * halfWidth + x];
 
-	constexpr auto YH = 235.0f;	// limited range.
-	constexpr auto YL = 16.0f;	// limited range.
-	// constexpr auto YH = 255.0f;	// full range.
-	// constexpr auto YL = 0.0f;	// full range.
-	constexpr auto YMAX = 255.0f;
-	constexpr auto YD = (YH - YL) / YMAX;
-	constexpr auto YB = YL / YMAX;
+	const float3 rgb0 = { macroPx.x, macroPx.x, macroPx.x };
+	const float3 rgb1 = { macroPx.y, macroPx.y, macroPx.y };
 
-	constexpr auto dst_scale = 65535.0f;
-	constexpr auto uv_center = (dst_scale + 1.0f) / 2.0f;
+	float3 yuv0 = RGB2YUV_709_limited(rgb0, in_max, out_max);
+	float3 yuv1 = RGB2YUV_709_limited(rgb1, in_max, out_max);
+	// float3 yuv0 = RGB2YUV_709_full(rgb0, in_max, out_max);
+	// float3 yuv1 = RGB2YUV_709_full(rgb1, in_max, out_max);
 
-	float y0, y1;
-	float u = uv_center, v = uv_center;
-	float alpha = dst_scale;
-
-	y0 = macroPx.x * YD + YB;
-	y1 = macroPx.y * YD + YB;
-	y0 *= dst_scale;
-	y1 *= dst_scale;
+	float y0 = yuv0.x, y1 = yuv1.x;
+	float u = yuv0.y, v = yuv0.z;
+	float alpha = out_max;
 
 	dst[(y * halfWidth + x) * 2 + 0] = static_cast<uint16_t>(y0);
 	dst[(y * halfWidth + x) * 2 + 1] = static_cast<uint16_t>(y1);
@@ -205,7 +198,7 @@ static cudaError_t launchYUYVToRGB( void* input, T* output, size_t width, size_t
 	return CUDA(cudaGetLastError());
 }
 
-static cudaError_t launchGRAY32FToPA16( float* input, uint16_t* output, size_t width, size_t height, cudaStream_t stream)
+static cudaError_t launchGRAY32FToPA16( float* input, uint16_t* output, size_t width, size_t height, float in_max, float out_max, cudaStream_t stream)
 {
 	if( !input || !output || !width || !height )
 		return cudaErrorInvalidValue;
@@ -218,7 +211,7 @@ static cudaError_t launchGRAY32FToPA16( float* input, uint16_t* output, size_t w
 #endif
 	const dim3 gridDim(iDivUp(halfWidth, blockDim.x), iDivUp(height, blockDim.y));
 
-	GRAY32FToPA16<<<gridDim, blockDim, 0, stream>>>((float2*)input, output, halfWidth, height);
+	GRAY32FToPA16<<<gridDim, blockDim, 0, stream>>>((float2*)input, output, halfWidth, height, in_max, out_max);
 
 	return CUDA(cudaGetLastError());
 }
@@ -302,7 +295,7 @@ cudaError_t cudaYVYUToRGBA( void* input, float4* output, size_t width, size_t he
 //-----------------------------------------------------------------------------------
 
 // GRAY to YUV+A PA16 4:2:2:4.
-cudaError_t cudaGRAY32FToPA16( float* input, uint16_t* output, size_t width, size_t height, cudaStream_t stream )
+cudaError_t cudaGRAY32FToPA16( float* input, uint16_t* output, size_t width, size_t height, float in_max, float out_max, cudaStream_t stream )
 {
-	return launchGRAY32FToPA16(input, output, width, height, stream);
+	return launchGRAY32FToPA16(input, output, width, height, in_max, out_max, stream);
 }

@@ -245,7 +245,7 @@ cudaError_t cudaUYVYToRGBA( void* input, float4* output, size_t width, size_t he
 
 
 // GRAY to YUV+A PA16 4:2:2:4.
-cudaError_t cudaGRAY32FToPA16( float* input, uint16_t* output, size_t width, size_t height, cudaStream_t stream = NULL );
+cudaError_t cudaGRAY32FToPA16( float* input, uint16_t* output, size_t width, size_t height, float in_max = 1.0f, float out_max = 65535.0f, cudaStream_t stream = NULL );
 
 
 //////////////////////////////////////////////////////////////////////////////////
