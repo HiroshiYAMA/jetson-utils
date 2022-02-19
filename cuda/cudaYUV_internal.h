@@ -88,10 +88,10 @@ inline __device__ __host__ st_ColorSpaceRangeCoef gen_color_space_range_coef(con
 	};
 
 	st_ColorSpaceRangeCoef cs_range_coef = {
-		range_MAX / (cs_range_scaled.Ymax - cs_range_scaled.Ymin),
-		range_MAX / ((cs_range_scaled.Cmax - cs_range_scaled.Cmin) / 2),
 		(cs_range_scaled.Ymax - cs_range_scaled.Ymin) / range_MAX,
 		((cs_range_scaled.Cmax - cs_range_scaled.Cmin) / 2) / range_MAX,
+		range_MAX / (cs_range_scaled.Ymax - cs_range_scaled.Ymin),
+		range_MAX / ((cs_range_scaled.Cmax - cs_range_scaled.Cmin) / 2),
 		cs_range_scaled.Ymin,
 		(range_MAX + 1) / 2,
 	};
