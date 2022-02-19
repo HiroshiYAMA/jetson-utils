@@ -227,6 +227,7 @@ template<> inline __host__ __device__ imageFormat imageFormatFromType<uchar4>();
 template<> inline __host__ __device__ imageFormat imageFormatFromType<float>();
 template<> inline __host__ __device__ imageFormat imageFormatFromType<float3>();
 template<> inline __host__ __device__ imageFormat imageFormatFromType<float4>();
+template<> inline __host__ __device__ imageFormat imageFormatFromType<uint16_t>();
 
 // templated version of base type / vector type
 template<imageFormat format> struct imageFormatType;
