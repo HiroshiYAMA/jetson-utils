@@ -84,10 +84,14 @@ ndiSend* ndiSend::Create( const videoOptions& options )
 	frm.xres = opt.width;
 	frm.yres = opt.height;
 	// frm.FourCC = NDIlib_FourCC_type_BGRA;
-	// frm.FourCC = NDIlib_FourCC_type_RGBA;
 	// frm.FourCC = NDIlib_FourCC_type_UYVA;
+#ifdef NDI_SEND_PA16
 	frm.FourCC = NDIlib_FourCC_type_PA16;
 	frm.line_stride_in_bytes = opt.width * 1 * sizeof(uint16_t);
+#else
+	frm.FourCC = NDIlib_FourCC_type_RGBA;
+	frm.line_stride_in_bytes = opt.width * 4;
+#endif
 	frm.frame_rate_N = opt.frameRateNum;
 	frm.frame_rate_D = opt.frameRateDenom;
 	frm.frame_format_type = NDIlib_frame_format_type_progressive;
