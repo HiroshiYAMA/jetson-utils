@@ -106,10 +106,11 @@ inline __device__ float3 HSV2RGB( const float3 &hsv )
 }
 
 // apply saturation, luminance, contrast.
-inline __device__ float3 applyColorAdjustment(const float3 &rgb_src, float sat, float gain, float contrast)
+inline __device__ float3 applyColorAdjustment(const float3 &rgb_src, float sat, float gain, float contrast, float hue)
 {
     float3 hsv = RGB2HSV(rgb_src);
 
+    hsv.x += (hue * (1.0f / 6.0f));
     hsv.y *= sat;
     hsv.z *= gain;
     hsv.z -= 0.5f;

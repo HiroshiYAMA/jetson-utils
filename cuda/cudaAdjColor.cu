@@ -25,7 +25,7 @@
 // gpuAdjColor.
 template<typename T, typename S>
 __global__ void gpuAdjColor( T* input, S* output, int width, int height,
-							 float sat, float gain, float contrast,
+							 float sat, float gain, float contrast, float hue,
 							 float max_value )
 {
 	const int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -37,7 +37,7 @@ __global__ void gpuAdjColor( T* input, S* output, int width, int height,
 
 	float3 rgb = make_float3(pi);
 	rgb /= 255.0f;
-	rgb = applyColorAdjustment(rgb, sat, gain, contrast);
+	rgb = applyColorAdjustment(rgb, sat, gain, contrast, hue);
 	rgb *= 255.0f;
 
 	S po;
@@ -57,7 +57,7 @@ __global__ void gpuAdjColor( T* input, S* output, int width, int height,
 // launchResize
 template<typename T, typename S>
 static cudaError_t launchResize( T* input, S* output, size_t width, size_t height,
-								 float sat, float gain, float contrast,
+								 float sat, float gain, float contrast, float hue,
 								 float max_value, cudaStream_t stream )
 {
 	if( !input || !output )
@@ -74,17 +74,17 @@ static cudaError_t launchResize( T* input, S* output, size_t width, size_t heigh
 #endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuAdjColor<T, S><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, sat, gain, contrast, max_value);
+	gpuAdjColor<T, S><<<gridDim, blockDim, 0, stream>>>(input, output, width, height, sat, gain, contrast, hue, max_value);
 
 	return CUDA(cudaGetLastError());
 }
 
 #define FUNC_CUDA_RESIZE(T, S) \
 cudaError_t cudaAdjColor( T* input, S* output, size_t width, size_t height, \
-						  float sat, float gain, float contrast, \
+						  float sat, float gain, float contrast, float hue, \
 						  float max_value, cudaStream_t stream ) \
 { \
-	return launchResize<T, S>(input, output, width, height, sat, gain, contrast, max_value, stream); \
+	return launchResize<T, S>(input, output, width, height, sat, gain, contrast, hue, max_value, stream); \
 }
 
 // cudaAdjColor (uint8 grayscale)
@@ -139,20 +139,20 @@ FUNC_CUDA_RESIZE(float4, float4);
 
 //-----------------------------------------------------------------------------------
 cudaError_t cudaAdjColor( void* input, void* output, size_t width, size_t height, imageFormat format,
-						  float sat, float gain, float contrast, cudaStream_t stream )
+						  float sat, float gain, float contrast, float hue, cudaStream_t stream )
 {
 	if( format == IMAGE_RGB8 || format == IMAGE_BGR8 )
-		return cudaAdjColor((uchar3*)input, (uchar3*)output, width, height, sat, gain, contrast, 255.0f, stream);
+		return cudaAdjColor((uchar3*)input, (uchar3*)output, width, height, sat, gain, contrast, hue, 255.0f, stream);
 	else if( format == IMAGE_RGBA8 || format == IMAGE_BGRA8 )
-		return cudaAdjColor((uchar4*)input, (uchar4*)output, width, height, sat, gain, contrast, 255.0f, stream);
+		return cudaAdjColor((uchar4*)input, (uchar4*)output, width, height, sat, gain, contrast, hue, 255.0f, stream);
 	else if( format == IMAGE_RGB32F || format == IMAGE_BGR32F )
-		return cudaAdjColor((float3*)input, (float3*)output, width, height, sat, gain, contrast, FLT_MAX, stream);
+		return cudaAdjColor((float3*)input, (float3*)output, width, height, sat, gain, contrast, hue, FLT_MAX, stream);
 	else if( format == IMAGE_RGBA32F || format == IMAGE_BGRA32F )
-		return cudaAdjColor((float4*)input, (float4*)output, width, height, sat, gain, contrast, FLT_MAX, stream);
+		return cudaAdjColor((float4*)input, (float4*)output, width, height, sat, gain, contrast, hue, FLT_MAX, stream);
 	else if( format == IMAGE_GRAY8 )
-		return cudaAdjColor((uint8_t*)input, (uint8_t*)output, width, height, sat, gain, contrast, 255.0f, stream);
+		return cudaAdjColor((uint8_t*)input, (uint8_t*)output, width, height, sat, gain, contrast, hue, 255.0f, stream);
 	else if( format == IMAGE_GRAY32F )
-		return cudaAdjColor((float*)input, (float*)output, width, height, sat, gain, contrast, FLT_MAX, stream);
+		return cudaAdjColor((float*)input, (float*)output, width, height, sat, gain, contrast, hue, FLT_MAX, stream);
 
 	LogError(LOG_CUDA "cudaAdjColor() -- invalid image format '%s'\n", imageFormatToStr(format));
 	LogError(LOG_CUDA "                supported formats are:\n");

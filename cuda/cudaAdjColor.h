@@ -32,7 +32,7 @@
 
 #define FUNC_CUDA_ADJCOLOR_HEADER(T, S, M) \
 cudaError_t cudaAdjColor( T* input,  S* output, size_t width, size_t height, \
-						  float sat, float gain, float contrast, \
+						  float sat, float gain, float contrast, float hue, \
 						  float max_value = M, cudaStream_t stream = NULL );
 
 /**
@@ -108,7 +108,7 @@ FUNC_CUDA_ADJCOLOR_HEADER(float4, float4, FLT_MAX);
  * @ingroup resize
  */
 cudaError_t cudaAdjColor( void* input,  void* output, size_t width, size_t height, imageFormat format,
-						  float sat, float gain, float contrast, cudaStream_t stream = NULL );
+						  float sat, float gain, float contrast, float hue, cudaStream_t stream = NULL );
 
 #endif
 
