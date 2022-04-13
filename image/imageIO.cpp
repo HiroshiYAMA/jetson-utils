@@ -281,7 +281,13 @@ bool saveImage( const char* filename, void* ptr, int width, int height, imageFor
 	const size_t channels = imageFormatChannels(format);
 	const size_t stride   = width * sizeof(unsigned char) * channels;
 	const size_t size     = stride * height;
-	unsigned char* img    = (unsigned char*)ptr;
+	unsigned char* img    = nullptr;
+
+	if( !cudaAllocMapped((void**)&img, size) )
+	{
+		LogError(LOG_IMAGE "saveImage() -- failed to allocate %zu bytes for image '%s'\n", size, filename);
+		return false;
+	}
 
 	// if needed, convert from float to uint8
 	const imageBaseType baseType = imageFormatBaseType(format);
@@ -297,24 +303,23 @@ bool saveImage( const char* filename, void* ptr, int width, int height, imageFor
 		else if( channels == 4 )
 			outputFormat = IMAGE_RGBA8;
 
-		if( !cudaAllocMapped((void**)&img, size) )
-		{
-			LogError(LOG_IMAGE "saveImage() -- failed to allocate %zu bytes for image '%s'\n", size, filename);
-			return false;
-		}
-
 		if( CUDA_FAILED(cudaConvertColor(ptr, format, img, outputFormat, width, height, pixel_range)) )  // TODO limit pixel
 		{
 			LogError(LOG_IMAGE "saveImage() -- failed to convert image from %s to %s ('%s')\n", imageFormatToStr(format), imageFormatToStr(outputFormat), filename);
 			return false;
 		}
-		
-		CUDA(cudaDeviceSynchronize());
+
+	} else {
+		if( CUDA_FAILED(cudaMemcpyAsync(img, ptr, size, cudaMemcpyDeviceToHost)) ) {
+			LogError(LOG_IMAGE "saveImage() -- failed to cudaMemcpyAsync image ('%s')\n", filename);
+			return false;
+		}
 	}
+
+	CUDA(cudaDeviceSynchronize());
 	
 	#define release_return(x) 	\
-		if( baseType == IMAGE_FLOAT ) \
-			CUDA(cudaFreeHost(img)); \
+		CUDA(cudaFreeHost(img)); \
 		return x;
 	
 	// determine the file extension
