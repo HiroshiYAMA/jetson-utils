@@ -27,6 +27,7 @@
 #include "videoOutput.h"
 
 #include <Processing.NDI.Lib.h>
+// #include <Processing.NDI.Advanced.h>
 
 class ndiSend : public videoOutput
 {
@@ -61,7 +62,7 @@ public:
 
 	// /**
 	//  * Close the stream.
-	//  * @see videoOutput::Open()
+	//  * @see videoOutput::Close()
 	//  */
 	// virtual void Close();
 

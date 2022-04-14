@@ -29,6 +29,7 @@
 #include "videoDecoder.h"
 #endif
 #include "sharedBufferReceive.h"
+#include "NDI_Receive.h"
 
 #include "logging.h"
 
@@ -86,6 +87,10 @@ videoSource* videoSource::Create( const videoOptions& options )
 	else if( uri.protocol == "sb" )
 	{
 		src = sharedBufferReceive::Create(opt);
+	}
+	else if( uri.protocol == "ndi" )
+	{
+		src = ndiReceive::Create(opt);
 	}
 	else
 	{

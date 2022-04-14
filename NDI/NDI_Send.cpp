@@ -31,12 +31,6 @@
 // constructor
 ndiSend::ndiSend( const videoOptions& options ) : videoOutput(options)
 {
-	if (!NDIlib_initialize())
-	{
-		LogError(LOG_NDI_SEND "Cannot run NDI.");
-		exit(EXIT_FAILURE);
-	}
-
 	mStreaming = true;
 
 	mOptions.deviceType = videoOptions::DEVICE_NDI;
@@ -53,9 +47,6 @@ ndiSend::~ndiSend()
 
 	// Destroy the NDI sender
 	NDIlib_send_destroy(pNDI_send);
-
-	// Not required, but nice
-	NDIlib_destroy();
 }
 
 
@@ -64,7 +55,7 @@ ndiSend* ndiSend::Create( const videoOptions& options )
 {
 	auto ndi_send = new ndiSend(options);
 	if (!ndi_send) {
-		LogError(LOG_NDI_SEND "Cannot create instance.");
+		LogError(LOG_NDI_SEND "Cannot create instance.\n");
 		return nullptr;
 	}
 
@@ -76,7 +67,8 @@ ndiSend* ndiSend::Create( const videoOptions& options )
 	// We create the NDI sender
 	ndi_send->pNDI_send = NDIlib_send_create(&(ndi_send->NDI_send_create_desc));
 	if (!ndi_send->pNDI_send) {
-		LogError(LOG_NDI_SEND "ERROR!! NDIlib_send_create.");
+		LogError(LOG_NDI_SEND "ERROR!! NDIlib_send_create.\n");
+		delete ndi_send;
 		return nullptr;
 	}
 
