@@ -1015,7 +1015,7 @@ bool gstDecoder::Open()
 
 			// re-open pipeline.
 			{
-				GError *err;
+				GError *err = NULL;
 				mPipeline = gst_parse_launch(mLaunchStr.c_str(), &err);
 				gst_element_set_state(mPipeline, GST_STATE_PAUSED);
 				if( err != NULL )
