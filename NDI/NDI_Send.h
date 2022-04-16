@@ -82,6 +82,11 @@ protected:
 	NDIlib_send_create_t NDI_send_create_desc;
 	NDIlib_send_instance_t pNDI_send;
 	NDIlib_video_frame_v2_t NDI_video_frame;
+
+	static constexpr auto IMG_NUM = 2;
+	int idx_front = 0;
+	int idx_back = (idx_front + 1) & 1;
+	uint16_t* img[IMG_NUM] = { NULL };	// uint16_t. PA16.
 };
 
 #endif

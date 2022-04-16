@@ -27,6 +27,8 @@
 
 #include <strings.h>
 
+#include "cudaMappedMemory.h"
+
 
 // constructor
 ndiSend::ndiSend( const videoOptions& options ) : videoOutput(options)
@@ -40,6 +42,8 @@ ndiSend::ndiSend( const videoOptions& options ) : videoOutput(options)
 // destructor
 ndiSend::~ndiSend()
 {
+	for (int i = 0; i < IMG_NUM; i++) CUDA_FREE_MAPPED(img[i], true);
+
 	// Because one buffer is in flight we need to make sure that there is no chance that we might free it before
 	// NDI is done with it. You can ensure this either by sending another frame, or just by sending a frame with
 	// a NULL pointer.
@@ -88,6 +92,14 @@ ndiSend* ndiSend::Create( const videoOptions& options )
 	frm.frame_rate_D = opt.frameRateDenom;
 	frm.frame_format_type = NDIlib_frame_format_type_progressive;
 
+	for (int i = 0; i < IMG_NUM; i++) {
+		if( !cudaAllocMapped(&(ndi_send->img[i]), make_int2(frm.xres, frm.yres * 3), true) )	// PA16. 3 planes of Y, UV, Alpha.
+		{
+			LogError("BACKGROUND_MATTING_V2:  failed to allocate CUDA memory for output RenderImage image to NDI (%ux%u)\n", frm.xres, frm.yres);
+			return nullptr;
+		}
+	}
+
 	return ndi_send;
 }
 
@@ -107,6 +119,12 @@ bool ndiSend::Render( void* image, uint32_t width, uint32_t height, imageFormat 
 		mOptions.height = height;
 	}
 
+	if ( format == IMAGE_PA16 ) {
+		cudaMemcpyAsync(img[idx_back], image, width * height * 3 * sizeof(uint16_t), cudaMemcpyDeviceToHost);
+	} else {
+		cudaMemcpyAsync(img[idx_back], image, width * height * 4 * sizeof(uint8_t), cudaMemcpyDeviceToHost);
+	}
+
 	// const bool substreams_success = videoOutput::Render(image, width, height, format);
 
 	// CUDA(cudaStreamSynchronize(mStream));
@@ -114,8 +132,11 @@ bool ndiSend::Render( void* image, uint32_t width, uint32_t height, imageFormat 
 	// We now submit the frame asynchronously. This means that this call will return immediately and the
 	// API will "own" the memory location until there is a synchronozing event. A synchronouzing event is
 	// one of : NDIlib_send_send_video_async, NDIlib_send_send_video, NDIlib_send_destroy
-	NDI_video_frame.p_data = (uint8_t*)image;
+	NDI_video_frame.p_data = (uint8_t*)img[idx_front];
 	NDIlib_send_send_video_async_v2(pNDI_send, &NDI_video_frame);
+
+	idx_front = (idx_front + 1) & 1;
+	idx_back = (idx_front + 1) & 1;
 
 	// return substreams_success;
 	return true;
