@@ -641,9 +641,10 @@ bool gstDecoder::buildLaunchStr()
 		ss << " ! ";
 	}
 
-	// rate-limit if requested
-	if( mCustomRate )
-		ss << "videorate drop-only=true max-rate=" << (int)mOptions.frameRate << " ! ";
+	//// Not smooth display. comment by 2022.4.18 HY.
+	// // rate-limit if requested
+	// if( mCustomRate )
+	// 	ss << "videorate drop-only=true max-rate=" << (int)mOptions.frameRate << " ! ";
 
 	// add the app sink
 	ss << "appsink name=mysink"; // wait-on-eos=false;
