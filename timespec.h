@@ -26,6 +26,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <thread>
 
 #include "logging.h"
 
@@ -196,6 +197,32 @@ inline void sleepUs( uint64_t microseconds )								{ sleepTime(timeNew(0, micro
  */
 inline void sleepNs( uint64_t nanoseconds )								{ sleepTime(timeNew(0, nanoseconds)); }
 
+
+// wait V period.
+inline void waitVperiod(timespec &t_pre, double frameRate, double min_fps = 1.0)
+{
+	const double dt_1V_msec = 1000.0 / std::max(frameRate, min_fps);
+
+	timespec t_cur, dt;
+	timestamp(&t_cur);
+	timeDiff(t_pre, t_cur, &dt);
+	double dt_msec = timeDouble(dt);
+
+	constexpr double th = 1.0;
+	double t_sleep = std::max(dt_1V_msec - dt_msec, 0.0) - th;
+	int64_t t = t_sleep;
+	if (t > 0) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(t));
+	}
+
+	do {
+		timestamp(&t_cur);
+		timeDiff(t_pre, t_cur, &dt);
+		dt_msec = timeDouble(dt);
+	} while (dt_msec < dt_1V_msec);
+
+	t_pre = t_cur;
+}
 
 #endif
 

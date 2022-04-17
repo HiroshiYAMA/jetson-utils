@@ -52,6 +52,8 @@ sharedBufferReceive::sharedBufferReceive( const videoOptions& options ) : videoS
 	sb_buf_receive = nullptr;
 	sb_buf_out = nullptr;
 
+	t_pre = {};
+
 	mOptions.deviceType = videoOptions::DEVICE_SHAREDBUFFER;
 }
 
@@ -220,6 +222,9 @@ bool sharedBufferReceive::Capture( void** output, imageFormat format, uint64_t t
 		LogError(LOG_SHARED_BUFFER_RECEIVE "                             * rgba32f\n");
 		return false;
 	}
+
+	// wait V period.
+	waitVperiod(t_pre, mOptions.frameRate);
 
 	*output = sb_buf_out;
 	return true;

@@ -28,6 +28,8 @@
 #include "logging.h"
 #define LOG_SHARED_BUFFER_RECEIVE "[shared buffer receive] "
 
+#include "timespec.h"
+
 
 
 class sharedBufferReceive : public videoSource
@@ -111,4 +113,6 @@ protected:
 
 	void *sb_buf_receive;
 	void *sb_buf_out;
+
+	timespec t_pre;
 };
