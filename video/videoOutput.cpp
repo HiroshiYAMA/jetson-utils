@@ -63,6 +63,7 @@ static videoOutput* createDisplaySubstream( videoOutput* output, videoOptions& o
 	if( options.resource.protocol != "display" && !headless )
 	{
 		options.resource = "display://0";
+		options.fullScreen = cmdLine.GetFlag("fullscreen");
 		videoOutput* display = videoOutput::Create(options);
 
 		if( !display )
