@@ -22,6 +22,8 @@
  
 #include "glDisplay.h"
 #include "cudaNormalize.h"
+#include "cudaResize.h"
+#include "imageFormat.h"
 #include "timespec.h"
 
 #include <X11/Xatom.h>
@@ -103,6 +105,10 @@ glDisplay::glDisplay( const videoOptions& options ) : videoOutput(options)
 	
 	// register default event handler
 	AddEventHandler(&onEvent, this);
+
+	displayCUDA = nullptr;
+	display_width = 0;
+	display_height = 0;
 }
 
 
@@ -143,6 +149,12 @@ glDisplay::~glDisplay()
 	{
 		CUDA(cudaFree(mNormalizedCUDA));
 		mNormalizedCUDA = NULL;
+	}
+
+	if( displayCUDA != nullptr )
+	{
+		CUDA(cudaFree(displayCUDA));
+		displayCUDA = nullptr;
 	}
 
 	// destroy the OpenGL context
@@ -213,7 +225,7 @@ glDisplay* glDisplay::Create( const videoOptions& options )
 	vp->mID = gDisplays.size();
 	gDisplays.push_back(vp);
 
-	LogInfo(LOG_GL "glDisplay -- display device initialized (%ux%u)\n", vp->GetWidth(), vp->GetHeight());
+	LogInfo(LOG_GL "glDisplay -- display device initialized (%ux%u)\n", vp->display_width, vp->display_height);
 	return vp;
 }
 
@@ -255,8 +267,11 @@ bool glDisplay::initWindow()
 	if( mOptions.height == 0 )
 		mOptions.height = screenHeight;
 
+	display_width = mOptions.width;
+	display_height = mOptions.height;
+
 	LogInfo(LOG_GL "glDisplay -- X screen %i resolution:  %ix%i\n", screenIdx, screenWidth, screenHeight);
-	LogInfo(LOG_GL "glDisplay -- X window resolution:    %ux%u\n", mOptions.width, mOptions.height);
+	LogInfo(LOG_GL "glDisplay -- X window resolution:    %ux%u\n", display_width, display_height);
 	
 	Screen* screen = XScreenOfDisplay(mDisplayX, screenIdx);
 
@@ -308,7 +323,7 @@ bool glDisplay::initWindow()
 
 	
 	// create window
-	Window win = XCreateWindow(mDisplayX, winRoot, 0, 0, mOptions.width, mOptions.height, 
+	Window win = XCreateWindow(mDisplayX, winRoot, 0, 0, display_width, display_height, 
 						  0, visual->depth, InputOutput, visual->visual, 
 						  CWBorderPixel|CWColormap|CWEventMask, &winAttr);
 
@@ -340,8 +355,8 @@ bool glDisplay::initWindow()
 
 	mViewport[0] = 0; 
 	mViewport[1] = 0; 
-	mViewport[2] = mOptions.width; 
-	mViewport[3] = mOptions.height;
+	mViewport[2] = display_width; 
+	mViewport[3] = display_height;
 
 	mStreaming = true;
 	
@@ -404,7 +419,7 @@ void glDisplay::SetViewport( int left, int top, int right, int bottom )
 	const int height = bottom - top;
 
 	mViewport[0] = left;
-	mViewport[1] = GetHeight() - bottom;
+	mViewport[1] = display_height - bottom;
 	mViewport[2] = width;
 	mViewport[3] = height;
 
@@ -418,8 +433,8 @@ void glDisplay::ResetViewport()
 {
 	mViewport[0] = 0;
 	mViewport[1] = 0;
-	mViewport[2] = GetWidth();
-	mViewport[3] = GetHeight();
+	mViewport[2] = display_width;
+	mViewport[3] = display_height;
 
 	if( mRendering )
 		activateViewport();
@@ -651,16 +666,48 @@ bool glDisplay::Render( void* image, uint32_t width, uint32_t height, imageForma
 	// determine input format
 	if( imageFormatIsRGB(format) )
 	{
-		// resize the window once to match the feed, but let the user resize/maximize
-		// only resize again if the window is then smaller than the feed
-		if( !mResizedToFeed || ((GetWidth() < width || GetHeight() < height) && (width < mScreenWidth && height < mScreenHeight)) )
+		// // resize the window once to match the feed, but let the user resize/maximize
+		// // only resize again if the window is then smaller than the feed
+		// if( !mResizedToFeed || ((GetWidth() < width || GetHeight() < height) && (width < mScreenWidth && height < mScreenHeight)) )
+		// {
+		// 	SetSize(width, height);
+		// 	mResizedToFeed = true;
+		// }
+
 		{
-			SetSize(width, height);
-			mResizedToFeed = true;
+			if( !displayCUDA )
+			{
+				if( CUDA_FAILED(cudaMalloc(&displayCUDA, 7680 * 4320 * sizeof(decltype(*displayCUDA)))) )
+				{
+					LogError(LOG_GL "glDisplay.Render() failed to allocate CUDA memory for disaplay\n");
+					return false;
+				}
+			}
+
+			auto resize = [&](auto img) -> auto {
+				return cudaResize(img, width, height, displayCUDA, display_width, display_height, FILTER_LINEAR);
+			};
+
+			switch (format) {
+			case IMAGE_RGB8: case IMAGE_BGR8:
+				resize((uchar3 *)image);
+				break;
+			case IMAGE_RGBA8: case IMAGE_BGRA8:
+				resize((uchar4 *)image);
+				break;
+			case IMAGE_RGB32F: case IMAGE_BGR32F:
+				resize((float3 *)image);
+				break;
+			case IMAGE_RGBA32F: case IMAGE_BGRA32F:
+				resize((float4 *)image);
+				break;
+			default:
+				return false;
+			}
 		}
 
 		// render and present the frame
-		RenderOnce(image, width, height, format, 0, 0);
+		RenderOnce(displayCUDA, display_width, display_height, IMAGE_RGBA8, 0, 0);
 	}
 	else
 	{
@@ -806,7 +853,7 @@ void glDisplay::SetMaximized( bool maximized )
 // SetSize
 void glDisplay::SetSize( uint32_t width, uint32_t height )
 {
-	if( mOptions.width == width && mOptions.height == height )
+	if( display_width == width && display_height == height )
 		return;
 
 	// limit size to screen resolution
@@ -831,8 +878,8 @@ void glDisplay::SetSize( uint32_t width, uint32_t height )
 
 	LogVerbose(LOG_GL "glDisplay -- set the window size to %ux%u\n", width, height); 
 
-	mOptions.width = width;
-	mOptions.height = height;
+	display_width = width;
+	display_height = height;
 
 	ResetViewport();
 }
@@ -1188,18 +1235,18 @@ void glDisplay::ProcessEvents()
 		}
 		else if( evt.type == ConfigureNotify )
 		{
-			if( evt.xconfigure.width != mOptions.width || evt.xconfigure.height != mOptions.height )
+			if( evt.xconfigure.width != display_width || evt.xconfigure.height != display_height )
 			{
-				const int prevWidth = mOptions.width;
-				const int prevHeight = mOptions.height;
+				const int prevWidth = display_width;
+				const int prevHeight = display_height;
 
-				mOptions.width = evt.xconfigure.width;
-				mOptions.height = evt.xconfigure.height;
+				display_width = evt.xconfigure.width;
+				display_height = evt.xconfigure.height;
 
 				if( mViewport[2] == prevWidth && mViewport[3] == prevHeight )
 					SetViewport(0, 0, evt.xconfigure.width, evt.xconfigure.height);
 
-				dispatchEvent(WINDOW_RESIZED, mOptions.width, mOptions.height);
+				dispatchEvent(WINDOW_RESIZED, display_width, display_height);
 			}
 		}
 		else if( evt.type == ClientMessage )

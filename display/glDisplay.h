@@ -642,6 +642,10 @@ protected:
 	std::vector<glWidget*> mWidgets;
 	std::vector<glTexture*> mTextures;
 	std::vector<eventHandler> mEventHandlers;
+
+	uchar4 *displayCUDA;
+	uint32_t display_width;
+	uint32_t display_height;
 };
 
 /**
