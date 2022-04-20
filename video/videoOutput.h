@@ -42,6 +42,7 @@
 		  "                             * file://my_directory/   (directory of images)\n"	\
 		  "                             * rtp://<remote-ip>:1234 (RTP stream)\n"			\
 		  "                             * display://0            (OpenGL window)\n" 		\
+		  "                             * ndi://NDI_SOURCE_NAME  (NDI stream)\n"	 		\
 		  "  --output-codec=CODEC   desired codec for compressed output streams:\n"		\
 		  "                            * h264 (default), h265\n"						\
 		  "                            * vp8, vp9\n"									\

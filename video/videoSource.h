@@ -42,6 +42,8 @@
 		  "                             * file://my_image.jpg      (image file)\n"				\
 		  "                             * file://my_video.mp4      (video file)\n"				\
 		  "                             * file://my_directory/     (directory of images)\n"		\
+		  "                             * ndi://'MACHINE_NAME (NDI_SOURCE_NAME)' (NDI stream)\n"	\
+		  "                             * sb://shared_buffer_name  (POSIX shared buffer)\n"		\
 		  "  --input-width=WIDTH    explicitly request a width of the stream (optional)\n"   	\
 		  "  --input-height=HEIGHT  explicitly request a height of the stream (optional)\n"  	\
 		  "  --input-rate=RATE      explicitly request a framerate of the stream (optional)\n"	\
