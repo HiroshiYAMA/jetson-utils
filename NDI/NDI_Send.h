@@ -86,6 +86,7 @@ protected:
 	static constexpr auto IMG_NUM = 2;
 	int idx_front = 0;
 	int idx_back = (idx_front + 1) & 1;
+	uint16_t* img_pre = NULL;	// uint16_t. PA16.
 	uint16_t* img[IMG_NUM] = { NULL };	// uint16_t. PA16.
 };
 

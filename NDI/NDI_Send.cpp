@@ -28,6 +28,8 @@
 #include <strings.h>
 
 #include "cudaMappedMemory.h"
+#include "cudaYUV.h"
+#include "cudaResize.h"
 
 
 // constructor
@@ -42,6 +44,7 @@ ndiSend::ndiSend( const videoOptions& options ) : videoOutput(options)
 // destructor
 ndiSend::~ndiSend()
 {
+	CUDA_FREE_MAPPED(img_pre, false);
 	for (int i = 0; i < IMG_NUM; i++) CUDA_FREE_MAPPED(img[i], true);
 
 	// Because one buffer is in flight we need to make sure that there is no chance that we might free it before
@@ -92,10 +95,15 @@ ndiSend* ndiSend::Create( const videoOptions& options )
 	frm.frame_rate_D = opt.frameRateDenom;
 	frm.frame_format_type = NDIlib_frame_format_type_progressive;
 
+	if( !cudaAllocMapped(&(ndi_send->img_pre), make_int2(frm.xres, frm.yres * 3), false) )	// PA16. 3 planes of Y, UV, Alpha.
+	{
+		LogError(LOG_NDI_SEND "failed to allocate CUDA memory for image(pre) (%ux%u)\n", frm.xres, frm.yres);
+		return nullptr;
+	}
 	for (int i = 0; i < IMG_NUM; i++) {
 		if( !cudaAllocMapped(&(ndi_send->img[i]), make_int2(frm.xres, frm.yres * 3), true) )	// PA16. 3 planes of Y, UV, Alpha.
 		{
-			LogError("BACKGROUND_MATTING_V2:  failed to allocate CUDA memory for output RenderImage image to NDI (%ux%u)\n", frm.xres, frm.yres);
+			LogError(LOG_NDI_SEND "failed to allocate CUDA memory for image[] (%ux%u)\n", frm.xres, frm.yres);
 			return nullptr;
 		}
 	}
@@ -119,10 +127,46 @@ bool ndiSend::Render( void* image, uint32_t width, uint32_t height, imageFormat 
 		mOptions.height = height;
 	}
 
-	if ( format == IMAGE_PA16 ) {
-		cudaMemcpyAsync(img[idx_back], image, width * height * 3 * sizeof(uint16_t), cudaMemcpyDeviceToHost);
-	} else {
-		cudaMemcpyAsync(img[idx_back], image, width * height * 4 * sizeof(uint8_t), cudaMemcpyDeviceToHost);
+	auto copy_img = [&](auto image) -> void {
+		using type = decltype(image);
+#ifdef NDI_SEND_PA16
+		// [0, 255] -> [0, 65535].
+		// cuda RGBA8 -> PA16.
+		cudaConvertToPA16((type)image, img_pre, width, height, 255.0f, 65535.0f);
+		cudaResize(img_pre, width, height, img[idx_back], width, height, FILTER_POINT);
+#else
+		cudaResize((type)image, width, height, (type)img[idx_back], width, height, FILTER_POINT);
+#endif
+	};
+
+	switch (format) {
+	case IMAGE_GRAY8:
+		copy_img((uint8_t *)image);
+		break;
+	case IMAGE_GRAY32F:
+		copy_img((float *)image);
+		break;
+	case IMAGE_RGB8: case IMAGE_BGR8:
+		copy_img((uchar3 *)image);
+		break;
+	case IMAGE_RGB32F: case IMAGE_BGR32F:
+		copy_img((float3 *)image);
+		break;
+	case IMAGE_RGBA8: case IMAGE_BGRA8:
+		copy_img((uchar4 *)image);
+		break;
+	case IMAGE_RGBA32F: case IMAGE_BGRA32F:
+		copy_img((float4 *)image);
+		break;
+	default:
+		LogError(LOG_NDI_SEND "ndiSend::Render() -- invalid image format '%s'\n", imageFormatToStr(format));
+		LogError(LOG_NDI_SEND "                     supported formats are:\n");
+		LogError(LOG_NDI_SEND "                         * gray8\n");
+		LogError(LOG_NDI_SEND "                         * gray32f\n");
+		LogError(LOG_NDI_SEND "                         * rgb8, bgr8\n");
+		LogError(LOG_NDI_SEND "                         * rgba8, bgra8\n");
+		LogError(LOG_NDI_SEND "                         * rgb32f, bgr32f\n");
+		LogError(LOG_NDI_SEND "                         * rgba32f, bgra32f\n");
 	}
 
 	// const bool substreams_success = videoOutput::Render(image, width, height, format);

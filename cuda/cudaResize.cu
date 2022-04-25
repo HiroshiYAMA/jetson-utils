@@ -162,7 +162,9 @@ static cudaError_t launchResize( T* input, size_t inputWidth, size_t inputHeight
 #define FUNC_CUDA_RESIZE(T, S) \
 cudaError_t cudaResize( T* input, size_t inputWidth, size_t inputHeight, S* output, size_t outputWidth, size_t outputHeight, int mode, bool sampling_shift, float max_value, cudaStream_t stream ) \
 { \
-	if (sampling_shift) { \
+	if (inputWidth == outputWidth && inputHeight == outputHeight && imageFormatFromType<T>() == imageFormatFromType<S>()) { \
+		return cudaMemcpyAsync(output, input, outputWidth * outputHeight * sizeof(S), cudaMemcpyDeviceToDevice); \
+	} else if (sampling_shift) { \
 		return launchResize<T, S, true>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value, stream); \
 	} else { \
 		return launchResize<T, S, false>(input, inputWidth, inputHeight, output, outputWidth, outputHeight, mode, max_value, stream); \
