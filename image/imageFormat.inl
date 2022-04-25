@@ -44,8 +44,10 @@ inline const char* imageFormatToStr( imageFormat format )
 		case IMAGE_YV12:	 	return "yv12";
 		case IMAGE_NV12:	 	return "nv12";
 		case IMAGE_UYVY:	 	return "uyvy";
+		case IMAGE_UYVA:	 	return "uyva";
 		case IMAGE_YUYV:	 	return "yuyv";
 		case IMAGE_YVYU:		return "yvyu";
+		case IMAGE_P216:	 	return "p216";
 		case IMAGE_PA16:	 	return "pa16";
 		case IMAGE_BAYER_BGGR:	return "bayer-bggr";
 		case IMAGE_BAYER_GBRG:	return "bayer-gbrg";
@@ -147,6 +149,8 @@ inline imageBaseType imageFormatBaseType( imageFormat format )
 		case IMAGE_BGR32F:		
 		case IMAGE_RGBA32F: 
 		case IMAGE_BGRA32F:		return IMAGE_FLOAT;
+		case IMAGE_P216:
+		case IMAGE_PA16:	return IMAGE_UINT16;
 	}
 
 	return IMAGE_UINT8;
@@ -172,8 +176,10 @@ inline size_t imageFormatChannels( imageFormat format )
 		case IMAGE_YV12:
 		case IMAGE_NV12:
 		case IMAGE_UYVY:
+		case IMAGE_P216:
 		case IMAGE_YUYV:		
 		case IMAGE_YVYU:		return 3;
+		case IMAGE_UYVA:
 		case IMAGE_PA16:		return 4;
 		case IMAGE_BAYER_BGGR:
 		case IMAGE_BAYER_GBRG:
@@ -206,6 +212,8 @@ inline size_t imageFormatDepth( imageFormat format )
 		case IMAGE_UYVY:
 		case IMAGE_YUYV:		
 		case IMAGE_YVYU:		return 16;
+		case IMAGE_UYVA:		return 24;
+		case IMAGE_P216:		return sizeof(uint16_t) * 2 * 8;
 		case IMAGE_PA16:		return sizeof(uint16_t) * 3 * 8;
 		case IMAGE_BAYER_BGGR:
 		case IMAGE_BAYER_GBRG:

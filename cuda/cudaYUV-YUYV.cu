@@ -28,25 +28,40 @@
 //-----------------------------------------------------------------------------------
 // YUV to RGB colorspace conversion
 //-----------------------------------------------------------------------------------
-static inline __device__ float clamp( float x )	
-{ 
-	return fminf(fmaxf(x, 0.0f), 255.0f); 
-}
+// static inline __device__ float clamp( float x )
+// {
+// 	return fminf(fmaxf(x, 0.0f), 255.0f);
+// }
 
-static inline __device__ float3 YUV2RGB(float Y, float U, float V)
+// static inline __device__ float3 YUV2RGB(float Y, float U, float V)
+// {
+// 	U -= 128.0f;
+// 	V -= 128.0f;
+
+// #if 1
+// 	return make_float3(clamp(Y + 1.4065f * V),
+//     				    clamp(Y - 0.3455f * U - 0.7169f * V),
+// 				    clamp(Y + 1.7790f * U));
+// #else
+// 	return make_float3(clamp(Y + 1.402f * V),
+//     				    clamp(Y - 0.344f * U - 0.714f * V),
+// 				    clamp(Y + 1.772f * U));
+// #endif
+// }
+
+static inline __device__ __host__ float3 YUV2RGB(const float3 &yuv, int width, int height, float in_max, float out_max, bool is_limited = true)
 {
-	U -= 128.0f;
-	V -= 128.0f;
+	float3 rgb;
 
-#if 1
-	return make_float3(clamp(Y + 1.4065f * V),
-    				    clamp(Y - 0.3455f * U - 0.7169f * V),
-				    clamp(Y + 1.7790f * U));
-#else
-	return make_float3(clamp(Y + 1.402f * V),
-    				    clamp(Y - 0.344f * U - 0.714f * V),
-				    clamp(Y + 1.772f * U));
-#endif
+	if (width > 1920 || height > 1080) {
+		rgb = is_limited ? YUV2RGB_2020_limited(yuv, in_max, out_max) : YUV2RGB_2020_full(yuv, in_max, out_max);
+	} else if (width > 720 || height > 576) {
+		rgb = is_limited ? YUV2RGB_709_limited(yuv, in_max, out_max) : YUV2RGB_709_full(yuv, in_max, out_max);
+	} else {
+		rgb = is_limited ? YUV2RGB_601_limited(yuv, in_max, out_max) : YUV2RGB_601_full(yuv, in_max, out_max);
+	}
+
+	return rgb;
 }
 
 static inline __device__ __host__ float3 RGB2YUV(const float3 &rgb, int width, int height, float in_max, float out_max, bool is_limited = true)
@@ -131,7 +146,7 @@ template<> inline __host__ __device__ float8 make_float8(const float8 &v, float 
 // YUYV/UYVY to RGBA
 //-----------------------------------------------------------------------------------
 template <typename T, imageFormat format>
-__global__ void YUYVToRGBA( uchar4* src, T* dst, int halfWidth, int height )
+__global__ void YUYVToRGBA( uchar4* src, T* dst, int halfWidth, int height, float in_max = 255.0f, float out_max = 255.0f )
 {
 	const int x = blockIdx.x * blockDim.x + threadIdx.x;
 	const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -170,13 +185,27 @@ __global__ void YUYVToRGBA( uchar4* src, T* dst, int halfWidth, int height )
 		v  = macroPx.z;
 	}
 
-	// this function outputs two pixels from one YUYV macropixel
-	const float3 px0 = YUV2RGB(y0, u, v);
-	const float3 px1 = YUV2RGB(y1, u, v);
+	float a0, a1;
+	if (format == IMAGE_UYVA) {
+		const uchar2 *src_alpha = (uchar2 *)(&src[height * halfWidth]);
+		const uchar2 alphaPx = src_alpha[y * height + x];
+		a0 = alphaPx.x;
+		a1 = alphaPx.y;
+	} else {
+		a0 = out_max;
+		a1 = out_max;
+	}
 
-	dst[y * halfWidth + x] = make_vec<T>(px0.x, px0.y, px0.z, 255,
-								  px1.x, px1.y, px1.z, 255);
-} 
+	// this function outputs two pixels from one YUYV macropixel
+	float3 yuv0 = make_float3(y0, u, v);
+	float3 yuv1 = make_float3(y1, u, v);
+	constexpr bool is_limited = true;
+	const float3 px0 = YUV2RGB(yuv0, halfWidth * 2, height, in_max, out_max, is_limited);
+	const float3 px1 = YUV2RGB(yuv1, halfWidth * 2, height, in_max, out_max, is_limited);
+
+	dst[y * halfWidth + x] = make_vec<T>(px0.x, px0.y, px0.z, a0,
+								  px1.x, px1.y, px1.z, a1);
+}
 
 // GRAY/RGB/RGBA to UYVA.
 // src: [0, in_max].
@@ -208,12 +237,12 @@ __global__ void ConvertToUYVA( T* src, uint8_t* dst, int halfWidth, int height, 
 	float alpha0 = a0 * scale;
 	float alpha1 = a1 * scale;
 
-	dst[(y * halfWidth + x) * 4 + 0] = static_cast<uint16_t>(u);
-	dst[(y * halfWidth + x) * 4 + 1] = static_cast<uint16_t>(y0);
-	dst[(y * halfWidth + x) * 4 + 2] = static_cast<uint16_t>(v);
-	dst[(y * halfWidth + x) * 4 + 3] = static_cast<uint16_t>(y1);
-	dst[(height * 2 + y) * halfWidth * 2 + 0] = static_cast<uint16_t>(alpha0);
-	dst[(height * 2 + y) * halfWidth * 2 + 1] = static_cast<uint16_t>(alpha1);
+	dst[(y * halfWidth + x) * 4 + 0] = static_cast<uint8_t>(u);
+	dst[(y * halfWidth + x) * 4 + 1] = static_cast<uint8_t>(y0);
+	dst[(y * halfWidth + x) * 4 + 2] = static_cast<uint8_t>(v);
+	dst[(y * halfWidth + x) * 4 + 3] = static_cast<uint8_t>(y1);
+	dst[height * halfWidth * 4 + (y * halfWidth + x) * 2 + 0] = static_cast<uint8_t>(alpha0);
+	dst[height * halfWidth * 4 + (y * halfWidth + x) * 2 + 1] = static_cast<uint8_t>(alpha1);
 }
 
 // GRAY/RGB/RGBA to PA16.
@@ -250,12 +279,12 @@ __global__ void ConvertToPA16( T* src, uint16_t* dst, int halfWidth, int height,
 	dst[(y * halfWidth + x) * 2 + 1] = static_cast<uint16_t>(y1);
 	dst[((y + height) * halfWidth + x) * 2 + 0] = static_cast<uint16_t>(u);
 	dst[((y + height) * halfWidth + x) * 2 + 1] = static_cast<uint16_t>(v);
-	dst[((y + height * 2) * halfWidth + x) * 2 + 0] = static_cast<uint16_t>(alpha0);
-	dst[((y + height * 2) * halfWidth + x) * 2 + 1] = static_cast<uint16_t>(alpha1);
+	dst[height * halfWidth * 4 + (y * halfWidth + x) * 2 + 0] = static_cast<uint16_t>(alpha0);
+	dst[height * halfWidth * 4 + (y * halfWidth + x) * 2 + 1] = static_cast<uint16_t>(alpha1);
 }
 
 template<typename T, imageFormat format>
-static cudaError_t launchYUYVToRGB( void* input, T* output, size_t width, size_t height, cudaStream_t stream)
+static cudaError_t launchYUYVToRGB( void* input, T* output, size_t width, size_t height, float in_max, float out_max, cudaStream_t stream)
 {
 	if( !input || !output || !width || !height )
 		return cudaErrorInvalidValue;
@@ -268,7 +297,7 @@ static cudaError_t launchYUYVToRGB( void* input, T* output, size_t width, size_t
 #endif
 	const dim3 gridDim(iDivUp(halfWidth, blockDim.x), iDivUp(height, blockDim.y));
 
-	YUYVToRGBA<T, format><<<gridDim, blockDim, 0, stream>>>((uchar4*)input, output, halfWidth, height);
+	YUYVToRGBA<T, format><<<gridDim, blockDim, 0, stream>>>((uchar4*)input, output, halfWidth, height, in_max, out_max);
 
 	return CUDA(cudaGetLastError());
 }
@@ -314,25 +343,25 @@ static cudaError_t launchConvertToPA16( T* input, uint16_t* output, size_t width
 // cudaYUYVToRGB (uchar3)
 cudaError_t cudaYUYVToRGB( void* input, uchar3* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<uchar6, IMAGE_YUYV>(input, (uchar6*)output, width, height, stream);
+	return launchYUYVToRGB<uchar6, IMAGE_YUYV>(input, (uchar6*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaYUYVToRGB (float3)
 cudaError_t cudaYUYVToRGB( void* input, float3* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<float6, IMAGE_YUYV>(input, (float6*)output, width, height, stream);
+	return launchYUYVToRGB<float6, IMAGE_YUYV>(input, (float6*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaYUYVToRGBA (uchar4)
 cudaError_t cudaYUYVToRGBA( void* input, uchar4* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<uchar8, IMAGE_YUYV>(input, (uchar8*)output, width, height, stream);
+	return launchYUYVToRGB<uchar8, IMAGE_YUYV>(input, (uchar8*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaYUYVToRGBA (float4)
 cudaError_t cudaYUYVToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<float8, IMAGE_YUYV>(input, (float8*)output, width, height, stream);
+	return launchYUYVToRGB<float8, IMAGE_YUYV>(input, (float8*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 //-----------------------------------------------------------------------------------
@@ -340,25 +369,49 @@ cudaError_t cudaYUYVToRGBA( void* input, float4* output, size_t width, size_t he
 // cudaUYVYToRGB (uchar3)
 cudaError_t cudaUYVYToRGB( void* input, uchar3* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<uchar6, IMAGE_UYVY>(input, (uchar6*)output, width, height, stream);
+	return launchYUYVToRGB<uchar6, IMAGE_UYVY>(input, (uchar6*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaUYVYToRGB (float3)
 cudaError_t cudaUYVYToRGB( void* input, float3* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<float6, IMAGE_UYVY>(input, (float6*)output, width, height, stream);
+	return launchYUYVToRGB<float6, IMAGE_UYVY>(input, (float6*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaUYVYToRGBA (uchar4)
 cudaError_t cudaUYVYToRGBA( void* input, uchar4* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<uchar8, IMAGE_UYVY>(input, (uchar8*)output, width, height, stream);
+	return launchYUYVToRGB<uchar8, IMAGE_UYVY>(input, (uchar8*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaUYVYToRGBA (float4)
 cudaError_t cudaUYVYToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<float8, IMAGE_UYVY>(input, (float8*)output, width, height, stream);
+	return launchYUYVToRGB<float8, IMAGE_UYVY>(input, (float8*)output, width, height, 255.0f, 255.0f, stream);
+}
+
+// cudaUYVAToRGB (uchar3)
+cudaError_t cudaUYVAToRGB( void* input, uchar3* output, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchYUYVToRGB<uchar6, IMAGE_UYVA>(input, (uchar6*)output, width, height, 255.0f, 255.0f, stream);
+}
+
+// cudaUYVAToRGB (float3)
+cudaError_t cudaUYVAToRGB( void* input, float3* output, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchYUYVToRGB<float6, IMAGE_UYVA>(input, (float6*)output, width, height, 255.0f, 255.0f, stream);
+}
+
+// cudaUYVAToRGBA (uchar4)
+cudaError_t cudaUYVAToRGBA( void* input, uchar4* output, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchYUYVToRGB<uchar8, IMAGE_UYVA>(input, (uchar8*)output, width, height, 255.0f, 255.0f, stream);
+}
+
+// cudaUYVAToRGBA (float4)
+cudaError_t cudaUYVAToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchYUYVToRGB<float8, IMAGE_UYVA>(input, (float8*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 //-----------------------------------------------------------------------------------
@@ -366,25 +419,25 @@ cudaError_t cudaUYVYToRGBA( void* input, float4* output, size_t width, size_t he
 // cudaYVYUToRGB (uchar3)
 cudaError_t cudaYVYUToRGB( void* input, uchar3* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<uchar6, IMAGE_YVYU>(input, (uchar6*)output, width, height, stream);
+	return launchYUYVToRGB<uchar6, IMAGE_YVYU>(input, (uchar6*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaYUYVToRGB (float3)
 cudaError_t cudaYVYUToRGB( void* input, float3* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<float6, IMAGE_YVYU>(input, (float6*)output, width, height, stream);
+	return launchYUYVToRGB<float6, IMAGE_YVYU>(input, (float6*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaYUYVToRGBA (uchar4)
 cudaError_t cudaYVYUToRGBA( void* input, uchar4* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<uchar8, IMAGE_YVYU>(input, (uchar8*)output, width, height, stream);
+	return launchYUYVToRGB<uchar8, IMAGE_YVYU>(input, (uchar8*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 // cudaYUYVToRGBA (float4)
 cudaError_t cudaYVYUToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream )
 {
-	return launchYUYVToRGB<float8, IMAGE_YVYU>(input, (float8*)output, width, height, stream);
+	return launchYUYVToRGB<float8, IMAGE_YVYU>(input, (float8*)output, width, height, 255.0f, 255.0f, stream);
 }
 
 

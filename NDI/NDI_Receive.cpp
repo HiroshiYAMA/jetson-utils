@@ -79,7 +79,7 @@ ndiReceive* ndiReceive::Create( const videoOptions& options )
 // #ifdef NDI_SEND_PA16
 // 	ndi_recv->NDI_recv_create_desc.color_format = NDIlib_recv_color_format_best;	// to receive P216, PA16.
 // #else
-	ndi_recv->NDI_recv_create_desc.color_format = NDIlib_recv_color_format_RGBX_RGBA;
+	ndi_recv->NDI_recv_create_desc.color_format = NDIlib_recv_color_format_fastest;	// to receive UYVY, UYVA.
 // #endif
 	ndi_recv->pNDI_recv = NDIlib_recv_create_v3(&ndi_recv->NDI_recv_create_desc);
 	if (!ndi_recv->pNDI_recv) {
@@ -139,10 +139,20 @@ void ndiReceive::checkBuffer()
 	while (!signal_recieved_NDI_recv) {
 		if (NDIlib_recv_capture_v2(pNDI_recv, &NDI_video_frame, nullptr, nullptr, 1000) == NDIlib_frame_type_video) {
 			switch (NDI_video_frame.FourCC) {
-			case NDIlib_FourCC_type_RGBX:
-			case NDIlib_FourCC_type_RGBA:
-				mFormatIN = imageFormat::IMAGE_RGBA8;
-				NDIsize = NDI_video_frame.data_size_in_bytes * NDI_video_frame.yres;
+			// case NDIlib_FourCC_type_RGBX:
+			// case NDIlib_FourCC_type_RGBA:
+			// 	mFormatIN = imageFormat::IMAGE_RGBA8;
+			// 	NDIsize = NDI_video_frame.line_stride_in_bytes * NDI_video_frame.yres;
+			// 	break;
+
+			case NDIlib_FourCC_video_type_UYVY:
+				mFormatIN = imageFormat::IMAGE_UYVY;
+				NDIsize = NDI_video_frame.line_stride_in_bytes * NDI_video_frame.yres;
+				break;
+
+			case NDIlib_FourCC_video_type_UYVA:
+				mFormatIN = imageFormat::IMAGE_UYVA;
+				NDIsize = NDI_video_frame.line_stride_in_bytes * NDI_video_frame.yres * 3 / 2;
 				break;
 
 			// case NDIlib_FourCC_video_type_P216:

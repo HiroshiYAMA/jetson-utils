@@ -242,6 +242,26 @@ cudaError_t cudaUYVYToRGBA( void* input, uchar4* output, size_t width, size_t he
  */
 cudaError_t cudaUYVYToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream = NULL );
 
+/**
+ * Convert a UYVA 4224 packed image into RGB uchar3.
+ */
+cudaError_t cudaUYVAToRGB( void* input, uchar3* output, size_t width, size_t height, cudaStream_t stream = NULL );
+
+/**
+ * Convert a UYVA 4224 packed image into RGB float3.
+ */
+cudaError_t cudaUYVAToRGB( void* input, float3* output, size_t width, size_t height, cudaStream_t stream = NULL );
+
+/**
+ * Convert a UYVA 4224 packed image into RGBA uchar4.
+ */
+cudaError_t cudaUYVAToRGBA( void* input, uchar4* output, size_t width, size_t height, cudaStream_t stream = NULL );
+
+/**
+ * Convert a UYVA 4224 packed image into RGBA float4.
+ */
+cudaError_t cudaUYVAToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream = NULL );
+
 ///@}
 
 
