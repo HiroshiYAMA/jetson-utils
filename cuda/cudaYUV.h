@@ -245,6 +245,17 @@ cudaError_t cudaUYVYToRGBA( void* input, float4* output, size_t width, size_t he
 ///@}
 
 
+// GRAY/RGB/RGBA/BGR/BGRA to UYVA 4:2:2:4.
+cudaError_t cudaConvertToUYVA( uint8_t* input, uint8_t* output, size_t width, size_t height, float in_max = 255.0f, float out_max = 255.0f, bool is_BGR = false, cudaStream_t stream = NULL );
+cudaError_t cudaConvertToUYVA( float* input, uint8_t* output, size_t width, size_t height, float in_max = 1.0f, float out_max = 255.0f, bool is_BGR = false, cudaStream_t stream = NULL );
+cudaError_t cudaConvertToUYVA( uchar3* input, uint8_t* output, size_t width, size_t height, float in_max = 255.0f, float out_max = 255.0f, bool is_BGR = false, cudaStream_t stream = NULL );
+cudaError_t cudaConvertToUYVA( float3* input, uint8_t* output, size_t width, size_t height, float in_max = 1.0f, float out_max = 255.0f, bool is_BGR = false, cudaStream_t stream = NULL );
+cudaError_t cudaConvertToUYVA( uchar4* input, uint8_t* output, size_t width, size_t height, float in_max = 255.0f, float out_max = 255.0f, bool is_BGR = false, cudaStream_t stream = NULL );
+cudaError_t cudaConvertToUYVA( float4* input, uint8_t* output, size_t width, size_t height, float in_max = 1.0f, float out_max = 255.0f, bool is_BGR = false, cudaStream_t stream = NULL );
+// GRAY to UYVA 4:2:2:4.
+// cudaError_t cudaGRAY32FToUYVA( float* input, uint8_t* output, size_t width, size_t height, float in_max = 1.0f, float out_max = 255.0f, cudaStream_t stream = NULL );
+cudaError_t cudaConvertToUYVA( void* input,  uint8_t* output, size_t width, size_t height, imageFormat format, float in_max = 1.0f, float out_max = 255.0f, cudaStream_t stream = NULL );
+
 // GRAY/RGB/RGBA/BGR/BGRA to YUV+A PA16 4:2:2:4.
 cudaError_t cudaConvertToPA16( uint8_t* input, uint16_t* output, size_t width, size_t height, float in_max = 255.0f, float out_max = 65535.0f, bool is_BGR = false, cudaStream_t stream = NULL );
 cudaError_t cudaConvertToPA16( float* input, uint16_t* output, size_t width, size_t height, float in_max = 1.0f, float out_max = 65535.0f, bool is_BGR = false, cudaStream_t stream = NULL );

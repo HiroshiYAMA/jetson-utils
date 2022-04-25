@@ -88,8 +88,8 @@ ndiSend* ndiSend::Create( const videoOptions& options )
 	frm.FourCC = NDIlib_FourCC_type_PA16;
 	frm.line_stride_in_bytes = opt.width * 1 * sizeof(uint16_t);
 #else
-	frm.FourCC = NDIlib_FourCC_type_RGBA;
-	frm.line_stride_in_bytes = opt.width * 4;
+	frm.FourCC = NDIlib_FourCC_type_UYVA;
+	frm.line_stride_in_bytes = opt.width * 2;
 #endif
 	frm.frame_rate_N = opt.frameRateNum;
 	frm.frame_rate_D = opt.frameRateDenom;
@@ -128,14 +128,16 @@ bool ndiSend::Render( void* image, uint32_t width, uint32_t height, imageFormat 
 	}
 
 	auto copy_img = [&](auto image) -> void {
-		using type = decltype(image);
 #ifdef NDI_SEND_PA16
 		// [0, 255] -> [0, 65535].
 		// cuda RGBA8 -> PA16.
-		cudaConvertToPA16((type)image, img_pre, width, height, 255.0f, 65535.0f);
-		cudaResize(img_pre, width, height, img[idx_back], width, height, FILTER_POINT);
+		cudaConvertToPA16(image, img_pre, width, height, 255.0f, 65535.0f);
+		cudaMemcpyAsync(img[idx_back], img_pre, width * height * 3 * sizeof(uint16_t), cudaMemcpyDeviceToDevice);
 #else
-		cudaResize((type)image, width, height, (type)img[idx_back], width, height, FILTER_POINT);
+		// [0, 255] -> [0, 255].
+		// cuda RGBA8 -> UYVA.
+		cudaConvertToUYVA(image, (uint8_t *)img_pre, width, height);
+		cudaMemcpyAsync(img[idx_back], img_pre, width * height * 3 * sizeof(uint8_t), cudaMemcpyDeviceToDevice);
 #endif
 	};
 

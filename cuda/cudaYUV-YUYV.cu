@@ -178,6 +178,44 @@ __global__ void YUYVToRGBA( uchar4* src, T* dst, int halfWidth, int height )
 								  px1.x, px1.y, px1.z, 255);
 } 
 
+// GRAY/RGB/RGBA to UYVA.
+// src: [0, in_max].
+// dst: [0, out_max].
+template<typename T, bool is_BGR>	// T: uchar2, float2, uchar6, float6, uchar8, float8.
+__global__ void ConvertToUYVA( T* src, uint8_t* dst, int halfWidth, int height, float in_max, float out_max )
+{
+	const int x = blockIdx.x * blockDim.x + threadIdx.x;
+	const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if( x >= halfWidth || y >= height )
+		return;
+
+	const T macroPx = src[y * halfWidth + x];
+
+	const float8 rgb01 = make_float8(macroPx, in_max);
+	const float3 rgb0 = is_BGR ? float3{ rgb01.z0, rgb01.y0, rgb01.x0 } : float3{ rgb01.x0, rgb01.y0, rgb01.z0 };
+	const float3 rgb1 = is_BGR ? float3{ rgb01.z1, rgb01.y1, rgb01.x1 } : float3{ rgb01.x1, rgb01.y1, rgb01.z1 };
+	const float a0 = rgb01.w0;
+	const float a1 = rgb01.w1;
+
+	constexpr bool is_limited = true;
+	float3 yuv0 = RGB2YUV(rgb0, halfWidth * 2, height, in_max, out_max, is_limited);
+	float3 yuv1 = RGB2YUV(rgb1, halfWidth * 2, height, in_max, out_max, is_limited);
+
+	float y0 = yuv0.x, y1 = yuv1.x;
+	float u = yuv0.y, v = yuv0.z;
+	const float scale = out_max / in_max;
+	float alpha0 = a0 * scale;
+	float alpha1 = a1 * scale;
+
+	dst[(y * halfWidth + x) * 4 + 0] = static_cast<uint16_t>(u);
+	dst[(y * halfWidth + x) * 4 + 1] = static_cast<uint16_t>(y0);
+	dst[(y * halfWidth + x) * 4 + 2] = static_cast<uint16_t>(v);
+	dst[(y * halfWidth + x) * 4 + 3] = static_cast<uint16_t>(y1);
+	dst[(height * 2 + y) * halfWidth * 2 + 0] = static_cast<uint16_t>(alpha0);
+	dst[(height * 2 + y) * halfWidth * 2 + 1] = static_cast<uint16_t>(alpha1);
+}
+
 // GRAY/RGB/RGBA to PA16.
 // src: [0, in_max].
 // dst: [0, out_max].
@@ -231,6 +269,25 @@ static cudaError_t launchYUYVToRGB( void* input, T* output, size_t width, size_t
 	const dim3 gridDim(iDivUp(halfWidth, blockDim.x), iDivUp(height, blockDim.y));
 
 	YUYVToRGBA<T, format><<<gridDim, blockDim, 0, stream>>>((uchar4*)input, output, halfWidth, height);
+
+	return CUDA(cudaGetLastError());
+}
+
+template<typename T, typename T2, bool is_BGR>
+static cudaError_t launchConvertToUYVA( T* input, uint8_t* output, size_t width, size_t height, float in_max, float out_max, cudaStream_t stream)
+{
+	if( !input || !output || !width || !height )
+		return cudaErrorInvalidValue;
+
+	const int  halfWidth = width / 2;	// two pixels are output at once
+#ifdef JETSON
+	const dim3 blockDim(32, 8);
+#else
+	const dim3 blockDim(64, 8);
+#endif
+	const dim3 gridDim(iDivUp(halfWidth, blockDim.x), iDivUp(height, blockDim.y));
+
+	ConvertToUYVA<T2, is_BGR><<<gridDim, blockDim, 0, stream>>>((T2*)input, output, halfWidth, height, in_max, out_max);
 
 	return CUDA(cudaGetLastError());
 }
@@ -328,6 +385,105 @@ cudaError_t cudaYVYUToRGBA( void* input, uchar4* output, size_t width, size_t he
 cudaError_t cudaYVYUToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream )
 {
 	return launchYUYVToRGB<float8, IMAGE_YVYU>(input, (float8*)output, width, height, stream);
+}
+
+
+
+//-------------------------------------------------------------------------------------
+// GRAY/RGB/RGBA/BGR/BGRA to YUV(+A)
+//-------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------
+
+// GRAY/RGB/RGBA/BGR/BGRA to UYVA 4:2:2:4.
+cudaError_t cudaConvertToUYVA( uint8_t* input, uint8_t* output, size_t width, size_t height, float in_max, float out_max, bool is_BGR, cudaStream_t stream )
+{
+	return launchConvertToUYVA<uint8_t, uchar2, false>(input, output, width, height, in_max, out_max, stream);
+}
+cudaError_t cudaConvertToUYVA( float* input, uint8_t* output, size_t width, size_t height, float in_max, float out_max, bool is_BGR, cudaStream_t stream )
+{
+	return launchConvertToUYVA<float, float2, false>(input, output, width, height, in_max, out_max, stream);
+}
+cudaError_t cudaConvertToUYVA( uchar3* input, uint8_t* output, size_t width, size_t height, float in_max, float out_max, bool is_BGR, cudaStream_t stream )
+{
+	if (is_BGR) {
+		return launchConvertToUYVA<uchar3, uchar6, true>(input, output, width, height, in_max, out_max, stream);
+	} else {
+		return launchConvertToUYVA<uchar3, uchar6, false>(input, output, width, height, in_max, out_max, stream);
+	}
+}
+cudaError_t cudaConvertToUYVA( float3* input, uint8_t* output, size_t width, size_t height, float in_max, float out_max, bool is_BGR, cudaStream_t stream )
+{
+	if (is_BGR) {
+		return launchConvertToUYVA<float3, float6, true>(input, output, width, height, in_max, out_max, stream);
+	} else {
+		return launchConvertToUYVA<float3, float6, false>(input, output, width, height, in_max, out_max, stream);
+	}
+}
+cudaError_t cudaConvertToUYVA( uchar4* input, uint8_t* output, size_t width, size_t height, float in_max, float out_max, bool is_BGR, cudaStream_t stream )
+{
+	if (is_BGR) {
+		return launchConvertToUYVA<uchar4, uchar8, true>(input, output, width, height, in_max, out_max, stream);
+	} else {
+		return launchConvertToUYVA<uchar4, uchar8, false>(input, output, width, height, in_max, out_max, stream);
+	}
+}
+cudaError_t cudaConvertToUYVA( float4* input, uint8_t* output, size_t width, size_t height, float in_max, float out_max, bool is_BGR, cudaStream_t stream )
+{
+	if (is_BGR) {
+		return launchConvertToUYVA<float4, float8, true>(input, output, width, height, in_max, out_max, stream);
+	} else {
+		return launchConvertToUYVA<float4, float8, false>(input, output, width, height, in_max, out_max, stream);
+	}
+}
+
+cudaError_t cudaConvertToUYVA( void* input,  uint8_t* output, size_t width, size_t height, imageFormat format, float in_max, float out_max, cudaStream_t stream )
+{
+	cudaError_t err;
+
+	switch(format) {
+	case IMAGE_GRAY8:
+		err = cudaConvertToUYVA((uint8_t *)input, output, width, height, in_max, out_max, false, stream);
+		break;
+	case IMAGE_GRAY32F:
+		err = cudaConvertToUYVA((float *)input, output, width, height, in_max, out_max, false, stream);
+		break;
+	case IMAGE_RGB8:
+		err = cudaConvertToUYVA((uchar3 *)input, output, width, height, in_max, out_max, false, stream);
+		break;
+	case IMAGE_RGB32F:
+		err = cudaConvertToUYVA((float3 *)input, output, width, height, in_max, out_max, false, stream);
+		break;
+	case IMAGE_RGBA8:
+		err = cudaConvertToUYVA((uchar4 *)input, output, width, height, in_max, out_max, false, stream);
+		break;
+	case IMAGE_RGBA32F:
+		err = cudaConvertToUYVA((float4 *)input, output, width, height, in_max, out_max, false, stream);
+		break;
+	case IMAGE_BGR8:
+		err = cudaConvertToUYVA((uchar3 *)input, output, width, height, in_max, out_max, true, stream);
+		break;
+	case IMAGE_BGR32F:
+		err = cudaConvertToUYVA((float3 *)input, output, width, height, in_max, out_max, true, stream);
+		break;
+	case IMAGE_BGRA8:
+		err = cudaConvertToUYVA((uchar4 *)input, output, width, height, in_max, out_max, true, stream);
+		break;
+	case IMAGE_BGRA32F:
+		err = cudaConvertToUYVA((float4 *)input, output, width, height, in_max, out_max, true, stream);
+		break;
+
+	default:
+		LogError(LOG_CUDA "cudaConvertToUYVA() -- invalid image format '%s'\n", imageFormatToStr(format));
+		LogError(LOG_CUDA "                       supported formats are:\n");
+		LogError(LOG_CUDA "                           * gray8, gray32f\n");
+		LogError(LOG_CUDA "                           * rgb8, bgr8, rgb32f, bgr32f\n");
+		LogError(LOG_CUDA "                           * rgba8, bgra8, rgba32f, bgra32f\n");
+
+		err = cudaErrorInvalidValue;
+	}
+
+	return err;
 }
 
 //-----------------------------------------------------------------------------------
