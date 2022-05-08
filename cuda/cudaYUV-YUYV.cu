@@ -188,7 +188,7 @@ __global__ void YUYVToRGBA( uchar4* src, T* dst, int halfWidth, int height, floa
 	float a0, a1;
 	if (format == IMAGE_UYVA) {
 		const uchar2 *src_alpha = (uchar2 *)(&src[height * halfWidth]);
-		const uchar2 alphaPx = src_alpha[y * height + x];
+		const uchar2 alphaPx = src_alpha[y * halfWidth + x];
 		a0 = alphaPx.x;
 		a1 = alphaPx.y;
 	} else {
