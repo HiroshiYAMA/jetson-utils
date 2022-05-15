@@ -77,7 +77,7 @@ NV12 に対応した VideoCaptureクラスのためにパッチを当ててイ�
 OpenCV のバージョンに対応したパッチファイルを使う。  
 
 ```bash
-export OPENCV_VERSION='4.1.1'   # '4.1.1', '4.4.0', ...
+export OPENCV_VERSION='4.1.1'   # '4.1.1', '4.4.0', '4.5.5', ...
 curl -L -o ./opencv-${OPENCV_VERSION}.zip https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip
 curl -L -o ./opencv_contrib-${OPENCV_VERSION}.zip https://github.com/opencv/opencv_contrib/archive/${OPENCV_VERSION}.zip
 7z x opencv-${OPENCV_VERSION}.zip
