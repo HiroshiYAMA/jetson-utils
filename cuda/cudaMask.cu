@@ -27,7 +27,7 @@
 // gpuMask.
 // * Mask an image on the GPU (supports RGB/BGR, RGBA/BGRA)
 template<typename T, typename S>
-__global__ void gpuMask(T *input, S *mask, T *output, size_t width, size_t height, float4 bg, float bg_th, float2 range)
+__global__ void gpuMask(T *input, S *mask, T *output, size_t width, size_t height, float4 bg, float bg_th, float2 range, em_COLOR_ADJ_SPILL_MODE spill_mode)
 {
 	const int x = blockIdx.x * blockDim.x + threadIdx.x;
 	const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -36,6 +36,7 @@ __global__ void gpuMask(T *input, S *mask, T *output, size_t width, size_t heigh
 		return;
 
 	T pix_src = input[y * width + x];
+	pix_src = apply_spill_pix(pix_src, spill_mode);
 	S pix_mask = mask[y * width + x];
 	T pix_bg = cast_vec<T>(bg);
 	T pix_dst = cast_vec<T>(make_float4(make_float3(pix_mask > S(bg_th * range.y) ? pix_src : pix_bg), pix_mask));
@@ -47,7 +48,7 @@ __global__ void gpuMask(T *input, S *mask, T *output, size_t width, size_t heigh
 
 // fg + bg w/ mask.
 template<typename T, typename S>
-__global__ void gpuMask(T *input_fg, T *input_bg, S *mask, T *output, size_t width, size_t height, float2 range)
+__global__ void gpuMask(T *input_fg, T *input_bg, S *mask, T *output, size_t width, size_t height, float2 range, em_COLOR_ADJ_SPILL_MODE spill_mode)
 {
 	const int x = blockIdx.x * blockDim.x + threadIdx.x;
 	const int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -56,6 +57,7 @@ __global__ void gpuMask(T *input_fg, T *input_bg, S *mask, T *output, size_t wid
 		return;
 
 	T pix_fg = input_fg[y * width + x];
+	pix_fg = apply_spill_pix(pix_fg, spill_mode);
 	T pix_bg = input_bg[y * width + x];
 	S pix_mask = mask[y * width + x];
 	float alpha = pix_mask / range.y;
@@ -68,7 +70,7 @@ __global__ void gpuMask(T *input_fg, T *input_bg, S *mask, T *output, size_t wid
 // launchMask
 // * Mask an image on the GPU (supports RGB/BGR, RGBA/BGRA)
 template<typename T, typename S>
-static cudaError_t launchMask(T *input, S *mask, T *output, size_t width, size_t height, float bg_color[3], float bg_color_th, float2 range, cudaStream_t stream)
+static cudaError_t launchMask(T *input, S *mask, T *output, size_t width, size_t height, float bg_color[3], float bg_color_th, float2 range, em_COLOR_ADJ_SPILL_MODE spill_mode, cudaStream_t stream)
 {
 	if( !input || !mask || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -85,14 +87,14 @@ static cudaError_t launchMask(T *input, S *mask, T *output, size_t width, size_t
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
 	const auto bg = make_vec<float4>(bg_color[0], bg_color[1], bg_color[2], 255.0f);
-	gpuMask<T, S><<<gridDim, blockDim, 0, stream>>>(input, mask, output, width, height, bg, bg_color_th, range);
+	gpuMask<T, S><<<gridDim, blockDim, 0, stream>>>(input, mask, output, width, height, bg, bg_color_th, range, spill_mode);
 
 	return CUDA(cudaGetLastError());
 }
 
 // fg + bg w/ mask.
 template<typename T, typename S>
-static cudaError_t launchMask(T *input_fg, T *input_bg, S *mask, T *output, size_t width, size_t height, float2 range, cudaStream_t stream)
+static cudaError_t launchMask(T *input_fg, T *input_bg, S *mask, T *output, size_t width, size_t height, float2 range, em_COLOR_ADJ_SPILL_MODE spill_mode, cudaStream_t stream)
 {
 	if( !input_fg || !input_bg || !mask || !output )
 		return cudaErrorInvalidDevicePointer;
@@ -108,41 +110,41 @@ static cudaError_t launchMask(T *input_fg, T *input_bg, S *mask, T *output, size
 #endif
 	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height,blockDim.y));
 
-	gpuMask<T, S><<<gridDim, blockDim, 0, stream>>>(input_fg, input_bg, mask, output, width, height, range);
+	gpuMask<T, S><<<gridDim, blockDim, 0, stream>>>(input_fg, input_bg, mask, output, width, height, range, spill_mode);
 
 	return CUDA(cudaGetLastError());
 }
 
 //-----------------------------------------------------------------------------------
 cudaError_t cudaMask(void *input, void *mask, void *output, size_t width, size_t height,
-    imageFormat format, imageFormat format_mask, float bg_color[3], float bg_color_th, float2 range, cudaStream_t stream)
+    imageFormat format, imageFormat format_mask, float bg_color[3], float bg_color_th, float2 range, em_COLOR_ADJ_SPILL_MODE spill_mode, cudaStream_t stream)
 {
 	if( format == IMAGE_RGB8 || format == IMAGE_BGR8 ) {
 		if ( format_mask == IMAGE_GRAY8 ) {
-			return launchMask<uchar3, uchar>((uchar3 *)input, (uchar *)mask, (uchar3 *)output, width, height, bg_color, bg_color_th, range, stream);
+			return launchMask<uchar3, uchar>((uchar3 *)input, (uchar *)mask, (uchar3 *)output, width, height, bg_color, bg_color_th, range, spill_mode, stream);
 		} else if ( format_mask == IMAGE_GRAY32F ) {
-			return launchMask<uchar3, float>((uchar3 *)input, (float *)mask, (uchar3 *)output, width, height, bg_color, bg_color_th, range, stream);
+			return launchMask<uchar3, float>((uchar3 *)input, (float *)mask, (uchar3 *)output, width, height, bg_color, bg_color_th, range, spill_mode, stream);
 		}
 	}
 	else if( format == IMAGE_RGBA8 || format == IMAGE_BGRA8 ) {
 		if ( format_mask == IMAGE_GRAY8 ) {
-			return launchMask<uchar4, uchar>((uchar4 *)input, (uchar *)mask, (uchar4 *)output, width, height, bg_color, bg_color_th, range, stream);
+			return launchMask<uchar4, uchar>((uchar4 *)input, (uchar *)mask, (uchar4 *)output, width, height, bg_color, bg_color_th, range, spill_mode, stream);
 		} else if ( format_mask == IMAGE_GRAY32F ) {
-			return launchMask<uchar4, float>((uchar4 *)input, (float *)mask, (uchar4 *)output, width, height, bg_color, bg_color_th, range, stream);
+			return launchMask<uchar4, float>((uchar4 *)input, (float *)mask, (uchar4 *)output, width, height, bg_color, bg_color_th, range, spill_mode, stream);
 		}
 	}
 	else if( format == IMAGE_RGB32F || format == IMAGE_BGR32F ) {
 		if ( format_mask == IMAGE_GRAY8 ) {
-			return launchMask<float3, uchar>((float3 *)input, (uchar *)mask, (float3 *)output, width, height, bg_color, bg_color_th, range, stream);
+			return launchMask<float3, uchar>((float3 *)input, (uchar *)mask, (float3 *)output, width, height, bg_color, bg_color_th, range, spill_mode, stream);
 		} else if ( format_mask == IMAGE_GRAY32F ) {
-			return launchMask<float3, float>((float3 *)input, (float *)mask, (float3 *)output, width, height, bg_color, bg_color_th, range, stream);
+			return launchMask<float3, float>((float3 *)input, (float *)mask, (float3 *)output, width, height, bg_color, bg_color_th, range, spill_mode, stream);
 		}
 	}
 	else if( format == IMAGE_RGBA32F || format == IMAGE_BGRA32F ) {
 		if ( format_mask == IMAGE_GRAY8 ) {
-			return launchMask<float4, uchar>((float4 *)input, (uchar *)mask, (float4 *)output, width, height, bg_color, bg_color_th, range, stream);
+			return launchMask<float4, uchar>((float4 *)input, (uchar *)mask, (float4 *)output, width, height, bg_color, bg_color_th, range, spill_mode, stream);
 		} else if ( format_mask == IMAGE_GRAY32F ) {
-			return launchMask<float4, float>((float4 *)input, (float *)mask, (float4 *)output, width, height, bg_color, bg_color_th, range, stream);
+			return launchMask<float4, float>((float4 *)input, (float *)mask, (float4 *)output, width, height, bg_color, bg_color_th, range, spill_mode, stream);
 		}
 	}
 
@@ -154,41 +156,41 @@ cudaError_t cudaMask(void *input, void *mask, void *output, size_t width, size_t
 	return cudaErrorInvalidValue;
 }
 cudaError_t cudaMask(void *input, void *mask, void *output, size_t width, size_t height,
-    imageFormat format, imageFormat format_mask, float bg_color[3], float bg_color_th, cudaStream_t stream)
+    imageFormat format, imageFormat format_mask, float bg_color[3], float bg_color_th, em_COLOR_ADJ_SPILL_MODE spill_mode, cudaStream_t stream)
 {
-	return cudaMask(input, mask, output, width, height, format, format_mask, bg_color, bg_color_th, float2{0, 255}, stream);
+	return cudaMask(input, mask, output, width, height, format, format_mask, bg_color, bg_color_th, float2{0, 255}, spill_mode, stream);
 }
 
 // fg + bg w/ mask.
 cudaError_t cudaMask(void *input_fg, void *input_bg, void *mask, void *output, size_t width, size_t height,
-    imageFormat format, imageFormat format_mask, float2 range, cudaStream_t stream)
+    imageFormat format, imageFormat format_mask, float2 range, em_COLOR_ADJ_SPILL_MODE spill_mode, cudaStream_t stream)
 {
 	if( format == IMAGE_RGB8 || format == IMAGE_BGR8 ) {
 		if ( format_mask == IMAGE_GRAY8 ) {
-			return launchMask<uchar3, uchar>((uchar3 *)input_fg, (uchar3 *)input_bg, (uchar *)mask, (uchar3 *)output, width, height, range, stream);
+			return launchMask<uchar3, uchar>((uchar3 *)input_fg, (uchar3 *)input_bg, (uchar *)mask, (uchar3 *)output, width, height, range, spill_mode, stream);
 		} else if ( format_mask == IMAGE_GRAY32F ) {
-			return launchMask<uchar3, float>((uchar3 *)input_fg, (uchar3 *)input_bg, (float *)mask, (uchar3 *)output, width, height, range, stream);
+			return launchMask<uchar3, float>((uchar3 *)input_fg, (uchar3 *)input_bg, (float *)mask, (uchar3 *)output, width, height, range, spill_mode, stream);
 		}
 	}
 	else if( format == IMAGE_RGBA8 || format == IMAGE_BGRA8 ) {
 		if ( format_mask == IMAGE_GRAY8 ) {
-			return launchMask<uchar4, uchar>((uchar4 *)input_fg, (uchar4 *)input_bg, (uchar *)mask, (uchar4 *)output, width, height, range, stream);
+			return launchMask<uchar4, uchar>((uchar4 *)input_fg, (uchar4 *)input_bg, (uchar *)mask, (uchar4 *)output, width, height, range, spill_mode, stream);
 		} else if ( format_mask == IMAGE_GRAY32F ) {
-			return launchMask<uchar4, float>((uchar4 *)input_fg, (uchar4 *)input_bg, (float *)mask, (uchar4 *)output, width, height, range, stream);
+			return launchMask<uchar4, float>((uchar4 *)input_fg, (uchar4 *)input_bg, (float *)mask, (uchar4 *)output, width, height, range, spill_mode, stream);
 		}
 	}
 	else if( format == IMAGE_RGB32F || format == IMAGE_BGR32F ) {
 		if ( format_mask == IMAGE_GRAY8 ) {
-			return launchMask<float3, uchar>((float3 *)input_fg, (float3 *)input_bg, (uchar *)mask, (float3 *)output, width, height, range, stream);
+			return launchMask<float3, uchar>((float3 *)input_fg, (float3 *)input_bg, (uchar *)mask, (float3 *)output, width, height, range, spill_mode, stream);
 		} else if ( format_mask == IMAGE_GRAY32F ) {
-			return launchMask<float3, float>((float3 *)input_fg, (float3 *)input_bg, (float *)mask, (float3 *)output, width, height, range, stream);
+			return launchMask<float3, float>((float3 *)input_fg, (float3 *)input_bg, (float *)mask, (float3 *)output, width, height, range, spill_mode, stream);
 		}
 	}
 	else if( format == IMAGE_RGBA32F || format == IMAGE_BGRA32F ) {
 		if ( format_mask == IMAGE_GRAY8 ) {
-			return launchMask<float4, uchar>((float4 *)input_fg, (float4 *)input_bg, (uchar *)mask, (float4 *)output, width, height, range, stream);
+			return launchMask<float4, uchar>((float4 *)input_fg, (float4 *)input_bg, (uchar *)mask, (float4 *)output, width, height, range, spill_mode, stream);
 		} else if ( format_mask == IMAGE_GRAY32F ) {
-			return launchMask<float4, float>((float4 *)input_fg, (float4 *)input_bg, (float *)mask, (float4 *)output, width, height, range, stream);
+			return launchMask<float4, float>((float4 *)input_fg, (float4 *)input_bg, (float *)mask, (float4 *)output, width, height, range, spill_mode, stream);
 		}
 	}
 
@@ -200,7 +202,7 @@ cudaError_t cudaMask(void *input_fg, void *input_bg, void *mask, void *output, s
 	return cudaErrorInvalidValue;
 }
 cudaError_t cudaMask(void *input_fg, void *input_bg, void *mask, void *output, size_t width, size_t height,
-    imageFormat format, imageFormat format_mask, cudaStream_t stream)
+    imageFormat format, imageFormat format_mask, em_COLOR_ADJ_SPILL_MODE spill_mode, cudaStream_t stream)
 {
-	return cudaMask(input_fg, input_bg, mask, output, width, height, format, format_mask, float2{0, 255}, stream);
+	return cudaMask(input_fg, input_bg, mask, output, width, height, format, format_mask, float2{0, 255}, spill_mode, stream);
 }

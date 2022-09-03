@@ -25,6 +25,7 @@
 
 
 #include "cudaUtility.h"
+#include "cudaSpill.h"
 
 #include <math.h>
 
@@ -242,6 +243,9 @@ struct st_COLLO_param {
 
 	// // projection mode.
 	// em_COLLO_projection_mode projection_mode;
+
+	// spill mode.
+	em_COLOR_ADJ_SPILL_MODE spill_mode;
 
 	// alpha blend.
 	bool alpha_blend;

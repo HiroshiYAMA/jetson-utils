@@ -288,6 +288,7 @@ __global__ void cudaCollo(
 #else
 	float3 pix_fg = cast_vec<float3>(pix_in_HiReso);
 #endif
+	pix_fg = apply_spill_pix(pix_fg, collo_prm.spill_mode);
 
 	float3 pix_bg;
 	if (collo_prm.overlay_panorama) {
