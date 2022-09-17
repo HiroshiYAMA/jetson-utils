@@ -320,6 +320,12 @@ cudaError_t cudaNV12ToRGBA( void* input, uchar4* output, size_t width, size_t he
  */
 cudaError_t cudaNV12ToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream = NULL );
 
+// P010_10LE. like a 10bit version NV12.
+cudaError_t cudaP010_10LEToRGB( void* input, uchar3* output, size_t width, size_t height, cudaStream_t stream = NULL );
+cudaError_t cudaP010_10LEToRGB( void* input, float3* output, size_t width, size_t height, cudaStream_t stream = NULL );
+cudaError_t cudaP010_10LEToRGBA( void* input, uchar4* output, size_t width, size_t height, cudaStream_t stream = NULL );
+cudaError_t cudaP010_10LEToRGBA( void* input, float4* output, size_t width, size_t height, cudaStream_t stream = NULL );
+
 ///@}
 
 #endif

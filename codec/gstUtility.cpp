@@ -47,6 +47,8 @@ imageFormat gst_parse_format( GstStructure* caps )
 		return IMAGE_I420;
 	else if( strcasecmp(format, "nv12") == 0 )
 		return IMAGE_NV12;
+	else if( strcasecmp(format, "p010_10le") == 0 )
+		return IMAGE_P010_10LE;
 	else if( strcasecmp(format, "yv12") == 0 )
 		return IMAGE_YV12;
 	else if( strcasecmp(format, "yuyv") == 0 )
@@ -76,6 +78,7 @@ const char* gst_format_to_string( imageFormat format )
 		case IMAGE_YUY2:	return "YUY2";
 		case IMAGE_I420:	return "I420";
 		case IMAGE_NV12:	return "NV12";
+		case IMAGE_P010_10LE:	return "P010_10LE";
 		case IMAGE_YV12:	return "YV12";
 		case IMAGE_YVYU:	return "YVYU";
 		case IMAGE_UYVY:	return "UYVY";

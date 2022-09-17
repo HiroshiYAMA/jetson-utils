@@ -70,6 +70,7 @@ enum imageFormat
 	IMAGE_PA16,					/**< YUV+A PA16 4:2:2:4 planar (`'pa16'`) */
 	IMAGE_I420,					/**< YUV I420 4:2:0 planar (`'i420'`) */
 	IMAGE_YV12,					/**< YUV YV12 4:2:0 planar (`'yv12'`) */
+	IMAGE_P010_10LE,			/**< YUV NV12 4:2:0 planar (`'p010_10le'`) 10bit */
 	IMAGE_NV12,					/**< YUV NV12 4:2:0 planar (`'nv12'`) */
 	
 	// Bayer

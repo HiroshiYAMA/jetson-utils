@@ -397,7 +397,11 @@ bool gstDecoder::discover()
 
 	// retrieve video caps
 	GstCaps* caps = gst_discoverer_stream_info_get_caps(streamInfo);
-	
+	auto structure = gst_caps_get_structure (caps, 0);
+	gst_structure_get_uint (structure, "bit-depth-luma", &mBitDepthY);
+	gst_structure_get_uint (structure, "bit-depth-chroma", &mBitDepthUV);
+	mChromaFormat = gst_structure_get_string (structure, "chroma-format");
+
 	if( !caps )
 	{
 		printf(LOG_GSTREAMER "gstDecoder -- failed to discover video caps\n");
@@ -636,6 +640,8 @@ bool gstDecoder::buildLaunchStr()
 
 		if (mOptions.codec == videoOptions::CODEC_QTRLE) {
 			ss << ", format=(string)RGBA";
+		// } else if (mBitDepthY == 10 && mBitDepthUV == 10 && mChromaFormat == "4:2:0") {
+		// 	ss << ", format=(string)NV12";
 		}
 
 		ss << " ! ";
@@ -943,6 +949,7 @@ bool gstDecoder::Capture( void** output, imageFormat format, uint64_t timeout )
 	void* nextRGB = mBufferRGB.Next(RingBuffer::Write);
 	// LogWarning("--------------------- nextRGB: %p\n", nextRGB);
 
+	// if (mFormatYUV == IMAGE_P010_10LE) mFormatYUV = IMAGE_NV12;
 	if( CUDA_FAILED(cudaConvertColor(latestYUV, mFormatYUV, nextRGB, format, GetWidth(), GetHeight(), make_float2(0,255), mStream)) )
 	{
 		LogError(LOG_GSTREAMER "gstDecoder::Capture() -- unsupported image format (%s)\n", imageFormatToStr(format));

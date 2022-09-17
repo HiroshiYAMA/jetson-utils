@@ -179,6 +179,10 @@ protected:
 	size_t	   mLoopCount;
 	size_t	   mFrameCount;
 	imageFormat  mFormatYUV;
+
+	uint32_t mBitDepthY;
+	uint32_t mBitDepthUV;
+	std::string mChromaFormat;
 };
   
 #endif

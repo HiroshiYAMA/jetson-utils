@@ -115,6 +115,70 @@ __global__ void NV12ToRGB(uint32_t* srcImage, size_t nSourcePitch,
 	dstImage[y * width + x]     = YUV2RGB<T>(yuv10);
 }
 
+//-----------------------------------------------------------------------------------
+// P010_10LE to RGB
+//-----------------------------------------------------------------------------------
+template<typename T>
+__global__ void P010_10LEToRGB(uint32_t* srcImage, size_t nSourcePitch,
+                          T* dstImage,        size_t nDestPitch,
+                          uint32_t width,     uint32_t height)
+{
+	int x, y;
+	int x_even;
+	uint32_t processingPitch;
+	uint16_t *srcImageU16 = (uint16_t *)srcImage;
+	uint3 yuv10;
+
+	processingPitch = nSourcePitch / sizeof(uint16_t);
+
+	x = blockIdx.x * blockDim.x + threadIdx.x;
+	y = blockIdx.y *  blockDim.y       +  threadIdx.y;
+	x /= 1;
+	y /= 1;
+	x_even = x & ~1;
+
+	if( x >= width )
+		return; //x = width - 1;
+
+	if( y >= height )
+		return; // y = height - 1;
+
+	yuv10.x = srcImageU16[y * processingPitch + x    ];
+
+	uint32_t chromaOffset    = processingPitch * height;
+	int y_chroma = y >> 1;
+
+	if (y & 1)  // odd scanline ?
+	{
+		uint32_t chromaCb;
+		uint32_t chromaCr;
+
+		chromaCb = srcImageU16[chromaOffset + y_chroma * processingPitch + x_even    ];
+		chromaCr = srcImageU16[chromaOffset + y_chroma * processingPitch + x_even + 1];
+
+		if (y_chroma < ((height >> 1) - 1)) // interpolate chroma vertically
+		{
+			chromaCb = (chromaCb + srcImageU16[chromaOffset + (y_chroma + 1) * processingPitch + x_even    ] + 1) >> 1;
+			chromaCr = (chromaCr + srcImageU16[chromaOffset + (y_chroma + 1) * processingPitch + x_even + 1] + 1) >> 1;
+		}
+
+		yuv10.y = chromaCb;
+		yuv10.z = chromaCr;
+	}
+	else
+	{
+		yuv10.y = srcImageU16[chromaOffset + y_chroma * processingPitch + x_even    ];
+		yuv10.z = srcImageU16[chromaOffset + y_chroma * processingPitch + x_even + 1];
+	}
+
+	// YUV to RGB transformation conversion
+	constexpr auto shift_to8bit = 8;
+	yuv10.x >>= shift_to8bit;
+	yuv10.y >>= shift_to8bit;
+	yuv10.z >>= shift_to8bit;
+	dstImage[y * width + x]     = YUV2RGB<T>(yuv10);
+}
+
 
 template<typename T> 
 static cudaError_t launchNV12ToRGB( void* srcDev, T* dstDev, size_t width, size_t height, cudaStream_t stream )
@@ -140,6 +204,30 @@ static cudaError_t launchNV12ToRGB( void* srcDev, T* dstDev, size_t width, size_
 	return CUDA(cudaGetLastError());
 }
 
+template<typename T>
+static cudaError_t launchP010_10LEToRGB( void* srcDev, T* dstDev, size_t width, size_t height, cudaStream_t stream )
+{
+	if( !srcDev || !dstDev )
+		return cudaErrorInvalidDevicePointer;
+
+	if( width == 0 || height == 0 )
+		return cudaErrorInvalidValue;
+
+	const size_t srcPitch = width * sizeof(uint16_t);
+	const size_t dstPitch = width * sizeof(T);
+
+#ifdef JETSON
+	const dim3 blockDim(32, 8, 1);
+#else
+	const dim3 blockDim(64, 8, 1);
+#endif
+	const dim3 gridDim(iDivUp(width,blockDim.x), iDivUp(height, blockDim.y), 1);
+
+	P010_10LEToRGB<T><<<gridDim, blockDim, 0, stream>>>( (uint32_t*)srcDev, srcPitch, dstDev, dstPitch, width, height );
+
+	return CUDA(cudaGetLastError());
+}
+
 // cudaNV12ToRGB (uchar3)
 cudaError_t cudaNV12ToRGB( void* srcDev, uchar3* destDev, size_t width, size_t height, cudaStream_t stream )
 {
@@ -162,6 +250,30 @@ cudaError_t cudaNV12ToRGBA( void* srcDev, uchar4* destDev, size_t width, size_t 
 cudaError_t cudaNV12ToRGBA( void* srcDev, float4* destDev, size_t width, size_t height, cudaStream_t stream )
 {
 	return launchNV12ToRGB<float4>(srcDev, destDev, width, height, stream);
+}
+
+// cudaP010_10LEToRGB (uchar3)
+cudaError_t cudaP010_10LEToRGB( void* srcDev, uchar3* destDev, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchP010_10LEToRGB<uchar3>(srcDev, destDev, width, height, stream);
+}
+
+// cudaP010_10LEToRGB (float3)
+cudaError_t cudaP010_10LEToRGB( void* srcDev, float3* destDev, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchP010_10LEToRGB<float3>(srcDev, destDev, width, height, stream);
+}
+
+// cudaP010_10LEToRGBA (uchar4)
+cudaError_t cudaP010_10LEToRGBA( void* srcDev, uchar4* destDev, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchP010_10LEToRGB<uchar4>(srcDev, destDev, width, height, stream);
+}
+
+// cudaP010_10LEToRGBA (float4)
+cudaError_t cudaP010_10LEToRGBA( void* srcDev, float4* destDev, size_t width, size_t height, cudaStream_t stream )
+{
+	return launchP010_10LEToRGB<float4>(srcDev, destDev, width, height, stream);
 }
 
 
