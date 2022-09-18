@@ -398,9 +398,14 @@ bool gstDecoder::discover()
 	// retrieve video caps
 	GstCaps* caps = gst_discoverer_stream_info_get_caps(streamInfo);
 	auto structure = gst_caps_get_structure (caps, 0);
-	gst_structure_get_uint (structure, "bit-depth-luma", &mBitDepthY);
-	gst_structure_get_uint (structure, "bit-depth-chroma", &mBitDepthUV);
-	mChromaFormat = gst_structure_get_string (structure, "chroma-format");
+	if (!gst_structure_get_uint (structure, "bit-depth-luma", &mBitDepthY)) mBitDepthY = 8;
+	if (!gst_structure_get_uint (structure, "bit-depth-chroma", &mBitDepthUV)) mBitDepthUV = 8;
+	auto tmp_str = gst_structure_get_string (structure, "chroma-format");
+	if (tmp_str) {
+		mChromaFormat = tmp_str;
+	} else {
+		mChromaFormat = "4:2:0";
+	}
 
 	if( !caps )
 	{

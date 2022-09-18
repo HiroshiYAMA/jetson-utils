@@ -107,7 +107,7 @@ else()
 	set(OPENCV_LIBRARY)
 endif()
 cuda_add_library(jetson-utils SHARED ${jetsonUtilitySources})
-target_link_libraries(jetson-utils GL GLU GLEW gstreamer-1.0 gstapp-1.0 gstpbutils-1.0 SDL2 ${CUDA_nppicc_LIBRARY} ${OPENCV_LIBRARY} rt PocoFoundation pthread ndi)
+target_link_libraries(jetson-utils GL GLU GLEW gstreamer-1.0 gstapp-1.0 gstpbutils-1.0 ${SDL2_LIBRARIES} ${CUDA_nppicc_LIBRARY} ${OPENCV_LIBRARY} rt PocoFoundation pthread ndi)
 
 
 # transfer all headers to the include directory 

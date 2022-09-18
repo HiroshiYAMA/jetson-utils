@@ -40,10 +40,10 @@ __global__ void gpuSplit(T *input, T *output0, T *output1, T *output2, T *output
 	const T p2 = input[(y * width + x) * CH + 2];
 	const T p3 = (CH == 4) ? input[(y * width + x) * CH + 3] : T(0);
 
-	output0[y * width + x] = p0;
-	output1[y * width + x] = p1;
-	output2[y * width + x] = p2;
-	if (CH == 4) output3[y * width + x] = p3;
+	if (output0 != nullptr) output0[y * width + x] = p0;
+	if (output1 != nullptr) output1[y * width + x] = p1;
+	if (output2 != nullptr) output2[y * width + x] = p2;
+	if (output3 != nullptr) output3[y * width + x] = p3;
 }
 
 // gpuSplit.
@@ -62,8 +62,8 @@ __global__ void gpuSplit(T *input, S *output_color, R *output_alpha, size_t widt
 	S pix3 = cast_vec<S>(pix4);	// 3 colors.
 	R pix_a = alpha<T>(pix4);	// alpha.
 
-	output_color[y * width + x] = pix3;
-	output_alpha[y * width + x] = pix_a;
+	if (output_color != nullptr) output_color[y * width + x] = pix3;
+	if (output_alpha != nullptr) output_alpha[y * width + x] = pix_a;
 }
 
 // launchSplit
@@ -71,7 +71,7 @@ __global__ void gpuSplit(T *input, S *output_color, R *output_alpha, size_t widt
 template<typename T, int CH>
 static cudaError_t launchSplit(T *input, T **output, size_t width, size_t height, cudaStream_t stream)
 {
-	if( !input || !output[0] || !output[1] || !output[2] || (CH == 4 ? !output[3] : false) )
+	if( !input )
 		return cudaErrorInvalidDevicePointer;
 
 	if( width == 0 || height == 0 )
@@ -99,7 +99,7 @@ static cudaError_t launchSplit(T *input, T **output, size_t width, size_t height
 template<typename T, typename S, typename R>
 static cudaError_t launchSplit(T *input, S *output_color, R *output_alpha, size_t width, size_t height, cudaStream_t stream)
 {
-	if( !input || !output_color || !output_alpha )
+	if( !input )
 		return cudaErrorInvalidDevicePointer;
 
 	if( width == 0 || height == 0 )

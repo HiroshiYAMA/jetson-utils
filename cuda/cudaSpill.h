@@ -23,6 +23,7 @@
 #pragma once
 
 #include "cudaUtility.h"
+#include "imageFormat.h"
 
 enum em_COLOR_ADJ_SPILL_MODE {
 	COLOR_ADJ_SPILL_NONE,
@@ -61,3 +62,12 @@ inline __device__ T apply_spill_pix(T px, em_COLOR_ADJ_SPILL_MODE spill_mode)
 
 	return px;
 }
+
+
+
+cudaError_t cudaSpill( uchar3* input, uchar3* output, size_t width, size_t height, em_COLOR_ADJ_SPILL_MODE spill_mode = em_COLOR_ADJ_SPILL_MODE::COLOR_ADJ_SPILL_NONE, cudaStream_t stream = NULL );
+cudaError_t cudaSpill( uchar4* input, uchar4* output, size_t width, size_t height, em_COLOR_ADJ_SPILL_MODE spill_mode = em_COLOR_ADJ_SPILL_MODE::COLOR_ADJ_SPILL_NONE, cudaStream_t stream = NULL );
+cudaError_t cudaSpill( float3* input, float3* output, size_t width, size_t height, em_COLOR_ADJ_SPILL_MODE spill_mode = em_COLOR_ADJ_SPILL_MODE::COLOR_ADJ_SPILL_NONE, cudaStream_t stream = NULL );
+cudaError_t cudaSpill( float4* input, float4* output, size_t width, size_t height, em_COLOR_ADJ_SPILL_MODE spill_mode = em_COLOR_ADJ_SPILL_MODE::COLOR_ADJ_SPILL_NONE, cudaStream_t stream = NULL );
+
+cudaError_t cudaSpill( void* input, void* output, size_t width, size_t height, imageFormat format, em_COLOR_ADJ_SPILL_MODE spill_mode = em_COLOR_ADJ_SPILL_MODE::COLOR_ADJ_SPILL_NONE, cudaStream_t stream = NULL );

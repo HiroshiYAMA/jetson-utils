@@ -25,7 +25,6 @@
 
 
 #include "cudaUtility.h"
-#include "cudaSpill.h"
 
 #include <math.h>
 
@@ -179,26 +178,11 @@ enum class em_COLLO_projection_mode : int {
 };
 
 struct st_COLLO_param {
-	// type of input.
-	bool rgba;
-
 	// input.
 	uint32_t iW;
 	uint32_t iH;
 	float iAspect;
 	float iAspect_inv;
-
-	// input(High Resolution).
-	uint32_t iW_HiReso;
-	uint32_t iH_HiReso;
-	float iAspect_HiReso;
-	float iAspect_HiReso_inv;
-
-	// input(panorama).
-	uint32_t panoW;
-	uint32_t panoH;
-	float panoAspect;
-	float panoAspect_inv;
 
 	// output.
 	uint32_t oW;
@@ -206,34 +190,17 @@ struct st_COLLO_param {
 	float oAspect;
 	float oAspect_inv;
 	float v_fov_half_tan;
-	float v_fov_half_tan_back;
-
-	// mask.
-	uint32_t mW;
-	uint32_t mH;
-	float mAspect;
-	float mAspect_inv;
 
 	// lens spec.
 	float xcenter;
 	float ycenter;
-	float xcenter_HiReso;
-	float ycenter_HiReso;
-	float xcenter_mask;
-	float ycenter_mask;
 	float lens_radius_scale;
-	float lens_radius_scale_back;
 	st_COLLO_lens_table lens_tbl;
 	em_COLLO_lens_spec lens_type;
-	em_COLLO_lens_spec lens_type_back;
 
 	// rotaion.
 	st_COLLO_rotation rot;
 	glm::quat quat_view;
-	glm::quat quat_view_back;
-
-	// resolution mode of input image.
-	bool HiReso;
 
 	// pixel sampling filter.
 	int filter_mode;
@@ -243,22 +210,6 @@ struct st_COLLO_param {
 
 	// // projection mode.
 	// em_COLLO_projection_mode projection_mode;
-
-	// spill mode.
-	em_COLOR_ADJ_SPILL_MODE spill_mode;
-
-	// alpha blend.
-	bool alpha_blend;
-
-	// overlay panorama background.
-	bool overlay_panorama;
-
-	// mask. background color.
-	float4 bg_color;
-	float bg_color_th;	// [0 ... 1].
-
-	// output image with camera work.
-	bool camera_work;
 };
 
 /**
@@ -267,10 +218,12 @@ struct st_COLLO_param {
  * @param[in] focus focus of the lens (in mm).
  * @ingroup warping
  */
+// #define FUNC_CUDA_WARP_COLLO_HEADER(T, S) \
+// cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, \
+// 	S* output, S *output_fg, S *output_bg, S *output_mask, \
+// 	st_COLLO_param collo_prm, cudaStream_t stream = NULL );
 #define FUNC_CUDA_WARP_COLLO_HEADER(T, S) \
-cudaError_t cudaWarpCollo( T* input, float* mask, uchar4* input_HiReso, uchar4* input_panorama, \
-	S* output, S *output_fg, S *output_bg, S *output_mask, \
-	st_COLLO_param collo_prm, cudaStream_t stream = NULL );
+cudaError_t cudaWarpCollo( T* input, S* output, st_COLLO_param collo_prm, cudaStream_t stream = NULL );
 
 // cudaWarpCollo (uint8 grayscale)
 FUNC_CUDA_WARP_COLLO_HEADER(uint8_t, uint8_t);
