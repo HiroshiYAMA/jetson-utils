@@ -185,7 +185,7 @@ __global__ void cudaCollo(T* input, S* output, st_COLLO_param collo_prm )
 		auto input, auto u, auto v, auto iW, auto iH, auto oW, auto oH,
 		auto scale, auto max_value, auto filter)
 		-> auto {
-		decltype(*input + 0) pix;
+		std::remove_reference_t<decltype(*input)> pix;
 		switch (filter) {
 		case FILTER_LINEAR:	// Bi-linear. 3x3 filter.
 			pix = cudaFilterPixel<FILTER_LINEAR, false>(input, u, v, iW, iH, oW, oH, scale, max_value);
