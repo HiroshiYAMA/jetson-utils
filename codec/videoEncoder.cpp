@@ -283,10 +283,6 @@ bool videoEncoder::Render( void* image, uint32_t width, uint32_t height, imageFo
 	// error checking / return
 	bool enc_success = false;
 
-	auto render_end = [&]() -> bool {
-		return enc_success;
-	};
-
 	if( CUDA_FAILED(cudaConvertColor(image, format, rec_buf_BGR, IMAGE_BGR8, width, height, float2{0, 255}, mStream)) )
 	{
 		LogError(LOG_VIDEO_ENCODER "videoEncoder::Render() -- unsupported image format (%s)\n", imageFormatToStr(format));
@@ -297,7 +293,7 @@ bool videoEncoder::Render( void* image, uint32_t width, uint32_t height, imageFo
 		LogError(LOG_VIDEO_ENCODER "                            * rgba32f\n");
 
 		enc_success = false;
-		render_end();
+		return enc_success;
 	}
 
 	// CUDA(cudaDeviceSynchronize());	// TODO replace with cudaStream?
@@ -308,7 +304,7 @@ bool videoEncoder::Render( void* image, uint32_t width, uint32_t height, imageFo
 	enc_success = encodeBGR();
 
 	// render sub-streams
-	render_end();
+	return enc_success;
 }
 
 
