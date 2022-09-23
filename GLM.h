@@ -4,7 +4,7 @@
 #define GLM_FORCE_CUDA
 #define GLM_FORCE_CXX14
 #define GLM_FORCE_INLNIE
-#define GLM_SWIZZLE
+#define GLM_FORCE_SWIZZLE
 // 1. glm ライブラリーの基本機能が含まれます。
 #include <glm/glm.hpp>
 // 2. glm ライブラリーの拡張機能のうち既に仕様が安定した機能が glm/gtc に含まれます。

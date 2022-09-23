@@ -272,7 +272,18 @@ bool gstEncoder::buildLaunchStr()
 #if GST_CHECK_VERSION(1,0,0)
 	//ss << mCapsStr << " ! ";
 
-#ifdef JETSON
+#ifdef JETPACK_5
+	if( mOptions.codec == videoOptions::CODEC_H264 )
+		ss << "nvvidconv ! nvv4l2h264enc bitrate=" << mOptions.bitRate << " profile=High control-rate=variable_bitrate ! video/x-h264 !  ";	// TODO:  investigate quality-level setting
+	else if( mOptions.codec == videoOptions::CODEC_H265 )
+		ss << "nvvidconv ! nvv4l2h265enc bitrate=" << mOptions.bitRate << " ! control-rate=variable_bitrate ! video/x-h265 ! ";
+	else if( mOptions.codec == videoOptions::CODEC_VP8 )
+		ss << "nvvidconv ! nvv4l2vp8enc bitrate=" << mOptions.bitRate << " ! video/x-vp8 ! ";
+	else if( mOptions.codec == videoOptions::CODEC_VP9 )
+		ss << "nvvidconv ! nvv4l2vp9enc bitrate=" << mOptions.bitRate << " ! video/x-vp9 ! ";
+	else if( mOptions.codec == videoOptions::CODEC_MJPEG )
+		ss << "nvjpegenc ! image/jpeg ! ";
+#elif JETSON
 	if( mOptions.codec == videoOptions::CODEC_H264 )
 		ss << "omxh264enc bitrate=" << mOptions.bitRate << " profile=high ! video/x-h264 !  ";	// TODO:  investigate quality-level setting
 	else if( mOptions.codec == videoOptions::CODEC_H265 )
