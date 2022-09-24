@@ -119,7 +119,7 @@ template<typename T> struct vec_assert_false : std::false_type { };
 
 #define BaseType typename vecTypeInfo<T>::Base
 
-template<typename T> inline __host__ __device__ T make_vec(BaseType x0, BaseType y0, BaseType z0, BaseType w0, BaseType x1, BaseType y1, BaseType z1, BaseType w1) { static_assert(vec_assert_false<T>::value, "invalid vector type - supported types are uchar6, uchar8, float6, float8");  }
+template<typename T> inline __host__ __device__ T make_vec(BaseType x0, BaseType y0, BaseType z0, BaseType w0, BaseType x1, BaseType y1, BaseType z1, BaseType w1) { static_assert(vec_assert_false<T>::value, "invalid vector type - supported types are uchar6, uchar8, float6, float8"); return T{}; }
 
 template<> inline __host__ __device__ uchar6 make_vec( uint8_t x0, uint8_t y0, uint8_t z0, uint8_t w0, uint8_t x1, uint8_t y1, uint8_t z1, uint8_t w1 )	{ return {x0, y0, z0, x1, y1, z1}; }
 template<> inline __host__ __device__ uchar8 make_vec( uint8_t x0, uint8_t y0, uint8_t z0, uint8_t w0, uint8_t x1, uint8_t y1, uint8_t z1, uint8_t w1 )	{ return {x0, y0, z0, w1, x1, y1, z1, w1}; }
@@ -128,7 +128,7 @@ template<> inline __host__ __device__ float6 make_vec( float x0, float y0, float
 template<> inline __host__ __device__ float8 make_vec( float x0, float y0, float z0, float w0, float x1, float y1, float z1, float w1 )				{ return {x0, y0, z0, w1, x1, y1, z1, w1}; }
 
 // make_float8.
-template<typename T> inline __host__ __device__ float8 make_float8(T &v, float a) { static_assert(vec_assert_false<T>::value, "invalid vector type - supported types are uchar2, float2, uchar6, uchar8, float6, float8"); return T{0}; }
+template<typename T> inline __host__ __device__ float8 make_float8(T &v, float a) { static_assert(vec_assert_false<T>::value, "invalid vector type - supported types are uchar2, float2, uchar6, uchar8, float6, float8"); return make_vec<float8>(0, 0, 0, 0, 0, 0, 0, 0); }
 template<> inline __host__ __device__ float8 make_float8(uchar2 &v, float a) { return make_vec<float8>(v.x, v.x, v.x, a, v.y, v.y, v.y, a); }
 template<> inline __host__ __device__ float8 make_float8(uchar6 &v, float a) { return make_vec<float8>(v.x0, v.y0, v.z0, a, v.x1, v.y1, v.z1, a); }
 template<> inline __host__ __device__ float8 make_float8(uchar8 &v, float a) { return make_vec<float8>(v.x0, v.y0, v.z0, v.w0, v.x1, v.y1, v.z1, v.w1); }
