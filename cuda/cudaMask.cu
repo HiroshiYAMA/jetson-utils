@@ -38,9 +38,12 @@ __global__ void gpuMask(T *input, S *mask, T *output, size_t width, size_t heigh
 	T pix_src = input[y * width + x];
 	S pix_mask = mask[y * width + x];
 	T pix_bg = cast_vec<T>(bg);
+#if 0
 	T pix_dst = cast_vec<T>(make_float4(make_float3(pix_mask > S(bg_th * range.y) ? pix_src : pix_bg), pix_mask));
-	// float alpha = pix_mask / range.y;
-	// T pix_dst = cast_vec<T>(pix_src * alpha + pix_bg * (1.0f - alpha));
+#else
+	float alpha = pix_mask / range.y;
+	T pix_dst = cast_vec<T>(make_float4(make_float3(pix_src * alpha + pix_bg * (1.0f - alpha)), pix_mask));
+#endif
 
 	output[y * width + x] = pix_dst;
 }
