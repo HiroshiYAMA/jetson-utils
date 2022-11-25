@@ -134,6 +134,23 @@ cudaError_t cudaMerge(void **input, void *output, size_t width, size_t height, i
 	return cudaErrorInvalidValue;
 }
 
+#define FUNC_CUDA_MERGE(T, S, R) \
+cudaError_t cudaMerge(T* input_color, S* input_alpha, R* output, size_t width, size_t height, cudaStream_t stream) \
+{ \
+	return launchMerge<T, S, R>(input_color, input_alpha, output, width, height, stream); \
+}
+
+FUNC_CUDA_MERGE(uchar3, uint8_t, uchar4);
+FUNC_CUDA_MERGE(uchar3, float, uchar4);
+FUNC_CUDA_MERGE(uchar4, uint8_t, uchar4);
+FUNC_CUDA_MERGE(uchar4, float, uchar4);
+FUNC_CUDA_MERGE(float3, uint8_t, float4);
+FUNC_CUDA_MERGE(float3, float, float4);
+FUNC_CUDA_MERGE(float4, uint8_t, float4);
+FUNC_CUDA_MERGE(float4, float, float4);
+
+#undef FUNC_CUDA_MERGE
+
 cudaError_t cudaMerge(void *input_color, void *input_alpha, void *output, size_t width, size_t height, imageFormat format, cudaStream_t stream)
 {
 	if( format == IMAGE_RGBA8 || format == IMAGE_BGRA8 )

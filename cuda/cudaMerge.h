@@ -40,6 +40,20 @@ cudaError_t cudaMerge(void **input, void *output, size_t width, size_t height, i
  * Merge an image on the GPU (supports RGB/BGR, RGBA/BGRA from 3 colors and alpha plane)
  * @ingroup merge
  */
+#define FUNC_CUDA_MERGE_HEADER(T, S, R) \
+cudaError_t cudaMerge(T* input_color, S* input_alpha, R* output, size_t width, size_t height, cudaStream_t stream = NULL);
+
+FUNC_CUDA_MERGE_HEADER(uchar3, uint8_t, uchar4);
+FUNC_CUDA_MERGE_HEADER(uchar3, float, uchar4);
+FUNC_CUDA_MERGE_HEADER(uchar4, uint8_t, uchar4);
+FUNC_CUDA_MERGE_HEADER(uchar4, float, uchar4);
+FUNC_CUDA_MERGE_HEADER(float3, uint8_t, float4);
+FUNC_CUDA_MERGE_HEADER(float3, float, float4);
+FUNC_CUDA_MERGE_HEADER(float4, uint8_t, float4);
+FUNC_CUDA_MERGE_HEADER(float4, float, float4);
+
+#undef FUNC_CUDA_MERGE_HEADER
+
 cudaError_t cudaMerge(void *input_color, void *input_alpha, void *output, size_t width, size_t height, imageFormat format, cudaStream_t stream = NULL);
 
 #endif
