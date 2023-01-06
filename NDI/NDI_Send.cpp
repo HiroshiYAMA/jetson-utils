@@ -176,16 +176,16 @@ bool ndiSend::Render( void* image, uint32_t width, uint32_t height, imageFormat 
 
 	// const bool substreams_success = videoOutput::Render(image, width, height, format);
 
-	// CUDA(cudaStreamSynchronize(mStream));
-	
+	CUDA(cudaStreamSynchronize(mStream));
+
+	idx_front = (idx_front + 1) & 1;
+	idx_back = (idx_front + 1) & 1;
+
 	// We now submit the frame asynchronously. This means that this call will return immediately and the
 	// API will "own" the memory location until there is a synchronozing event. A synchronouzing event is
 	// one of : NDIlib_send_send_video_async, NDIlib_send_send_video, NDIlib_send_destroy
 	NDI_video_frame.p_data = (uint8_t*)img[idx_front];
 	NDIlib_send_send_video_async_v2(pNDI_send, &NDI_video_frame);
-
-	idx_front = (idx_front + 1) & 1;
-	idx_back = (idx_front + 1) & 1;
 
 	// return substreams_success;
 	return true;
