@@ -185,8 +185,21 @@ bool ndiSend::Render( void* image, uint32_t width, uint32_t height, imageFormat 
 	// API will "own" the memory location until there is a synchronozing event. A synchronouzing event is
 	// one of : NDIlib_send_send_video_async, NDIlib_send_send_video, NDIlib_send_destroy
 	NDI_video_frame.p_data = (uint8_t*)img[idx_front];
+	NDI_video_frame.p_metadata = meta[idx_front].c_str();
 	NDIlib_send_send_video_async_v2(pNDI_send, &NDI_video_frame);
+
+#if 0
+	// send metadata frame.
+	NDI_metadata_frame.p_data = meta[idx_front].data();
+	NDIlib_send_send_metadata(pNDI_send, &NDI_metadata_frame);
+#endif
 
 	// return substreams_success;
 	return true;
+}
+bool ndiSend::Render( void* image, uint32_t width, uint32_t height, imageFormat format, std::string &metadata )
+{
+	meta[idx_back] = metadata;
+
+	return Render(image, width, height, format);
 }

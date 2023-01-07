@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 2.8)
 unset(ENABLE_OPENCV CACHE)
 set(ENABLE_OPENCV "NO" CACHE BOOL "If YES, will enable support for OpenCV")
 
+set(CMAKE_CUDA_STANDARD 14)
+
 # determine if jetson-utils is being built as a submodule inside another repo,
 # or if it's being build standalone (if the later, we need to do some configuration)
 get_directory_property(hasParent PARENT_DIRECTORY)
@@ -23,7 +25,7 @@ else()
 	endif()
 
 	# -std=gnu++11
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-write-strings")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-write-strings")
   
 	# setup CUDA
 	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cuda")
@@ -108,6 +110,11 @@ else()
 endif()
 cuda_add_library(jetson-utils SHARED ${jetsonUtilitySources})
 target_link_libraries(jetson-utils GL GLU GLEW gstreamer-1.0 gstapp-1.0 gstpbutils-1.0 ${SDL2_LIBRARIES} ${CUDA_nppicc_LIBRARY} ${OPENCV_LIBRARY} rt PocoFoundation pthread ndi)
+set_target_properties(jetson-utils PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+)
 
 
 # transfer all headers to the include directory 
