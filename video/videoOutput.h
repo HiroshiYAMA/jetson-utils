@@ -170,7 +170,8 @@ public:
 	 * @returns `true` on success, `false` on error.
 	 */
 	template<typename T> bool Render( T* image, uint32_t width, uint32_t height )		{ return Render((void**)image, width, height, imageFormatFromType<T>()); }
-	
+	template<typename T> bool Render( T* image, uint32_t width, uint32_t height, std::string &metadata )		{ return Render((void**)image, width, height, imageFormatFromType<T>(), metadata); }
+
 	/**
 	 * Render and output the next frame to the stream.
 	 *
@@ -184,6 +185,7 @@ public:
 	 * @returns `true` on success, `false` on error.
 	 */
 	virtual bool Render( void* image, uint32_t width, uint32_t height, imageFormat format );
+	virtual bool Render( void* image, uint32_t width, uint32_t height, imageFormat format, std::string &metadata );
 
 	/**
 	 * Begin streaming the device.
@@ -315,6 +317,11 @@ protected:
 	std::vector<videoOutput*> mOutputs;
 
 	cudaStream_t  mStream;
+
+	static constexpr auto IMG_NUM = 2;
+	int idx_front = 0;
+	int idx_back = (idx_front + 1) & 1;
+	std::string meta[IMG_NUM] = { "" };
 };
 
 #endif
