@@ -722,8 +722,15 @@ bool glDisplay::Render( void* image, uint32_t width, uint32_t height, imageForma
 	}
 
 	// render sub-streams
-	const bool substreams_success = videoOutput::Render(image, width, height, format);
+	const bool substreams_success = videoOutput::Render(image, width, height, format, meta[idx_back]);
+	// const bool substreams_success = videoOutput::Render(image, width, height, format);
 	return display_success & substreams_success;
+}
+bool glDisplay::Render( void* image, uint32_t width, uint32_t height, imageFormat format, std::string &metadata )
+{
+	meta[idx_back] = metadata;
+
+	return Render(image, width, height, format);
 }
 
 

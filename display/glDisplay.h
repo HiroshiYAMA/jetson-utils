@@ -168,13 +168,15 @@ public:
 	 * @see videoOutput::Render
 	 */
 	template<typename T> bool Render( T* image, uint32_t width, uint32_t height )		{ return Render((void**)image, width, height, imageFormatFromType<T>()); }
-	
+	template<typename T> bool Render( T* image, uint32_t width, uint32_t height, std::string &metadata )		{ return Render((void**)image, width, height, imageFormatFromType<T>(), metadata); }
+
 	/**
 	 * Render a CUDA image (uchar3, uchar4, float3, float4) using OpenGL interop.
 	 * This is similar to RenderOnce(), in that it will begin/end the frame also.
 	 * @see videoOutput::Render
 	 */
 	virtual bool Render( void* image, uint32_t width, uint32_t height, imageFormat format );
+	virtual bool Render( void* image, uint32_t width, uint32_t height, imageFormat format, std::string &metadata );
 
 	/**
 	 * Render a CUDA image (uchar3, uchar4, float3, float4) using OpenGL interop.

@@ -202,13 +202,19 @@ void videoOutput::Close()
 
 // Render
 bool videoOutput::Render( void* image, uint32_t width, uint32_t height, imageFormat format )
+{
+	std::string str = "";
+
+	return Render(image, width, height, format, str);
+}
+bool videoOutput::Render( void* image, uint32_t width, uint32_t height, imageFormat format, std::string &metadata )
 {	
 	const uint32_t numOutputs = mOutputs.size();
 	bool result = true;
 
 	for( uint32_t n=0; n < numOutputs; n++ )
 	{
-		if( !mOutputs[n]->Render(image, width, height, format) )
+		if( !mOutputs[n]->Render(image, width, height, format, metadata) )
 			result = false;
 	}
 
