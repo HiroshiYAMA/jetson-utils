@@ -229,7 +229,16 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 
 	// RTSP latency
 	rtspLatency = cmdLine.GetUnsignedInt("input-rtsp-latency", rtspLatency);
-	
+
+	// stream delay.
+	stream_delay = (type == INPUT)
+		? cmdLine.GetFloat("input-sdelay")
+		: (type == OUTPUT)
+			? cmdLine.GetFloat("output-sdelay")
+			: 0.0f;
+	if( stream_delay == 0.0f )
+		stream_delay = cmdLine.GetFloat("sdelay");
+
 	return true;
 }
 

@@ -166,6 +166,16 @@ bool gstCamera::buildLaunchStr()
 		}
 		
 		//ss << "queue max-size-buffers=16 ! ";
+		ss << "queue max-size-buffers=0 max-size-bytes=0 max-size-time=0 min-threshold-time=";
+		ss << (uint64_t)mOptions.stream_delay;
+		ss << " ! ";
+		// max-size-buffers    : Max. number of buffers in the queue (0=disable)
+		// max-size-bytes      : Max. amount of data in the queue (bytes, 0=disable)
+		// max-size-time       : Max. amount of data in the queue (in ns, 0=disable)
+		// min-threshold-buffers: Min. number of buffers in the queue to allow reading (0=disable)
+		// min-threshold-bytes : Min. amount of data in the queue to allow reading (bytes, 0=disable)
+		// min-threshold-time  : Min. amount of data in the queue to allow reading (in ns, 0=disable)
+  
 
 		if( mOptions.codec == videoOptions::CODEC_H264 )
 			ss << "h264parse ! omxh264dec ! video/x-raw ! ";
