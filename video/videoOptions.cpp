@@ -231,13 +231,21 @@ bool videoOptions::Parse( const char* URI, const commandLine& cmdLine, videoOpti
 	rtspLatency = cmdLine.GetUnsignedInt("input-rtsp-latency", rtspLatency);
 
 	// stream delay.
-	stream_delay = (type == INPUT)
-		? cmdLine.GetFloat("input-sdelay")
+	stream_delay_ms = (type == INPUT)
+		? cmdLine.GetUnsignedInt("input-delay-ms")
 		: (type == OUTPUT)
-			? cmdLine.GetFloat("output-sdelay")
-			: 0.0f;
-	if( stream_delay == 0.0f )
-		stream_delay = cmdLine.GetFloat("sdelay");
+			? cmdLine.GetUnsignedInt("output-delay-ms")
+			: 0;
+	if( stream_delay_ms == 0 )
+		stream_delay_ms = cmdLine.GetUnsignedInt("delay-ms");
+
+	stream_delay_buf_count = (type == INPUT)
+		? cmdLine.GetUnsignedInt("input-delay-buf")
+		: (type == OUTPUT)
+			? cmdLine.GetUnsignedInt("output-delay-buf")
+			: 0;
+	if( stream_delay_buf_count == 0 )
+		stream_delay_buf_count = cmdLine.GetUnsignedInt("delay-buf");
 
 	return true;
 }

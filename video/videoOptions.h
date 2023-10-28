@@ -134,7 +134,8 @@ public:
 	int rtspLatency;
 
 	// delay.
-	float stream_delay;	// [ms].
+	uint32_t stream_delay_ms;	// [ms].
+	uint32_t stream_delay_buf_count;	// [frame].
 
 	/**
 	 * Device interface types.
