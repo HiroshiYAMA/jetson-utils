@@ -23,7 +23,7 @@
 #ifndef __DEV_GAMEPAD_H__
 #define __DEV_GAMEPAD_H__
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 #include <iostream>
 #include <memory>
