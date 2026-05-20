@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 
 unset(ENABLE_OPENCV CACHE)
 set(ENABLE_OPENCV "NO" CACHE BOOL "If YES, will enable support for OpenCV")
@@ -89,7 +89,8 @@ endif()
 # TODO see if this can be replaced by a FindGStreamer or similar
 include_directories(${PROJECT_INCLUDE_DIR}/jetson-utils)
 execute_process (COMMAND uname -m OUTPUT_VARIABLE CPU_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-include_directories(/usr/include/gstreamer-1.0 /usr/include/glib-2.0 /usr/include/libxml2 /usr/lib/${CPU_ARCH}-linux-gnu/gstreamer-1.0/include /usr/lib/${CPU_ARCH}-linux-gnu/glib-2.0/include/)
+# include_directories(/usr/include/gstreamer-1.0 /usr/include/glib-2.0 /usr/include/libxml2 /usr/lib/${CPU_ARCH}-linux-gnu/gstreamer-1.0/include /usr/lib/${CPU_ARCH}-linux-gnu/glib-2.0/include/)
+include_directories(/usr/local/include/gstreamer-1.0 /usr/local/include/glib-2.0 /usr/include/libxml2 /usr/lib/${CPU_ARCH}-linux-gnu/gstreamer-1.0/include /usr/lib/${CPU_ARCH}-linux-gnu/glib-2.0/include/)
 
 # NDI SDK.
 include_directories(/usr/local/include/NDI)
@@ -109,6 +110,8 @@ else()
 	set(OPENCV_LIBRARY)
 endif()
 cuda_add_library(jetson-utils SHARED ${jetsonUtilitySources})
+# target_link_directories(jetson-utils PUBLIC /usr/lib/x86_64-linux-gnu)
+target_link_directories(jetson-utils PUBLIC /usr/local/lib/x86_64-linux-gnu)
 target_link_libraries(jetson-utils GL GLU GLEW gstreamer-1.0 gstapp-1.0 gstpbutils-1.0 ${SDL2_LIBRARIES} ${CUDA_nppicc_LIBRARY} ${OPENCV_LIBRARY} rt PocoFoundation pthread ndi)
 set_target_properties(jetson-utils PROPERTIES
     CXX_STANDARD 17

@@ -226,6 +226,7 @@ bool videoDecoder::buildLaunchStr()
 		return false;
 	}
 
+#ifdef JETSON
 	if( mOptions.codec == videoOptions::CODEC_H264 )
 		// ss << "omxh264dec ! ";
 		ss << "nvv4l2decoder ! ";
@@ -244,6 +245,20 @@ bool videoDecoder::buildLaunchStr()
 	else if( mOptions.codec == videoOptions::CODEC_MPEG4 )
 		// ss << "omxmpeg4videodec ! ";
 		ss << "nvv4l2decoder ! ";
+#else
+	if( mOptions.codec == videoOptions::CODEC_H264 )
+		ss << "nvh264dec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_H265 )
+		ss << "nvh265dec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_VP8 )
+		ss << "nvvp8dec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_VP9 )
+		ss << "nvvp9dec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_MPEG2 )
+		ss << "nvmpeg2videodec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_MPEG4 )
+		ss << "nvmpeg4videodec ! ";
+#endif
 	else if( mOptions.codec == videoOptions::CODEC_MJPEG )
 		ss << "nvjpegdec ! ";
 	// else if( mOptions.codec == videoOptions::CODEC_QTRLE )
@@ -264,7 +279,8 @@ bool videoDecoder::buildLaunchStr()
 		return false;
 	}
 
-	ss << "nvvideoconvert ! video/x-raw,format=NV12 ! ";
+	// ss << "nvvideoconvert ! video/x-raw,format=NV12 ! ";
+	ss << "videoconvert ! video/x-raw,format=NV12 ! ";
 
 	// add the app sink
 	ss << "appsink";

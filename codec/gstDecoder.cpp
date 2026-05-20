@@ -567,6 +567,7 @@ bool gstDecoder::buildLaunchStr()
 	}
 
 #if GST_CHECK_VERSION(1,0,0)
+#ifdef JETSON
 	if( mOptions.codec == videoOptions::CODEC_H264 )
 		// ss << "omxh264dec ! ";
 		ss << "nvv4l2decoder ! ";
@@ -585,6 +586,20 @@ bool gstDecoder::buildLaunchStr()
 	else if( mOptions.codec == videoOptions::CODEC_MPEG4 )
 		// ss << "omxmpeg4videodec ! ";
 		ss << "nvv4l2decoder ! ";
+#else
+	if( mOptions.codec == videoOptions::CODEC_H264 )
+		ss << "nvh264dec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_H265 )
+		ss << "nvh265dec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_VP8 )
+		ss << "nvvp8dec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_VP9 )
+		ss << "nvvp9dec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_MPEG2 )
+		ss << "nvmpeg2videodec ! ";
+	else if( mOptions.codec == videoOptions::CODEC_MPEG4 )
+		ss << "nvmpeg4videodec ! ";
+#endif
 	else if( mOptions.codec == videoOptions::CODEC_MJPEG )
 		ss << "nvjpegdec ! ";
 	else if( mOptions.codec == videoOptions::CODEC_QTRLE )
@@ -625,7 +640,8 @@ bool gstDecoder::buildLaunchStr()
 #ifdef JETSON
 		ss << "nvvidconv";
 #else
-		ss << "nvvideoconvert";
+		// ss << "nvvideoconvert";
+		ss << "videoconvert ! videoscale";
 #endif
 
 #ifdef JETSON
