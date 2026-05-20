@@ -349,7 +349,7 @@ bool gstCamera::matchCaps( GstCaps* device_caps )
 	
 		// pick this one if the resolution is closer, or if the resolution is the same but the framerate is better
 		// (or if the framerate is the same and previous codec was MJPEG, pick the new one because MJPEG isn't preferred)
-		if( format != imageFormat::IMAGE_I420 && (resolutionDiff < bestResolution || (resolutionDiff == bestResolution && (is_best_rate || bestCodec == videoOptions::CODEC_MJPEG))) )
+		if( format != imageFormat::IMAGE_I420 && (resolutionDiff < bestResolution || (resolutionDiff == bestResolution && (is_best_rate || codec == videoOptions::CODEC_MJPEG))) )
 		{
 			bestResolution = resolutionDiff;
 			bestFrameRate = frameRate;
